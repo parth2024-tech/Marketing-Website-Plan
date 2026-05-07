@@ -14,6 +14,7 @@ import HealthTest from "@/pages/HealthTest";
 import SampleReport from "@/pages/SampleReport";
 import WhySentinel from "@/pages/WhySentinel";
 import Compare from "@/pages/Compare";
+import Pricing from "@/pages/Pricing";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ function Router() {
           <Route path="/sample-report" component={SampleReport} />
           <Route path="/why" component={WhySentinel} />
           <Route path="/compare" component={Compare} />
+          <Route path="/pricing" component={Pricing} />
           <Route component={NotFound} />
         </Switch>
       </main>

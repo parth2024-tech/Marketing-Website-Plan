@@ -9,6 +9,7 @@ const links = [
   { href: "/health-test", label: "Health Test" },
   { href: "/sample-report", label: "Sample Report" },
   { href: "/compare", label: "Compare" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/faq", label: "FAQ" },
   { href: "/waitlist", label: "Join Waitlist" },
 ];

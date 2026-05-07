@@ -6,7 +6,7 @@ const navLinks = [
   { href: "/why", label: "Why Sentinel" },
   { href: "/features", label: "Features" },
   { href: "/how-it-works", label: "How It Works" },
-  { href: "/health-test", label: "Health Test" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/faq", label: "FAQ" },
 ];
 
