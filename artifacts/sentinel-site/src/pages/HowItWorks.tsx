@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Download, Eye, Zap, MessageSquare, ArrowRight } from "lucide-react";
+import { Download, Eye, Zap, MessageSquare, ArrowRight, Database, Brain, Lock, BarChart2 } from "lucide-react";
 
 const steps = [
   {
@@ -158,6 +158,112 @@ export default function HowItWorks() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Technical credibility */}
+        <div className="border-t border-border/60 pt-20 mb-20">
+          <div className="text-center mb-14">
+            <h2 className="text-2xl font-bold tracking-tight mb-3">How it actually works</h2>
+            <p className="text-muted-foreground text-sm max-w-xl mx-auto">
+              No vague "AI". No magic. Here's the exact mechanism behind every prediction Sentinel makes.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* Telemetry */}
+            <div className="surface-card rounded-xl p-7 flex flex-col gap-5">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
+                  <Database className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Telemetry collection</h3>
+                  <p className="text-xs font-mono text-muted-foreground">Every 60–180 seconds</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Sentinel reads from Windows Management Instrumentation (WMI) and CIM — the same interfaces used by Dell Command Monitor and HP Support Assistant. These are read-only system calls. No kernel drivers are installed.
+              </p>
+              <div className="rounded-lg bg-[#0a0e1a] border border-border/40 p-4 font-mono text-xs space-y-1">
+                <div className="text-muted-foreground/50"># Sources polled each cycle</div>
+                <div className="text-cyan-400">Win32_Battery          <span className="text-slate-400">→ charge, discharge rate, cycles</span></div>
+                <div className="text-cyan-400">MSAcpi_ThermalZoneTemp <span className="text-slate-400">→ all thermal zones</span></div>
+                <div className="text-cyan-400">Win32_DiskDrive        <span className="text-slate-400">→ SMART attributes, wear</span></div>
+                <div className="text-cyan-400">Win32_PerfFormattedData<span className="text-slate-400">→ CPU, RAM pressure</span></div>
+                <div className="text-cyan-400">MSFT_PhysicalDisk      <span className="text-slate-400">→ NVMe endurance</span></div>
+              </div>
+            </div>
+
+            {/* Baseline learning */}
+            <div className="surface-card rounded-xl p-7 flex flex-col gap-5">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/30 flex items-center justify-center shrink-0">
+                  <Brain className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Baseline learning</h3>
+                  <p className="text-xs font-mono text-muted-foreground">Personalised in 7–14 days</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Each metric is modelled as a distribution across your usage contexts — idle, light load, heavy load, charging, discharging. Your "normal" CPU temperature at idle is different from a generic spec sheet value. Anomaly detection uses your distribution, not a manufacturer threshold.
+              </p>
+              <div className="rounded-lg bg-[#0a0e1a] border border-border/40 p-4 font-mono text-xs space-y-1">
+                <div className="text-muted-foreground/50"># Per-metric baseline model</div>
+                <div className="text-violet-400">window  <span className="text-slate-400">= rolling 30-day sliding buffer</span></div>
+                <div className="text-violet-400">context <span className="text-slate-400">= [idle | load | charging | battery]</span></div>
+                <div className="text-violet-400">μ, σ    <span className="text-slate-400">= mean + std dev per context</span></div>
+                <div className="text-violet-400">z_score <span className="text-slate-400">= (reading − μ) / σ</span></div>
+              </div>
+            </div>
+
+            {/* Local processing */}
+            <div className="surface-card rounded-xl p-7 flex flex-col gap-5">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Local processing only</h3>
+                  <p className="text-xs font-mono text-muted-foreground">Zero network calls during analysis</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                All baseline models, anomaly scoring, and report generation run on your machine. Sentinel makes no outbound HTTP requests during normal operation. Your hardware telemetry — serial numbers, temperatures, usage patterns — is never transmitted.
+              </p>
+              <div className="rounded-lg bg-[#0a0e1a] border border-border/40 p-4 font-mono text-xs space-y-1">
+                <div className="text-muted-foreground/50"># Sentinel network activity</div>
+                <div className="text-green-400">license_check  <span className="text-slate-400">→ once per 24h, anonymous token</span></div>
+                <div className="text-green-400">update_check   <span className="text-slate-400">→ once per week, version string only</span></div>
+                <div className="text-red-400/70">telemetry      <span className="text-slate-400">→ NEVER. All analysis is local.</span></div>
+                <div className="text-red-400/70">hardware_data  <span className="text-slate-400">→ NEVER. Stays on your device.</span></div>
+              </div>
+            </div>
+
+            {/* Anomaly scoring */}
+            <div className="surface-card rounded-xl p-7 flex flex-col gap-5">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/30 flex items-center justify-center shrink-0">
+                  <BarChart2 className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">Anomaly scoring</h3>
+                  <p className="text-xs font-mono text-muted-foreground">Weighted, correlated, confirmed</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                A single out-of-range reading doesn't trigger a notification. Sentinel requires either sustained deviation over multiple readings, or corroboration from a related metric. Battery temperature alone isn't flagged. Battery temperature + accelerating capacity loss + elevated charge cycles together is a pattern.
+              </p>
+              <div className="rounded-lg bg-[#0a0e1a] border border-border/40 p-4 font-mono text-xs space-y-1">
+                <div className="text-muted-foreground/50"># Alert trigger conditions</div>
+                <div className="text-amber-400">single_metric  <span className="text-slate-400">z &gt; 3.0 sustained 4+ readings</span></div>
+                <div className="text-amber-400">correlated     <span className="text-slate-400">z &gt; 2.0 on 2+ related metrics</span></div>
+                <div className="text-amber-400">trend          <span className="text-slate-400">monotonic drift &gt; 14 days</span></div>
+                <div className="text-amber-400">weight         <span className="text-slate-400">severity × component_criticality</span></div>
+              </div>
+            </div>
+
+          </div>
         </div>
 
         {/* Mocks section */}

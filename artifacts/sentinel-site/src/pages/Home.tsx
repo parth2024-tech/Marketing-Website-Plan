@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Download, ArrowRight, Cpu, Battery, HardDrive, Thermometer, Wifi, AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
 import WaitlistForm, { WaitlistCount } from "@/components/WaitlistForm";
+import HealthFeed from "@/components/HealthFeed";
 
 const metrics = [
   { label: "CPU Usage", value: "< 1%", color: "text-primary" },
@@ -234,6 +235,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Live health feed */}
+      <HealthFeed />
 
       {/* Waitlist section */}
       <section className="px-6 py-28" id="waitlist">

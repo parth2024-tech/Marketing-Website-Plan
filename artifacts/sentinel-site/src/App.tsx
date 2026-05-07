@@ -11,6 +11,8 @@ import WhatItMonitors from "@/pages/WhatItMonitors";
 import FAQ from "@/pages/FAQ";
 import Waitlist from "@/pages/Waitlist";
 import HealthTest from "@/pages/HealthTest";
+import SampleReport from "@/pages/SampleReport";
+import WhySentinel from "@/pages/WhySentinel";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ function Router() {
           <Route path="/faq" component={FAQ} />
           <Route path="/waitlist" component={Waitlist} />
           <Route path="/health-test" component={HealthTest} />
+          <Route path="/sample-report" component={SampleReport} />
+          <Route path="/why" component={WhySentinel} />
           <Route component={NotFound} />
         </Switch>
       </main>

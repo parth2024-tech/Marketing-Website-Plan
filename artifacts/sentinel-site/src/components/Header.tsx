@@ -3,9 +3,9 @@ import { Link, useLocation } from "wouter";
 import { Menu, X, Shield } from "lucide-react";
 
 const navLinks = [
+  { href: "/why", label: "Why Sentinel" },
   { href: "/features", label: "Features" },
   { href: "/how-it-works", label: "How It Works" },
-  { href: "/what-it-monitors", label: "What It Monitors" },
   { href: "/health-test", label: "Health Test" },
   { href: "/faq", label: "FAQ" },
 ];

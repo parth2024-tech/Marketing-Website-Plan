@@ -2,9 +2,12 @@ import { Link } from "wouter";
 import { Shield } from "lucide-react";
 
 const links = [
+  { href: "/why", label: "Why Sentinel" },
   { href: "/features", label: "Features" },
   { href: "/how-it-works", label: "How It Works" },
   { href: "/what-it-monitors", label: "What It Monitors" },
+  { href: "/health-test", label: "Health Test" },
+  { href: "/sample-report", label: "Sample Report" },
   { href: "/faq", label: "FAQ" },
   { href: "/waitlist", label: "Join Waitlist" },
 ];
