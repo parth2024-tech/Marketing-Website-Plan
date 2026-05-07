@@ -13,6 +13,7 @@ import Waitlist from "@/pages/Waitlist";
 import HealthTest from "@/pages/HealthTest";
 import SampleReport from "@/pages/SampleReport";
 import WhySentinel from "@/pages/WhySentinel";
+import Compare from "@/pages/Compare";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ function Router() {
           <Route path="/health-test" component={HealthTest} />
           <Route path="/sample-report" component={SampleReport} />
           <Route path="/why" component={WhySentinel} />
+          <Route path="/compare" component={Compare} />
           <Route component={NotFound} />
         </Switch>
       </main>

@@ -8,6 +8,7 @@ const links = [
   { href: "/what-it-monitors", label: "What It Monitors" },
   { href: "/health-test", label: "Health Test" },
   { href: "/sample-report", label: "Sample Report" },
+  { href: "/compare", label: "Compare" },
   { href: "/faq", label: "FAQ" },
   { href: "/waitlist", label: "Join Waitlist" },
 ];
