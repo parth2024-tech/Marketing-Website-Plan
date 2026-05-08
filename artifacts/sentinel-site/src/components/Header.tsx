@@ -7,6 +7,7 @@ const navLinks = [
   { href: "/risk-calculator", label: "Risk Calculator" },
   { href: "/habit-audit", label: "Habit Audit" },
   { href: "/health-test", label: "Health Test" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/pricing", label: "Pricing" },
 ];
 

@@ -15,6 +15,7 @@ import SampleReport from "@/pages/SampleReport";
 import WhySentinel from "@/pages/WhySentinel";
 import Compare from "@/pages/Compare";
 import Pricing from "@/pages/Pricing";
+import Dashboard from "@/pages/Dashboard";
 import OEMFailures from "@/pages/OEMFailures";
 import HabitAudit from "@/pages/HabitAudit";
 import RiskCalculator from "@/pages/RiskCalculator";
@@ -37,6 +38,7 @@ function Router() {
           <Route path="/faq" component={FAQ} />
           <Route path="/waitlist" component={Waitlist} />
           <Route path="/health-test" component={HealthTest} />
+          <Route path="/dashboard" component={Dashboard} />
           <Route path="/sample-report" component={SampleReport} />
           <Route path="/why" component={WhySentinel} />
           <Route path="/compare" component={Compare} />

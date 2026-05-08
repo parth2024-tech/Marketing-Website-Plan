@@ -1,14 +1,8 @@
 import { Link } from "wouter";
-import { Download, ArrowRight, Cpu, Battery, HardDrive, Thermometer, Wifi, AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
+import { Download, ArrowRight, Cpu, Battery, HardDrive, Thermometer, Wifi, AlertTriangle, CheckCircle, TrendingUp, Activity } from "lucide-react";
 import WaitlistForm, { WaitlistCount } from "@/components/WaitlistForm";
 import HealthFeed from "@/components/HealthFeed";
-
-const metrics = [
-  { label: "CPU Usage", value: "< 1%", color: "text-primary" },
-  { label: "Data Sent", value: "Zero Cloud", color: "text-primary" },
-  { label: "Warning Time", value: "Weeks Early", color: "text-accent" },
-  { label: "Windows", value: "10 & 11", color: "text-muted-foreground" },
-];
+import { useState, useEffect } from "react";
 
 const differentiators = [
   {
@@ -40,7 +34,7 @@ const featureHighlights = [
 ];
 
 // Animated diagnostic visual
-function DiagnosticVisual() {
+function DiagnosticVisual({ liveMetrics }: { liveMetrics: any }) {
   return (
     <div className="relative w-80 h-80 mx-auto">
       {/* Rings */}
@@ -78,14 +72,14 @@ function DiagnosticVisual() {
         style={{ animationDelay: "0s" }}
         data-testid="chip-cpu"
       >
-        CPU <span className="text-foreground ml-1">23%</span>
+        CPU <span className="text-foreground ml-1">{Math.round(liveMetrics.cpu)}%</span>
       </div>
       <div
         className="absolute bottom-12 left-2 px-2.5 py-1.5 rounded-md bg-card border border-accent/30 font-mono text-xs text-accent animate-float-chip"
         style={{ animationDelay: "1s" }}
         data-testid="chip-temp"
       >
-        TEMP <span className="text-foreground ml-1">67°C</span>
+        TEMP <span className="text-foreground ml-1">{Math.round(liveMetrics.temp)}°C</span>
       </div>
       <div
         className="absolute top-16 left-0 px-2.5 py-1.5 rounded-md bg-card border border-primary/30 font-mono text-xs text-primary animate-float-chip"
@@ -112,6 +106,25 @@ function DiagnosticVisual() {
 }
 
 export default function Home() {
+  const [liveMetrics, setLiveMetrics] = useState({
+    cpu: 23,
+    temp: 67,
+    batt: 94,
+    ssd: 98
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLiveMetrics(prev => ({
+        cpu: Math.max(5, Math.min(100, prev.cpu + (Math.random() - 0.5) * 15)),
+        temp: Math.max(45, Math.min(95, prev.temp + (Math.random() - 0.5) * 5)),
+        batt: 94,
+        ssd: 98
+      }));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="flex flex-col">
       {/* Hero */}
@@ -162,20 +175,44 @@ export default function Home() {
 
           {/* Visual */}
           <div className="flex items-center justify-center">
-            <DiagnosticVisual />
+            <DiagnosticVisual liveMetrics={liveMetrics} />
           </div>
         </div>
       </section>
 
-      {/* Metric strip */}
-      <section className="border-y border-border/60 bg-card/40 px-6 py-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
-          {metrics.map((m) => (
-            <div key={m.label} className="flex flex-col gap-1 text-center" data-testid={`metric-${m.label.toLowerCase().replace(/\s/g, "-")}`}>
-              <span className={`text-2xl font-bold font-mono ${m.color}`}>{m.value}</span>
-              <span className="text-xs text-muted-foreground uppercase tracking-widest">{m.label}</span>
+      {/* Live Metric strip */}
+      <section className="border-y border-border/60 bg-[#0a0e1a] px-6 py-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 border border-primary/20">
+              <Activity className="w-4 h-4 text-primary" />
             </div>
-          ))}
+            <div>
+              <div className="text-[10px] font-mono text-primary flex items-center gap-1.5 uppercase tracking-widest">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> Live Telemetry
+              </div>
+              <div className="text-xs text-muted-foreground font-mono">System monitoring active</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-8 md:gap-12 text-center md:text-left flex-1 justify-end max-w-2xl">
+            <div className="flex flex-col gap-1" data-testid="metric-cpu">
+              <span className="text-xs text-muted-foreground uppercase tracking-widest font-mono">CPU Load</span>
+              <span className="text-xl font-bold font-mono text-cyan-400">{Math.round(liveMetrics.cpu)}%</span>
+            </div>
+            <div className="flex flex-col gap-1" data-testid="metric-temp">
+              <span className="text-xs text-muted-foreground uppercase tracking-widest font-mono">Core Temp</span>
+              <span className="text-xl font-bold font-mono text-amber-400">{Math.round(liveMetrics.temp)}°C</span>
+            </div>
+            <div className="flex flex-col gap-1" data-testid="metric-batt">
+              <span className="text-xs text-muted-foreground uppercase tracking-widest font-mono">Batt Health</span>
+              <span className="text-xl font-bold font-mono text-green-400">{liveMetrics.batt}%</span>
+            </div>
+            <div className="flex flex-col gap-1" data-testid="metric-ssd">
+              <span className="text-xs text-muted-foreground uppercase tracking-widest font-mono">SSD Wear</span>
+              <span className="text-xl font-bold font-mono text-green-400">{liveMetrics.ssd}%</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -238,6 +275,38 @@ export default function Home() {
 
       {/* Live health feed */}
       <HealthFeed />
+
+      {/* Live Demo CTA */}
+      <section className="px-6 py-20 bg-gradient-to-b from-transparent to-primary/5">
+        <div className="max-w-4xl mx-auto surface-card rounded-2xl p-10 md:p-12 flex flex-col md:flex-row items-center gap-8 justify-between relative overflow-hidden border border-primary/20 shadow-2xl">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay pointer-events-none" />
+          <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="flex flex-col gap-4 relative z-10 max-w-lg">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-xs font-mono text-primary w-fit">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" /> INTERACTIVE PREVIEW
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight text-white">See Sentinel in action.</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Don't just take our word for it. View a simulated live dashboard mirroring the exact interface, metrics, and AI anomaly detection Sentinel provides for real systems.
+            </p>
+          </div>
+          
+          <div className="relative z-10 shrink-0">
+            <Link
+              href="/dashboard"
+              className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-black bg-cyan-400 rounded-xl overflow-hidden transition-all hover:scale-105 glow-cyan"
+              data-testid="button-live-demo"
+            >
+              <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[scan-line_1.5s_ease-in-out_infinite]" />
+              <span className="flex items-center gap-2 relative z-10">
+                Open Live Dashboard
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* Waitlist section */}
       <section className="px-6 py-28" id="waitlist">
