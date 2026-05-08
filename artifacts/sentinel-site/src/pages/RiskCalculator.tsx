@@ -149,7 +149,7 @@ function getLifespan(risk: number, age: Age | ""): string {
     gt4:  { low: "2–3 more years", moderate: "1–2 more years", elevated: "12–18 months", high: "Under 12 months", critical: "Replacement recommended" },
   };
   const bucket = risk <= 20 ? "low" : risk <= 35 ? "moderate" : risk <= 55 ? "elevated" : risk <= 75 ? "high" : "critical";
-  if (!age || age === "") return "—";
+  if (!age) return "—";
   return remaining[age][bucket];
 }
 

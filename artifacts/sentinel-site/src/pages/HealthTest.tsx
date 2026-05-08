@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Terminal, Copy, Download, CheckCheck, Cpu, Activity, ChevronDown, ChevronUp, ArrowRight, AlertCircle, Loader2, FileJson } from "lucide-react";
-import { parseReport } from "@/lib/reportSchema";
-import { generateReport, type ReportResult } from "@/lib/reportEngine";
+import { Terminal, Copy, Download, CheckCheck, Cpu, Activity, ChevronDown, ChevronUp, ArrowRight, AlertCircle, Loader2, FileJson, Check } from "lucide-react";
+import { parseReport, type SentinelReport } from "@/lib/report/schema";
+import { generateReport, type ReportResult } from "@/lib/report/engine";
+import { HABIT_QUESTIONS, type HabitAnswers } from "@/lib/report/habit";
 
 type Brand = "dell" | "lenovo" | "hp";
 
@@ -102,9 +103,15 @@ export default function HealthTest() {
   const [pasteValue, setPasteValue] = useState("");
   const [parseError, setParseError] = useState<string | null>(null);
   const [parsedResult, setParsedResult] = useState<ReportResult | null>(null);
+  const [parsedData, setParsedData] = useState<SentinelReport | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const pasteRef = useRef<HTMLDivElement>(null);
   const [, navigate] = useLocation();
+
+  // Habit audit state
+  const [habitAnswers, setHabitAnswers] = useState<HabitAnswers>({});
+  const habitAnsweredCount = Object.keys(habitAnswers).length;
+  const habitComplete = habitAnsweredCount === HABIT_QUESTIONS.length;
 
   const brand = brands.find((b) => b.id === activeBrand)!;
   const scriptContent = scripts[activeBrand];
@@ -387,57 +394,167 @@ export default function HealthTest() {
                 </div>
               )}
 
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    if (!pasteValue.trim()) { setParseError("Paste your script output first."); return; }
-                    setIsParsing(true);
-                    setParseError(null);
-                    setParsedResult(null);
-                    setTimeout(() => {
+              {/* Step 1: Analyze button — validates locally and reveals habit audit */}
+              {!parsedData && (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      if (!pasteValue.trim()) { setParseError("Paste your script output first."); return; }
+                      setIsParsing(true);
+                      setParseError(null);
+                      setParsedResult(null);
                       const { data, error } = parseReport(pasteValue);
                       if (error || !data) { setParseError(error ?? "Unknown error."); setIsParsing(false); return; }
-                      const result = generateReport(data);
-                      // Store in localStorage and navigate
-                      const id = Math.random().toString(36).slice(2, 10);
-                      try { localStorage.setItem(`sentinel_report_${id}`, JSON.stringify(data)); } catch {}
+                      setParsedData(data);
+                      setHabitAnswers({});
                       setIsParsing(false);
-                      navigate(`/r/${id}`);
-                    }, 400);
-                  }}
-                  disabled={isParsing || !pasteValue.trim()}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-background bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed glow-cyan transition-all"
-                >
-                  {isParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-                  {isParsing ? "Parsing…" : "Generate my report"}
-                </button>
-                {pasteValue && (
-                  <button
-                    onClick={() => { setPasteValue(""); setParseError(null); setParsedResult(null); }}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    }}
+                    disabled={isParsing || !pasteValue.trim()}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-background bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed glow-cyan transition-all"
                   >
-                    Clear
+                    {isParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+                    {isParsing ? "Parsing…" : "Analyse hardware →"}
                   </button>
-                )}
-              </div>
+                  {pasteValue && (
+                    <button
+                      onClick={() => { setPasteValue(""); setParseError(null); setParsedResult(null); setParsedData(null); }}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Parsed confirmation */}
+              {parsedData && (
+                <div className="flex items-center gap-2 text-xs text-green-400">
+                  <Check className="w-3.5 h-3.5" />
+                  Hardware data parsed — answer a few questions to complete your report.
+                  <button
+                    onClick={() => { setParsedData(null); setHabitAnswers({}); }}
+                    className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Change
+                  </button>
+                </div>
+              )}
 
               {/* What you'll get */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                {[
-                  { label: "Overall health score",  detail: "Weighted across battery, thermals, storage, memory, CPU" },
-                  { label: "Component breakdown",   detail: "Per-metric scores with status labels and raw readings" },
-                  { label: "Plain-English findings",detail: "Prioritised by urgency with specific action steps" },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-lg bg-primary/5 border border-primary/15 px-4 py-3">
-                    <div className="text-xs font-semibold text-primary mb-0.5">{item.label}</div>
-                    <div className="text-xs text-muted-foreground leading-relaxed">{item.detail}</div>
-                  </div>
-                ))}
-              </div>
+              {!parsedData && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                  {[
+                    { label: "Overall health score",  detail: "Weighted across battery, thermals, storage, memory, CPU" },
+                    { label: "Component breakdown",   detail: "Per-metric scores with status labels and raw readings" },
+                    { label: "Plain-English findings",detail: "Prioritised by urgency with specific action steps" },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-lg bg-primary/5 border border-primary/15 px-4 py-3">
+                      <div className="text-xs font-semibold text-primary mb-0.5">{item.label}</div>
+                      <div className="text-xs text-muted-foreground leading-relaxed">{item.detail}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </section>
+
+      {/* ── Step 2: Habit audit ─────────────────────────────────────────── */}
+      {parsedData && (
+        <section className="px-6 pb-24">
+          <div className="max-w-5xl mx-auto">
+            <div className="rounded-2xl border border-accent/30 bg-accent/3 overflow-hidden">
+              <div className="px-7 py-5 border-b border-accent/20 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
+                  <Activity className="w-4 h-4 text-accent" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-semibold text-foreground">Step 4 — Habit audit</h2>
+                    <span className="text-xs font-mono text-accent border border-accent/30 bg-accent/10 px-1.5 py-0.5 rounded">
+                      {habitAnsweredCount}/{HABIT_QUESTIONS.length} answered
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Your usage patterns account for 30% of your final score. Takes 30 seconds.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-5">
+                {HABIT_QUESTIONS.map((q) => (
+                  <div key={q.id}>
+                    <p className="text-sm font-medium text-foreground mb-2">{q.text}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {q.options.map((opt) => {
+                        const selected = habitAnswers[q.id] === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            onClick={() => setHabitAnswers((prev) => ({ ...prev, [q.id]: opt.value }))}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                              selected
+                                ? "border-accent/60 bg-accent/15 text-accent"
+                                : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground"
+                            }`}
+                          >
+                            {selected && <span className="mr-1">✓</span>}
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Generate button */}
+                <div className="pt-2 flex items-center gap-4">
+                  <button
+                    onClick={() => {
+                      if (!parsedData) return;
+                      setIsParsing(true);
+                      const tempId = Math.random().toString(36).slice(2, 10);
+                      try { localStorage.setItem(`sentinel_report_${tempId}`, JSON.stringify(parsedData)); } catch {}
+                      const answers = habitComplete ? habitAnswers : undefined;
+                      fetch("/api/reports", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ rawJson: parsedData, ...(answers ? { habitAnswers: answers } : {}) }),
+                      })
+                        .then(async (res) => {
+                          if (res.ok) {
+                            const { id, claimToken } = await res.json() as { id: string; claimToken: string };
+                            try {
+                              localStorage.setItem(`sentinel_report_${id}`, JSON.stringify(parsedData));
+                              if (claimToken) localStorage.setItem(`sentinel_claim_${id}`, claimToken);
+                            } catch {}
+                            setIsParsing(false);
+                            navigate(`/r/${id}`);
+                          } else {
+                            setIsParsing(false);
+                            navigate(`/r/${tempId}`);
+                          }
+                        })
+                        .catch(() => { setIsParsing(false); navigate(`/r/${tempId}`); });
+                    }}
+                    disabled={isParsing}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-background bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed glow-cyan transition-all"
+                  >
+                    {isParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+                    {isParsing ? "Generating…" : habitComplete ? "Generate full report →" : "Skip & generate report →"}
+                  </button>
+                  {!habitComplete && (
+                    <span className="text-xs text-muted-foreground/60">
+                      {HABIT_QUESTIONS.length - habitAnsweredCount} question{HABIT_QUESTIONS.length - habitAnsweredCount !== 1 ? "s" : ""} remaining
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

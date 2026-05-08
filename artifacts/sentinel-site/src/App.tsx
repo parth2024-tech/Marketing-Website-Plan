@@ -19,6 +19,7 @@ import OEMFailures from "@/pages/OEMFailures";
 import HabitAudit from "@/pages/HabitAudit";
 import RiskCalculator from "@/pages/RiskCalculator";
 import Report from "@/pages/Report";
+import MyReports from "@/pages/MyReports";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ function Router() {
           <Route path="/habit-audit" component={HabitAudit} />
           <Route path="/risk-calculator" component={RiskCalculator} />
           <Route path="/r/:id" component={Report} />
+          <Route path="/my-reports" component={MyReports} />
           <Route component={NotFound} />
         </Switch>
       </main>
