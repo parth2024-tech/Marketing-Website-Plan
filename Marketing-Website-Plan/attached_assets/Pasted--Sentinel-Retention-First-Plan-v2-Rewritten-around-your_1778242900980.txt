@@ -1,0 +1,187 @@
+
+# Sentinel: Retention-First Plan (v2)
+
+Rewritten around your critique. The previous plan was a feature list; this one is a **designed retention loop** with the paste-back parser as the centerpiece, honest cold-start states, and an explicit moment that creates upgrade desire.
+
+---
+
+## The core loop (designed end-to-end, not assembled from features)
+
+```text
+  [1] Land on site
+       v
+  [2] Run diagnostic script (existing /health-test)
+       v
+  [3] Paste output --> get REAL report (not mock)         <-- centerpiece
+       v
+  [4] Account auto-created from email on report  --------->  Lovable Cloud
+       v
+  [5] Get Habit Score + see 2-3 issues flagged "Pro only"  <-- upgrade moment
+       v
+  [6] Shareable result card (PNG + URL)         --------->  viral surface
+       v
+  [7] 7-day email: "recheck your laptop, paste again"
+       v
+  [8] 30-day email: side-by-side delta vs last month       <-- recurring pull
+       v
+  [9] Score changed badge in inbox + on /my-reports
+       v
+  back to [2]
+```
+
+Every Phase-1 feature exists to serve a step in this loop. Anything that doesn't is cut or deferred.
+
+---
+
+## Phase 1 — The loop, end to end (3-4 weeks)
+
+### 1.1 Paste-back parser (the centerpiece, treat it accordingly)
+
+Built first, built carefully. Scope:
+
+- **Define a strict input schema.** Ship a single canonical script (`sentinel-collect.ps1`) on `/health-test` that outputs **structured JSON**, not free-form text. We control both ends — never parse arbitrary OEM output. The script writes to a file and copies a base64-encoded JSON blob to the clipboard, ready to paste.
+- **Versioned schema.** First line of the JSON is `{"sentinelSchema": 1, ...}`. Reject anything else with a clear "your script is outdated, copy the latest" message linking back to /health-test.
+- **Zod validation** of every field. Unknown fields ignored, missing required fields → friendly error pointing to which check failed and a "report this output" button that captures the malformed JSON for us to debug.
+- **Three Windows variants only at launch:** Win10 22H2, Win11 22H2, Win11 23H2. Each tested manually before launch. Other versions show "we don't fully support this Windows build yet — your report may be incomplete" but still render what it can.
+- **Deterministic report generation.** No AI in the loop. Pure TS functions: thresholds, z-score against a small built-in baseline (until we have enough real data), and a fixed rules engine for findings.
+- **Graceful degradation.** Missing SSD data? Show "SSD data unavailable" instead of fabricating it. Every section can independently render or fail.
+
+Output: a real version of the existing `/sample-report` page, populated with the user's actual data, at `/r/[reportId]`.
+
+### 1.2 Account-on-report (Cloud-backed, minimal friction)
+
+- Enable Lovable Cloud. Add magic-link auth.
+- After generating a report, prompt: *"Save this report? We'll email you when something changes."* Email-only, no password.
+- Reports persist to the user's account. `/my-reports` lists them with score deltas between runs.
+- Anonymous reports are allowed (with a banner: "claim this report by adding your email").
+
+### 1.3 Habit Audit, woven into the loop (not a standalone quiz)
+
+- Triggered the **first time** a user views their report. Inline, not a separate page.
+- 8 questions, takes ~60 seconds, results merged into the report as a "Habit Score" alongside the Hardware Score.
+- The combined score becomes the headline metric the user wants to improve over time — that's what makes them come back.
+- Re-prompted after 90 days ("habits change — recheck?") not monthly. You're right that monthly is wrong.
+
+### 1.4 Shareable result card
+
+- Every report gets a public URL `/r/[id]` and a generated OG image (server-rendered PNG: score ring + headline finding + redacted machine model).
+- Copy-link, download-PNG, share-to-X buttons on the report page.
+- This is the viral surface. One user with a dramatic finding ("My SSD is in the bottom 3%") brings curious friends.
+
+### 1.5 Email digest infrastructure (moved up from Phase 3 — you were right)
+
+- Built in Phase 1 using Lovable's built-in email system.
+- Two emails:
+  - **7-day recheck nudge** — "It's been a week. Run the script again — see if anything changed."
+  - **30-day comparison** — side-by-side delta of every metric vs. last report. This is the killer recurring email.
+- Both are 1:1 transactional emails triggered by the user's own report submission, so they're allowed under the email rules.
+- Unsubscribe handled automatically.
+
+### 1.6 The upgrade moment (Free vs Pro, made concrete)
+
+- Free reports show **all** raw metrics and the headline score.
+- Pro-gated, blurred but visible:
+  - **Predictive findings** ("SSD likely to show errors in ~6 weeks based on wear curve")
+  - **Correlation insights** ("Your fan RPM spikes correlate with battery drain — root cause: thermal paste")
+  - **30-day delta email** (free users get a 90-day delta only)
+- The upgrade moment isn't a pricing page visit — it's the user staring at a blurred prediction on their own real report. That's the conversion surface.
+
+### 1.7 Anti-OEM evidence, not opinion
+
+- New page `/oem-failures` (replaces the abstract Manifesto for Phase 1).
+- 5 documented cases with screenshots:
+  - Dell SupportAssist clearing a "healthy" status while CrystalDiskInfo shows reallocated sectors.
+  - Lenovo Vantage's battery health shown in 3 buckets ("Good") vs. actual cycle count.
+  - HP Support Assistant pushing paid extended support before flagging a real issue.
+  - At least one case where Task Manager's "everything's fine" hides thermal throttling.
+  - Reddit/forum threads we can quote with permission.
+- We need to actually research and cite these. If we can't get 5 documented cases, we ship 3 and label the page as growing. No fabrication.
+
+---
+
+## Cold-start: honest "early access" states (no fake numbers)
+
+You're right that "1,284 laptops monitored" with 40 signups is a credibility bomb. New rule: **never show aggregated numbers we haven't earned.**
+
+- `/pulse` (live ticker): cut from Phase 1. Returns in Phase 2 only when reports > 500.
+- Benchmarks page: shipped as `/benchmarks-preview` with an explicit "Unlocking at 1,000 reports — currently at X" progress bar. Honest scarcity > fake abundance.
+- Per-model pages: only generated when a model has ≥ 10 real reports. Below that, the model lookup shows "We need 10+ reports for the [Dell XPS 13 9310] before we can show patterns. You'd be #4."
+- Wall of fame: deferred to Phase 3.
+
+This converts the cold-start problem into a **participation incentive**: "be one of the first 1,000 to unlock the benchmarks for your model."
+
+---
+
+## Re-engagement beyond email
+
+You called out the gap. Adding:
+
+- **Score-change badge on /my-reports** — visible the moment a user logs in, shows what changed.
+- **Browser push** (opt-in only, asked after the second report, never on first visit) — "Your laptop's score dropped 12 points. New finding."
+- **Comparison-to-friend feature** — when you share a report, the friend who pastes their own can opt to compare side by side. This is a designed bring-a-friend mechanic, not a hope.
+- **One-click recheck reminder** — "Remind me in 30 days" button on every report. Adds to a per-user cron-style schedule (Cloud).
+
+---
+
+## Content strategy (committed, not aspirational)
+
+You're right that "1 post a week" dies by week 3. Revised:
+
+- **No /insights page until 8 posts are pre-written.** That's the gate.
+- The first 8 posts are research-driven from real Sentinel data + OEM failure cases. Topics already viable: the 5 OEM failure cases (one each = 5 posts), "What 100 paste-back reports told us about charging habits", "Why your Dell's battery report is lying", "The 3 metrics OEM apps never show you."
+- Until then, the OEM-failures page IS the content surface. Each case is essentially a mini-post.
+
+---
+
+## Revised phasing
+
+### Phase 1 (3-4 weeks) — ship the loop
+- Canonical PowerShell collector + JSON schema
+- Paste-back parser with Zod validation, 3-Windows test matrix
+- Real report renderer at `/r/[id]`
+- Lovable Cloud + magic-link auth + `/my-reports`
+- Habit Audit inlined into report flow
+- Shareable OG images + share UX
+- 7-day and 30-day email digests (built on Lovable Emails)
+- Pro-gated blurred findings on the report (no payment yet — just signup-gated waitlist for Pro)
+- `/oem-failures` with 3-5 documented cases
+- Updated `/why` and `/compare` linking out to `/oem-failures`
+
+### Phase 2 (after ~500 real reports)
+- Model lookup with the 10-reports-per-model gate
+- `/benchmarks-preview` becomes `/benchmarks`
+- Browser push notifications
+- Friend-comparison feature
+- Manifesto page (now backed by real data and case studies)
+- Insights blog launches with 8 pre-written posts
+- Stripe payments for Pro
+
+### Phase 3 (after the desktop app ships)
+- `/pulse` live fleet ticker (real numbers only)
+- Wall of fame
+- Auto-sync from desktop app to web reports
+
+---
+
+## Risks & how we de-risk
+
+- **Parser reliability:** mitigated by controlling the script + JSON schema + Zod + per-section graceful failure. No free-form OEM output ever parsed.
+- **Cold start:** explicitly converted to scarcity messaging instead of hidden with fake numbers.
+- **Email digest fatigue:** capped at 2 lifecycle emails until user opts into more; clear unsubscribe; never sent if no meaningful change.
+- **Pro upgrade moment without payments yet:** Phase 1 collects "notify me when Pro launches" intent on the blurred findings — that's a stronger waitlist signal than a generic signup form.
+- **Content abandonment:** /insights gated on a written backlog.
+
+---
+
+## What's been cut from v1 and why
+
+- `/manifesto` (Phase 1): low ROI; moved to Phase 2 with real data behind it.
+- `/pulse` live ticker (Phase 1): can't ship without real volume.
+- `/risk-calculator` standalone: subsumed into the paste-back report (it now uses real data instead of synthetic inputs).
+- "Wall of fame," `/insights` early launch: deferred until they can be honest.
+
+---
+
+The loop is now: **paste → real report → score I want to improve → emailed back in 30 days → paste again**. That's the engine. Everything else either feeds it or is deferred.
+
+Approve this and I'll start Phase 1 with the canonical PowerShell collector + paste-back parser as the very first build, since the entire loop depends on that working reliably.
