@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { ChevronDown, ArrowRight } from "lucide-react";
+import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
 
 const faqs = [
   {
@@ -69,40 +70,46 @@ export default function FAQ() {
     <div className="px-6 py-20">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="mb-16">
-          <div className="mb-4">
-            <span className="text-xs font-mono font-medium px-3 py-1 rounded-full border border-primary/30 text-primary bg-primary/10">
-              FAQ
-            </span>
+        <AnimateIn>
+          <div className="mb-16">
+            <div className="mb-4">
+              <span className="text-xs font-mono font-medium px-3 py-1 rounded-full border border-primary/30 text-primary bg-primary/10">
+                FAQ
+              </span>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6" data-testid="heading-faq">
+              Questions,{" "}
+              <span className="gradient-text">answered directly.</span>
+            </h1>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              We built Sentinel to be transparent. If something isn't covered here, reach out.
+            </p>
           </div>
-          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6" data-testid="heading-faq">
-            Questions,{" "}
-            <span className="gradient-text">answered directly.</span>
-          </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            We built Sentinel to be transparent. If something isn't covered here, reach out.
-          </p>
-        </div>
+        </AnimateIn>
 
-        {/* FAQ items */}
-        <div className="flex flex-col gap-3">
+        {/* FAQ items — staggered */}
+        <StaggerContainer className="flex flex-col gap-3" staggerDelay={0.06}>
           {faqs.map((faq, i) => (
-            <FAQItem key={i} question={faq.question} answer={faq.answer} index={i} />
+            <StaggerItem key={i}>
+              <FAQItem question={faq.question} answer={faq.answer} index={i} />
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
 
         {/* Bottom CTA */}
-        <div className="mt-16 text-center flex flex-col items-center gap-5">
-          <p className="text-muted-foreground text-sm">Ready to give Sentinel a try?</p>
-          <Link
-            href="/waitlist"
-            className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all duration-200"
-            data-testid="button-faq-waitlist"
-          >
-            Join the waitlist
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
+        <AnimateIn delay={0.1}>
+          <div className="mt-16 text-center flex flex-col items-center gap-5">
+            <p className="text-muted-foreground text-sm">Ready to give Sentinel a try?</p>
+            <Link
+              href="/waitlist"
+              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all duration-200"
+              data-testid="button-faq-waitlist"
+            >
+              Join the waitlist
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </AnimateIn>
       </div>
     </div>
   );

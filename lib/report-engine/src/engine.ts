@@ -17,12 +17,21 @@ export interface Finding {
   pro: boolean;
 }
 
+export interface Prediction {
+  component: string;
+  currentValue: string;
+  projectedTimeline: string;
+  severity: "stable" | "declining" | "urgent";
+  insight: string;
+}
+
 export interface ReportResult {
   overall: number;
   grade: string;
   gradeLabel: string;
   components: ComponentScore[];
   findings: Finding[];
+  predictions: Prediction[];
   system: { model: string; hostname: string; os: string };
   generatedAt: string;
   algoVersion: number;
@@ -245,6 +254,167 @@ function generateFindings(r: SentinelReport): Finding[] {
   return findings;
 }
 
+function generatePredictions(r: SentinelReport): Prediction[] {
+  const predictions: Prediction[] = [];
+  const b = r.battery;
+  const t = r.thermals;
+  const s = r.storage?.[0];
+  const m = r.memory;
+  const c = r.cpu;
+
+  // Battery prediction
+  if (b?.health != null) {
+    const health = b.health;
+    const cycles = b.cycleCount ?? 0;
+    if (health >= 90) {
+      predictions.push({
+        component: "Battery",
+        currentValue: `${health.toFixed(1)}% capacity`,
+        projectedTimeline: "18–24 months before noticeable degradation",
+        severity: "stable",
+        insight: "Battery is in excellent condition. At current usage patterns, expect reliable performance for the next 1.5–2 years.",
+      });
+    } else if (health >= 75) {
+      const monthsLeft = Math.max(3, Math.round((health - 50) * 0.6));
+      predictions.push({
+        component: "Battery",
+        currentValue: `${health.toFixed(1)}% capacity · ${cycles} cycles`,
+        projectedTimeline: `${monthsLeft}–${monthsLeft + 4} months before performance becomes unreliable`,
+        severity: "declining",
+        insight: `At current degradation rate, battery performance may become unstable within ${monthsLeft}–${monthsLeft + 4} months. Runtime per charge will decrease noticeably. Plan for replacement within this window.`,
+      });
+    } else if (health >= 50) {
+      const monthsLeft = Math.max(1, Math.round((health - 40) * 0.4));
+      predictions.push({
+        component: "Battery",
+        currentValue: `${health.toFixed(1)}% capacity · ${cycles} cycles`,
+        projectedTimeline: `${monthsLeft}–${monthsLeft + 2} months before unexpected shutdowns likely`,
+        severity: "urgent",
+        insight: `Battery is degrading at an accelerated rate. Random shutdowns at 10–20% reported charge are likely within ${monthsLeft}–${monthsLeft + 2} months. Replacement is strongly recommended.`,
+      });
+    } else {
+      predictions.push({
+        component: "Battery",
+        currentValue: `${health.toFixed(1)}% capacity · ${cycles} cycles`,
+        projectedTimeline: "Immediate — replacement overdue",
+        severity: "urgent",
+        insight: "Battery has reached end-of-life. Unexpected shutdowns, swelling risk, and severely reduced runtime are expected. Replace as soon as possible.",
+      });
+    }
+  }
+
+  // Thermals prediction
+  if (t?.maxTempC != null) {
+    const temp = t.maxTempC;
+    const throttle = t.throttleEvents30min ?? 0;
+    if (temp <= 75 && throttle <= 2) {
+      predictions.push({
+        component: "Thermals",
+        currentValue: `${temp.toFixed(0)}°C peak · ${throttle} throttle events`,
+        projectedTimeline: "No thermal concerns for 12+ months",
+        severity: "stable",
+        insight: "Cooling system is performing well within safe limits. No intervention needed.",
+      });
+    } else if (temp <= 85) {
+      predictions.push({
+        component: "Thermals",
+        currentValue: `${temp.toFixed(0)}°C peak · ${throttle} throttle events`,
+        projectedTimeline: "6–12 months before thermal paste degradation becomes noticeable",
+        severity: "declining",
+        insight: `Temperatures are elevated. Without intervention, thermal paste degradation will cause temps to rise another 5–10°C over the next 6–12 months, leading to sustained throttling and reduced performance.`,
+      });
+    } else {
+      predictions.push({
+        component: "Thermals",
+        currentValue: `${temp.toFixed(0)}°C peak · ${throttle} throttle events`,
+        projectedTimeline: "1–3 months before component lifespan is significantly impacted",
+        severity: "urgent",
+        insight: `Sustained temperatures above 85°C are actively shortening CPU, GPU, and battery lifespan. Thermal paste replacement and vent cleaning are recommended within the next 1–3 months to prevent permanent damage.`,
+      });
+    }
+  }
+
+  // Storage prediction
+  if (s) {
+    const wear = s.wearLevelPct ?? s.healthPct;
+    const free = s.freeSpacePct ?? 100;
+    const realloc = s.reallocatedSectors ?? 0;
+    if (realloc > 0) {
+      predictions.push({
+        component: "Storage",
+        currentValue: `${realloc} reallocated sectors · ${free.toFixed(0)}% free`,
+        projectedTimeline: "Unpredictable — failure possible at any time",
+        severity: "urgent",
+        insight: "Reallocated sectors indicate physical media damage. Drive failure becomes increasingly likely. Back up all data immediately and plan for drive replacement.",
+      });
+    } else if (wear != null && wear < 60) {
+      const monthsLeft = Math.max(2, Math.round(wear * 0.3));
+      predictions.push({
+        component: "Storage",
+        currentValue: `${wear}% endurance remaining · ${free.toFixed(0)}% free`,
+        projectedTimeline: `${monthsLeft}–${monthsLeft + 6} months of write endurance remaining`,
+        severity: "declining",
+        insight: `SSD write endurance is below 60%. At current write patterns, the drive will reach its rated endurance limit within ${monthsLeft}–${monthsLeft + 6} months. Performance may degrade before then.`,
+      });
+    } else if (free < 10) {
+      predictions.push({
+        component: "Storage",
+        currentValue: `${free.toFixed(1)}% free space`,
+        projectedTimeline: "2–4 weeks before write performance degrades significantly",
+        severity: "urgent",
+        insight: "Critically low free space increases write amplification, accelerating SSD wear and reducing write speeds. Windows updates may also begin failing silently.",
+      });
+    } else {
+      predictions.push({
+        component: "Storage",
+        currentValue: wear != null ? `${wear}% endurance remaining · ${free.toFixed(0)}% free` : `${free.toFixed(0)}% free`,
+        projectedTimeline: "No storage concerns for 12+ months",
+        severity: "stable",
+        insight: "Storage health and free space are both in good condition. No action needed.",
+      });
+    }
+  }
+
+  // Memory prediction
+  if (m) {
+    const used = m.usedPct;
+    if (used > 85) {
+      predictions.push({
+        component: "Memory",
+        currentValue: `${m.totalGB} GB · ${used.toFixed(0)}% utilised`,
+        projectedTimeline: "Ongoing — system instability increases with each additional app",
+        severity: "urgent",
+        insight: "Memory is consistently near capacity. This forces heavy pagefile use, which degrades SSD lifespan and causes noticeable slowdowns. A RAM upgrade is recommended.",
+      });
+    } else if (used > 70) {
+      predictions.push({
+        component: "Memory",
+        currentValue: `${m.totalGB} GB · ${used.toFixed(0)}% utilised`,
+        projectedTimeline: "3–6 months before multitasking becomes noticeably slower",
+        severity: "declining",
+        insight: "Memory usage is moderately high. As installed applications grow and browser usage increases, expect more frequent slowdowns within 3–6 months.",
+      });
+    }
+  }
+
+  // CPU prediction
+  if (c) {
+    const throttle = c.throttleEvents30min ?? 0;
+    const load = c.avgLoadPct ?? 0;
+    if (throttle > 10 && load > 60) {
+      predictions.push({
+        component: "CPU",
+        currentValue: `${load.toFixed(0)}% avg load · ${throttle} throttle events`,
+        projectedTimeline: "Performance will degrade noticeably within 3–6 months",
+        severity: "declining",
+        insight: "High sustained load combined with frequent throttling indicates the CPU is thermally limited. Without thermal system maintenance, expect increasing performance loss over the next 3–6 months.",
+      });
+    }
+  }
+
+  return predictions;
+}
+
 export function combinedScore(hwScore: number, habitScore: number): number {
   return Math.round(0.7 * hwScore + 0.3 * habitScore);
 }
@@ -272,6 +442,7 @@ export function generateReport(r: SentinelReport): ReportResult {
   return {
     overall, grade, gradeLabel, components,
     findings: generateFindings(r),
+    predictions: generatePredictions(r),
     system: { model: r.system.model, hostname: r.system.hostname, os: r.system.os ?? "" },
     generatedAt: r.generatedAt,
     algoVersion: ALGORITHM_VERSION,

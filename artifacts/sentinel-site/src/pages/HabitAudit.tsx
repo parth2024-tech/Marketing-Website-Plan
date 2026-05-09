@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowRight, ArrowLeft, Share2, RotateCcw, CheckCircle } from "lucide-react";
+import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
 
 interface Question {
   id: string;
@@ -185,24 +186,26 @@ export default function HabitAudit() {
       <div className="min-h-screen bg-background text-foreground">
         <section className="relative py-24 px-6 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-accent/4 via-background to-primary/4 pointer-events-none" />
-          <div className="relative max-w-2xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/30 bg-accent/5 text-accent text-xs font-mono mb-6">
-              HABIT AUDIT
+          <AnimateIn>
+            <div className="relative max-w-2xl mx-auto text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-accent/30 bg-accent/5 text-accent text-xs font-mono mb-6">
+                HABIT AUDIT
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">
+                What are your habits doing to your laptop?
+              </h1>
+              <p className="text-lg text-muted-foreground leading-relaxed mb-4">
+                8 questions. About 60 seconds. You'll get a personalised Habit Score and a specific list of what's silently wearing down your hardware.
+              </p>
+              <p className="text-sm text-muted-foreground/60 mb-10">No data leaves your browser. Results are generated locally.</p>
+              <button
+                onClick={() => setStep("quiz")}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all text-sm"
+              >
+                Start the audit <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">
-              What are your habits doing to your laptop?
-            </h1>
-            <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-              8 questions. About 60 seconds. You'll get a personalised Habit Score and a specific list of what's silently wearing down your hardware.
-            </p>
-            <p className="text-sm text-muted-foreground/60 mb-10">No data leaves your browser. Results are generated locally.</p>
-            <button
-              onClick={() => setStep("quiz")}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-lg font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all text-sm"
-            >
-              Start the audit <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+          </AnimateIn>
         </section>
       </div>
     );
@@ -215,62 +218,69 @@ export default function HabitAudit() {
         <section className="px-6 py-16">
           <div className="max-w-2xl mx-auto">
             {/* Progress */}
-            <div className="mb-8">
-              <div className="flex justify-between text-xs text-muted-foreground mb-2 font-mono">
-                <span>Question {current + 1} of {QUESTIONS.length}</span>
-                <span>{Math.round(progress)}% complete</span>
+            <AnimateIn>
+              <div className="mb-8">
+                <div className="flex justify-between text-xs text-muted-foreground mb-2 font-mono">
+                  <span>Question {current + 1} of {QUESTIONS.length}</span>
+                  <span>{Math.round(progress)}% complete</span>
+                </div>
+                <div className="h-1 bg-border/40 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                </div>
               </div>
-              <div className="h-1 bg-border/40 rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
-              </div>
-            </div>
+            </AnimateIn>
 
             {/* Question */}
-            <div className="surface-card rounded-2xl p-8 mb-6">
-              <h2 className="text-xl font-semibold tracking-tight mb-2 leading-snug">{question.text}</h2>
-              {question.subtext && (
-                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{question.subtext}</p>
-              )}
-              <div className="space-y-3">
-                {question.options.map((opt) => (
-                  <button
-                    key={opt.label}
-                    onClick={() => handleSelect(opt.penalty)}
-                    className={`w-full text-left px-5 py-4 rounded-xl border transition-all ${
-                      selected === opt.penalty
-                        ? "border-primary/60 bg-primary/8 text-foreground"
-                        : "border-border/40 hover:border-border/80 text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${
-                        selected === opt.penalty ? "border-primary bg-primary" : "border-border/60"
-                      }`}>
-                        {selected === opt.penalty && <div className="w-1.5 h-1.5 rounded-full bg-background" />}
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium">{opt.label}</div>
-                        {opt.detail && <div className="text-xs text-muted-foreground/60 mt-0.5">{opt.detail}</div>}
-                      </div>
-                    </div>
-                  </button>
-                ))}
+            <AnimateIn>
+              <div className="surface-card rounded-2xl p-8 mb-6">
+                <h2 className="text-xl font-semibold tracking-tight mb-2 leading-snug">{question.text}</h2>
+                {question.subtext && (
+                  <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{question.subtext}</p>
+                )}
+                <StaggerContainer className="space-y-3" staggerDelay={0.04}>
+                  {question.options.map((opt) => (
+                    <StaggerItem key={opt.label}>
+                      <button
+                        onClick={() => handleSelect(opt.penalty)}
+                        className={`w-full text-left px-5 py-4 rounded-xl border transition-all ${
+                          selected === opt.penalty
+                            ? "border-primary/60 bg-primary/8 text-foreground"
+                            : "border-border/40 hover:border-border/80 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${
+                            selected === opt.penalty ? "border-primary bg-primary" : "border-border/60"
+                          }`}>
+                            {selected === opt.penalty && <div className="w-1.5 h-1.5 rounded-full bg-background" />}
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">{opt.label}</div>
+                            {opt.detail && <div className="text-xs text-muted-foreground/60 mt-0.5">{opt.detail}</div>}
+                          </div>
+                        </div>
+                      </button>
+                    </StaggerItem>
+                  ))}
+                </StaggerContainer>
               </div>
-            </div>
+            </AnimateIn>
 
             {/* Nav */}
-            <div className="flex justify-between items-center">
-              <button onClick={handleBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                <ArrowLeft className="w-3.5 h-3.5" /> Back
-              </button>
-              <button
-                onClick={handleNext}
-                disabled={selected === null}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-background bg-primary hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                {current < QUESTIONS.length - 1 ? "Next" : "See my results"} <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <AnimateIn delay={0.05}>
+              <div className="flex justify-between items-center">
+                <button onClick={handleBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <ArrowLeft className="w-3.5 h-3.5" /> Back
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={selected === null}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-background bg-primary hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  {current < QUESTIONS.length - 1 ? "Next" : "See my results"} <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </AnimateIn>
           </div>
         </section>
       </div>
@@ -284,75 +294,86 @@ export default function HabitAudit() {
         <div className="max-w-2xl mx-auto">
 
           {/* Score card */}
-          <div className="surface-card rounded-2xl p-8 mb-6 text-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-primary/3 to-transparent pointer-events-none" />
-            <div className="relative">
-              <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-4">Your Habit Score</p>
-              <div className={`text-7xl font-bold tracking-tight mb-2 ${grade.color}`}>{score}</div>
-              <div className="text-muted-foreground text-sm mb-1">/ 100</div>
-              <div className={`text-lg font-semibold mb-3 ${grade.color}`}>{grade.label}</div>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">{grade.detail}</p>
+          <AnimateIn>
+            <div className="surface-card rounded-2xl p-8 mb-6 text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-primary/3 to-transparent pointer-events-none" />
+              <div className="relative">
+                <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-4">Your Habit Score</p>
+                <div className={`text-7xl font-bold tracking-tight mb-2 ${grade.color}`}>{score}</div>
+                <div className="text-muted-foreground text-sm mb-1">/ 100</div>
+                <div className={`text-lg font-semibold mb-3 ${grade.color}`}>{grade.label}</div>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">{grade.detail}</p>
 
-              <div className="flex gap-3 justify-center mt-6">
-                <button
-                  onClick={handleShare}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-all"
-                >
-                  <Share2 className="w-3.5 h-3.5" /> Copy share link
-                </button>
-                <button
-                  onClick={handleRestart}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-all"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" /> Retake
-                </button>
+                <div className="flex gap-3 justify-center mt-6">
+                  <button
+                    onClick={handleShare}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-all"
+                  >
+                    <Share2 className="w-3.5 h-3.5" /> Copy share link
+                  </button>
+                  <button
+                    onClick={handleRestart}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-all"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" /> Retake
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          </AnimateIn>
 
           {/* Findings */}
           {sortedFindings.length > 0 ? (
             <div className="space-y-4 mb-6">
-              <h2 className="text-base font-semibold text-foreground">What's damaging your hardware</h2>
-              {sortedFindings.map((f) => (
-                <div
-                  key={f.title}
-                  className={`surface-card rounded-xl p-5 border-l-2 ${
-                    f.urgency === "high" ? "border-l-red-400" : f.urgency === "medium" ? "border-l-amber-400" : "border-l-cyan-400/50"
-                  }`}
-                >
-                  <div className="flex items-start gap-3 mb-2">
-                    <div className={`text-xs font-mono px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0 mt-0.5 ${
-                      f.urgency === "high" ? "bg-red-500/10 text-red-400" : f.urgency === "medium" ? "bg-amber-500/10 text-amber-400" : "bg-cyan-500/10 text-cyan-400"
-                    }`}>{f.urgency}</div>
-                    <h3 className="text-sm font-semibold text-foreground">{f.title}</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{f.advice}</p>
-                </div>
-              ))}
+              <AnimateIn>
+                <h2 className="text-base font-semibold text-foreground">What's damaging your hardware</h2>
+              </AnimateIn>
+              <StaggerContainer className="space-y-3" staggerDelay={0.06}>
+                {sortedFindings.map((f) => (
+                  <StaggerItem key={f.title}>
+                    <div
+                      className={`surface-card rounded-xl p-5 border-l-2 ${
+                        f.urgency === "high" ? "border-l-red-400" : f.urgency === "medium" ? "border-l-amber-400" : "border-l-cyan-400/50"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 mb-2">
+                        <div className={`text-xs font-mono px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0 mt-0.5 ${
+                          f.urgency === "high" ? "bg-red-500/10 text-red-400" : f.urgency === "medium" ? "bg-amber-500/10 text-amber-400" : "bg-cyan-500/10 text-cyan-400"
+                        }`}>{f.urgency}</div>
+                        <h3 className="text-sm font-semibold text-foreground">{f.title}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{f.advice}</p>
+                    </div>
+                  </StaggerItem>
+                ))}
+              </StaggerContainer>
             </div>
           ) : (
-            <div className="surface-card rounded-xl p-6 mb-6 flex items-center gap-4">
-              <CheckCircle className="w-6 h-6 text-green-400 shrink-0" />
-              <div>
-                <div className="text-sm font-semibold text-foreground mb-1">No major habit issues found</div>
-                <div className="text-sm text-muted-foreground">Your usage habits are among the best for long-term hardware health.</div>
+            <AnimateIn delay={0.05}>
+              <div className="surface-card rounded-xl p-6 mb-6 flex items-center gap-4">
+                <CheckCircle className="w-6 h-6 text-green-400 shrink-0" />
+                <div>
+                  <div className="text-sm font-semibold text-foreground mb-1">No major habit issues found</div>
+                  <div className="text-sm text-muted-foreground">Your usage habits are among the best for long-term hardware health.</div>
+                </div>
               </div>
-            </div>
+            </AnimateIn>
           )}
 
           {/* CTA */}
-          <div className="surface-card rounded-xl p-6">
-            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-              Habits explain <em>how</em> your laptop is wearing down. The diagnostic script shows <em>what's already happened</em>. Run both for the full picture.
-            </p>
-            <Link
-              href="/health-test"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all"
-            >
-              Run the hardware diagnostic <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+          <AnimateIn delay={0.08}>
+            <div className="surface-card rounded-xl p-6">
+              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                Habits explain <em>how</em> your laptop is wearing down. The diagnostic script shows <em>what's already happened</em>. Run both for the full picture.
+              </p>
+              <Link
+                href="/health-test"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all"
+              >
+                Run the hardware diagnostic <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </AnimateIn>
 
         </div>
       </section>

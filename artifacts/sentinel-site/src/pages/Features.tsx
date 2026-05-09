@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Brain, Fingerprint, BookOpen, MessageSquare, FileText, Lightbulb, GitBranch, TrendingUp, ArrowRight } from "lucide-react";
+import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
 
 const features = [
   {
@@ -65,56 +66,61 @@ export default function Features() {
     <div className="px-6 py-20">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="max-w-2xl mb-20">
-          <div className="mb-4">
-            <span className="text-xs font-mono font-medium px-3 py-1 rounded-full border border-primary/30 text-primary bg-primary/10">
-              CAPABILITIES
-            </span>
-          </div>
-          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6" data-testid="heading-features">
-            Eight capabilities.{" "}
-            <span className="gradient-text">One quiet guardian.</span>
-          </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            Sentinel does things no other Windows diagnostic tool does — because it's built around prediction, not observation.
-          </p>
-        </div>
-
-        {/* Feature grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {features.map((f, i) => (
-            <div
-              key={f.title}
-              className="surface-card rounded-xl p-8 flex flex-col gap-5 hover:border-primary/40 transition-all duration-300 group"
-              data-testid={`card-feature-${i}`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:border-primary/40 transition-colors">
-                  <f.icon className="w-5 h-5" />
-                </div>
-                <span className={`text-xs font-mono font-semibold px-2.5 py-1 rounded-full border ${f.badgeColor}`}>
-                  {f.badge}
-                </span>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-3">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.description}</p>
-              </div>
+        <AnimateIn>
+          <div className="max-w-2xl mb-20">
+            <div className="mb-4">
+              <span className="text-xs font-mono font-medium px-3 py-1 rounded-full border border-primary/30 text-primary bg-primary/10">
+                CAPABILITIES
+              </span>
             </div>
+            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6" data-testid="heading-features">
+              Eight capabilities.{" "}
+              <span className="gradient-text">One quiet guardian.</span>
+            </h1>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Sentinel does things no other Windows diagnostic tool does — because it's built around prediction, not observation.
+            </p>
+          </div>
+        </AnimateIn>
+
+        {/* Feature grid — staggered */}
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-6" staggerDelay={0.07}>
+          {features.map((f, i) => (
+            <StaggerItem key={f.title}>
+              <div
+                className="surface-card rounded-xl p-8 flex flex-col gap-5 hover:border-primary/40 transition-all duration-300 group h-full"
+                data-testid={`card-feature-${i}`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:border-primary/40 transition-colors">
+                    <f.icon className="w-5 h-5" />
+                  </div>
+                  <span className={`text-xs font-mono font-semibold px-2.5 py-1 rounded-full border ${f.badgeColor}`}>
+                    {f.badge}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">{f.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{f.description}</p>
+                </div>
+              </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
 
         {/* CTA */}
-        <div className="mt-20 text-center">
-          <Link
-            href="/waitlist"
-            className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all duration-200"
-            data-testid="button-features-waitlist"
-          >
-            Get early access
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
+        <AnimateIn delay={0.1}>
+          <div className="mt-20 text-center">
+            <Link
+              href="/waitlist"
+              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all duration-200"
+              data-testid="button-features-waitlist"
+            >
+              Get early access
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </AnimateIn>
       </div>
     </div>
   );

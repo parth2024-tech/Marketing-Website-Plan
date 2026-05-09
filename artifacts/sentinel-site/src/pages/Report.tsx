@@ -2,10 +2,11 @@ import { useEffect, useState, useRef } from "react";
 import { Link, useParams } from "wouter";
 import {
   ArrowRight, Shield, AlertTriangle, Info, Lock,
-  Share2, Check, Copy, Mail, ChevronDown,
+  Share2, Check, Copy, Mail, ChevronDown, TrendingDown, Clock, CheckCircle2,
 } from "lucide-react";
-import { generateReport, type ReportResult } from "@/lib/report/engine";
+import { generateReport, type ReportResult, type Prediction } from "@/lib/report/engine";
 import { SentinelReportSchema } from "@/lib/report/schema";
+import AnimateIn from "@/components/AnimateIn";
 
 // ── OG meta injection ────────────────────────────────────────────────────────
 
@@ -299,173 +300,260 @@ export default function Report() {
 
       {/* Report header */}
       <div className="border-b border-border/60 bg-card/20 px-6 py-5">
-        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-primary" />
+        <AnimateIn>
+          <div className="max-w-3xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+                <Shield className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <div className="text-xs font-mono text-muted-foreground/60 uppercase tracking-wide">Sentinel Hardware Report</div>
+                <div className="text-sm font-semibold">{result.system.model}</div>
+              </div>
             </div>
-            <div>
-              <div className="text-xs font-mono text-muted-foreground/60 uppercase tracking-wide">Sentinel Hardware Report</div>
-              <div className="text-sm font-semibold">{result.system.model}</div>
+            <div className="flex items-center gap-3">
+              {loadedFrom === "server" && (
+                <span className="text-xs font-mono text-green-400/60 border border-green-400/20 bg-green-400/5 px-2 py-0.5 rounded-full">
+                  synced
+                </span>
+              )}
+              <div className="text-xs font-mono text-muted-foreground/50">{genDate}</div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {loadedFrom === "server" && (
-              <span className="text-xs font-mono text-green-400/60 border border-green-400/20 bg-green-400/5 px-2 py-0.5 rounded-full">
-                synced
-              </span>
-            )}
-            <div className="text-xs font-mono text-muted-foreground/50">{genDate}</div>
-          </div>
-        </div>
+        </AnimateIn>
       </div>
 
       <div className="px-6 py-12">
         <div className="max-w-3xl mx-auto space-y-8">
 
           {/* Overall score */}
-          <div className="surface-card rounded-2xl p-8">
-            <div className="flex items-center gap-8 flex-wrap">
-              <div className="relative shrink-0">
-                <ScoreRing score={combinedScoreVal ?? result.overall} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <div className="text-2xl font-bold tabular-nums">{combinedScoreVal ?? result.overall}</div>
-                  <div className="text-xs text-muted-foreground">/100</div>
-                </div>
-              </div>
-              <div className="flex-1">
-                <div className="text-2xl font-bold mb-1">{result.grade} — {result.gradeLabel}</div>
-                {combinedScoreVal !== null && (
-                  <div className="flex items-center gap-3 mb-3 text-xs font-mono">
-                    <span className="text-muted-foreground/60">Hardware</span>
-                    <span className="text-foreground">{result.overall}</span>
-                    <span className="text-muted-foreground/40">+</span>
-                    <span className="text-muted-foreground/60">Habits</span>
-                    <span className="text-accent">{habitScore}</span>
-                    <span className="text-muted-foreground/40">→</span>
-                    <span className="text-primary font-semibold">Combined {combinedScoreVal}</span>
+          <AnimateIn>
+            <div className="surface-card rounded-2xl p-8">
+              <div className="flex items-center gap-8 flex-wrap">
+                <div className="relative shrink-0">
+                  <ScoreRing score={combinedScoreVal ?? result.overall} />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <div className="text-2xl font-bold tabular-nums">{combinedScoreVal ?? result.overall}</div>
+                    <div className="text-xs text-muted-foreground">/100</div>
                   </div>
-                )}
-                <div className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                  {(combinedScoreVal ?? result.overall) >= 80
-                    ? "Your hardware is in good shape. A few items to watch."
-                    : (combinedScoreVal ?? result.overall) >= 60
-                    ? "Some components need attention. Review the findings below."
-                    : "Multiple components are degraded. Prioritise the critical findings."}
                 </div>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="text-red-400/80 bg-red-400/5 border border-red-400/20 px-2 py-0.5 rounded-full font-mono">
-                    {publicFindings.filter((f) => f.urgency === "critical").length} critical
-                  </span>
-                  <span className="text-amber-400/80 bg-amber-400/5 border border-amber-400/20 px-2 py-0.5 rounded-full font-mono">
-                    {publicFindings.filter((f) => f.urgency === "warning").length} warnings
-                  </span>
-                  <span className="text-cyan-400/80 bg-cyan-400/5 border border-cyan-400/20 px-2 py-0.5 rounded-full font-mono">
-                    {publicFindings.filter((f) => f.urgency === "info").length} healthy
-                  </span>
+                <div className="flex-1">
+                  <div className="text-2xl font-bold mb-1">{result.grade} — {result.gradeLabel}</div>
+                  {combinedScoreVal !== null && (
+                    <div className="flex items-center gap-3 mb-3 text-xs font-mono">
+                      <span className="text-muted-foreground/60">Hardware</span>
+                      <span className="text-foreground">{result.overall}</span>
+                      <span className="text-muted-foreground/40">+</span>
+                      <span className="text-muted-foreground/60">Habits</span>
+                      <span className="text-accent">{habitScore}</span>
+                      <span className="text-muted-foreground/40">→</span>
+                      <span className="text-primary font-semibold">Combined {combinedScoreVal}</span>
+                    </div>
+                  )}
+                  <div className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                    {(combinedScoreVal ?? result.overall) >= 80
+                      ? "Your hardware is in good shape. A few items to watch."
+                      : (combinedScoreVal ?? result.overall) >= 60
+                      ? "Some components need attention. Review the findings below."
+                      : "Multiple components are degraded. Prioritise the critical findings."}
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="text-red-400/80 bg-red-400/5 border border-red-400/20 px-2 py-0.5 rounded-full font-mono">
+                      {publicFindings.filter((f) => f.urgency === "critical").length} critical
+                    </span>
+                    <span className="text-amber-400/80 bg-amber-400/5 border border-amber-400/20 px-2 py-0.5 rounded-full font-mono">
+                      {publicFindings.filter((f) => f.urgency === "warning").length} warnings
+                    </span>
+                    <span className="text-cyan-400/80 bg-cyan-400/5 border border-cyan-400/20 px-2 py-0.5 rounded-full font-mono">
+                      {publicFindings.filter((f) => f.urgency === "info").length} healthy
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </AnimateIn>
 
           {/* Component breakdown */}
-          <div className="surface-card rounded-2xl p-7">
-            <h2 className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest mb-5">Component breakdown</h2>
-            <div className="space-y-4">
-              {result.components.map((c) => {
-                const s = STATUS_STYLES[c.status];
-                return (
-                  <div key={c.name}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-foreground">{c.name}</span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded border ${s.badge} font-mono`}>{c.status}</span>
+          <AnimateIn delay={0.05}>
+            <div className="surface-card rounded-2xl p-7">
+              <h2 className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest mb-5">Component breakdown</h2>
+              <div className="space-y-4">
+                {result.components.map((c) => {
+                  const s = STATUS_STYLES[c.status];
+                  return (
+                    <div key={c.name}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">{c.name}</span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded border ${s.badge} font-mono`}>{c.status}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground font-mono">{c.detail}</span>
+                          <span className="text-sm font-bold font-mono tabular-nums w-8 text-right">{c.score}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-muted-foreground font-mono">{c.detail}</span>
-                        <span className="text-sm font-bold font-mono tabular-nums w-8 text-right">{c.score}</span>
+                      <div className="h-1.5 bg-border/30 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${s.bar} transition-all duration-700`} style={{ width: `${c.score}%` }} />
                       </div>
                     </div>
-                    <div className="h-1.5 bg-border/30 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${s.bar} transition-all duration-700`} style={{ width: `${c.score}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          </AnimateIn>
+
+          {/* ── Failure Prediction Timeline ────────────────────────────────── */}
+          {result.predictions && result.predictions.length > 0 && (
+            <AnimateIn delay={0.06}>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest">Failure Prediction Timeline</h2>
+                  <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-primary flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> PREDICTIVE
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground/50 leading-relaxed -mt-1 mb-1">
+                  How long before each component becomes a problem — based on current readings and degradation curves.
+                </p>
+                {result.predictions.map((pred, i) => {
+                  const severityStyles = {
+                    stable: {
+                      border: "border-l-green-400",
+                      icon: <CheckCircle2 className="w-4 h-4 text-green-400" />,
+                      badge: "text-green-400 bg-green-400/8 border-green-400/20",
+                      badgeLabel: "Stable",
+                      glow: "bg-green-400",
+                    },
+                    declining: {
+                      border: "border-l-amber-400",
+                      icon: <TrendingDown className="w-4 h-4 text-amber-400" />,
+                      badge: "text-amber-400 bg-amber-400/8 border-amber-400/20",
+                      badgeLabel: "Declining",
+                      glow: "bg-amber-400",
+                    },
+                    urgent: {
+                      border: "border-l-red-400",
+                      icon: <AlertTriangle className="w-4 h-4 text-red-400" />,
+                      badge: "text-red-400 bg-red-400/8 border-red-400/20",
+                      badgeLabel: "Urgent",
+                      glow: "bg-red-400",
+                    },
+                  };
+                  const s = severityStyles[pred.severity];
+                  return (
+                    <div key={i} className={`surface-card rounded-xl p-5 border-l-2 ${s.border}`}>
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <div className="flex items-center gap-3">
+                          {s.icon}
+                          <div>
+                            <div className="text-sm font-semibold text-foreground">{pred.component}</div>
+                            <div className="text-xs font-mono text-muted-foreground/50 mt-0.5">{pred.currentValue}</div>
+                          </div>
+                        </div>
+                        <span className={`text-xs font-mono px-2 py-0.5 rounded-full border shrink-0 ${s.badge}`}>
+                          {s.badgeLabel}
+                        </span>
+                      </div>
+                      {/* Timeline bar */}
+                      <div className="rounded-lg bg-muted/10 border border-border/30 px-4 py-3 mb-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Clock className="w-3 h-3 text-muted-foreground/40" />
+                          <span className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wide">Projected Timeline</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${s.glow} animate-glow-pulse shrink-0`} />
+                          <span className="text-sm font-medium text-foreground">{pred.projectedTimeline}</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{pred.insight}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </AnimateIn>
+          )}
 
           {/* Public findings */}
           {publicFindings.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest">Findings</h2>
-              {publicFindings.map((f, i) => {
-                const style = URGENCY_STYLES[f.urgency];
-                return (
-                  <div key={i} className={`surface-card rounded-xl p-5 border-l-2 ${style.border}`}>
-                    <div className="flex items-start gap-3 mb-2">
-                      <span className={`text-xs font-mono px-1.5 py-0.5 rounded border uppercase ${style.badge} shrink-0 mt-0.5`}>{f.urgency}</span>
-                      <div>
-                        <div className="text-xs font-mono text-muted-foreground/50 mb-0.5">{f.component}</div>
-                        <div className="text-sm font-semibold text-foreground">{f.title}</div>
+            <AnimateIn delay={0.07}>
+              <div className="space-y-3">
+                <h2 className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest">Findings</h2>
+                {publicFindings.map((f, i) => {
+                  const style = URGENCY_STYLES[f.urgency];
+                  return (
+                    <div key={i} className={`surface-card rounded-xl p-5 border-l-2 ${style.border}`}>
+                      <div className="flex items-start gap-3 mb-2">
+                        <span className={`text-xs font-mono px-1.5 py-0.5 rounded border uppercase ${style.badge} shrink-0 mt-0.5`}>{f.urgency}</span>
+                        <div>
+                          <div className="text-xs font-mono text-muted-foreground/50 mb-0.5">{f.component}</div>
+                          <div className="text-sm font-semibold text-foreground">{f.title}</div>
+                        </div>
                       </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{f.body}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{f.body}</p>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </AnimateIn>
           )}
 
           {/* Pro findings (blurred) */}
           {proFindings.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest">Predictive findings</h2>
-                <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-accent/10 border border-accent/30 text-accent">PRO</span>
-              </div>
-              {proFindings.map((f, i) => (
-                <div key={i} className="surface-card rounded-xl p-5 border border-accent/20 relative overflow-hidden">
-                  <div className="absolute inset-0 backdrop-blur-sm bg-background/60 z-10 flex items-center justify-center rounded-xl">
-                    <div className="text-center px-6">
-                      <Lock className="w-5 h-5 text-accent mx-auto mb-2" />
-                      <div className="text-sm font-semibold text-foreground mb-1">Pro finding</div>
-                      <div className="text-xs text-muted-foreground mb-3">Predictive insights unlock with early access.</div>
-                      <Link href="/waitlist" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-background bg-accent hover:bg-accent/90 transition-all">
-                        Get early access <ArrowRight className="w-3 h-3" />
-                      </Link>
+            <AnimateIn delay={0.08}>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest">Predictive findings</h2>
+                  <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-accent/10 border border-accent/30 text-accent">PRO</span>
+                </div>
+                {proFindings.map((f, i) => (
+                  <div key={i} className="surface-card rounded-xl p-5 border border-accent/20 relative overflow-hidden">
+                    <div className="absolute inset-0 backdrop-blur-sm bg-background/60 z-10 flex items-center justify-center rounded-xl">
+                      <div className="text-center px-6">
+                        <Lock className="w-5 h-5 text-accent mx-auto mb-2" />
+                        <div className="text-sm font-semibold text-foreground mb-1">Pro finding</div>
+                        <div className="text-xs text-muted-foreground mb-3">Predictive insights unlock with early access.</div>
+                        <Link href="/waitlist" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-background bg-accent hover:bg-accent/90 transition-all">
+                          Get early access <ArrowRight className="w-3 h-3" />
+                        </Link>
+                      </div>
+                    </div>
+                    <div className="opacity-20 select-none pointer-events-none" aria-hidden>
+                      <div className="text-xs font-mono text-muted-foreground/50 mb-1">{f.component}</div>
+                      <div className="text-sm font-semibold mb-2">{f.title}</div>
+                      <p className="text-sm text-muted-foreground">{f.body}</p>
                     </div>
                   </div>
-                  <div className="opacity-20 select-none pointer-events-none" aria-hidden>
-                    <div className="text-xs font-mono text-muted-foreground/50 mb-1">{f.component}</div>
-                    <div className="text-sm font-semibold mb-2">{f.title}</div>
-                    <p className="text-sm text-muted-foreground">{f.body}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </AnimateIn>
           )}
 
           {/* Claim panel (only shown when user owns the report) */}
-          <ClaimPanel id={id} />
+          <AnimateIn delay={0.06}>
+            <ClaimPanel id={id} />
+          </AnimateIn>
 
           {/* Share row */}
-          <ShareRow id={id} />
+          <AnimateIn delay={0.07}>
+            <ShareRow id={id} />
+          </AnimateIn>
 
           {/* Footer */}
-          <div className="surface-card rounded-xl p-5 flex items-center justify-between flex-wrap gap-4">
-            <div className="text-xs text-muted-foreground/60 leading-relaxed max-w-sm">
-              {loadedFrom === "server"
-                ? "This report is stored on Sentinel's servers and accessible from any device via the link above."
-                : "This report was generated from your device's hardware telemetry."}
+          <AnimateIn delay={0.08}>
+            <div className="surface-card rounded-xl p-5 flex items-center justify-between flex-wrap gap-4">
+              <div className="text-xs text-muted-foreground/60 leading-relaxed max-w-sm">
+                {loadedFrom === "server"
+                  ? "This report is stored on Sentinel's servers and accessible from any device via the link above."
+                  : "This report was generated from your device's hardware telemetry."}
+              </div>
+              <Link
+                href="/health-test"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold border border-border/60 text-foreground hover:border-primary/60 hover:text-primary transition-all"
+              >
+                Run another scan <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-            <Link
-              href="/health-test"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold border border-border/60 text-foreground hover:border-primary/60 hover:text-primary transition-all"
-            >
-              Run another scan <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+          </AnimateIn>
 
         </div>
       </div>

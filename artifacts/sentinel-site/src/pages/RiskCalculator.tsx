@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowRight, Share2, RotateCcw, AlertTriangle, TrendingDown, Shield } from "lucide-react";
 import { Link } from "wouter";
+import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
 
 interface Field<T extends string> {
   id: string;
@@ -173,17 +174,19 @@ export default function RiskCalculator() {
       {/* Hero */}
       <section className="relative py-16 px-6 border-b border-border/60 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/4 via-background to-accent/4 pointer-events-none" />
-        <div className="relative max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-mono mb-5">
-            RISK CALCULATOR
+        <AnimateIn>
+          <div className="relative max-w-3xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-mono mb-5">
+              RISK CALCULATOR
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+              What's your laptop's failure risk?
+            </h1>
+            <p className="text-muted-foreground leading-relaxed max-w-xl">
+              A deterministic risk model based on brand failure rates, usage patterns, and age-adjusted wear curves. Takes 30 seconds. No data leaves your browser.
+            </p>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            What's your laptop's failure risk?
-          </h1>
-          <p className="text-muted-foreground leading-relaxed max-w-xl">
-            A deterministic risk model based on brand failure rates, usage patterns, and age-adjusted wear curves. Takes 30 seconds. No data leaves your browser.
-          </p>
-        </div>
+        </AnimateIn>
       </section>
 
       {/* Form + result */}
@@ -191,113 +194,125 @@ export default function RiskCalculator() {
         <div className="max-w-3xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 
           {/* Inputs */}
-          <div className="space-y-5">
+          <StaggerContainer className="space-y-5" staggerDelay={0.04}>
             {FIELDS.map((field) => (
-              <div key={field.id}>
-                <label className="text-sm font-medium text-foreground mb-2 block">{field.label}</label>
-                {field.subtext && <p className="text-xs text-muted-foreground mb-2">{field.subtext}</p>}
-                <div className="grid grid-cols-2 gap-2">
-                  {field.options.map((opt) => {
-                    const current = inputs[field.id as keyof Inputs];
-                    const active = current === opt.value;
-                    return (
-                      <button
-                        key={opt.value}
-                        onClick={() => {
-                          setInputs((prev) => ({ ...prev, [field.id]: opt.value }));
-                          setShowResult(false);
-                        }}
-                        className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-all ${
-                          active
-                            ? "border-primary/60 bg-primary/8 text-foreground font-medium"
-                            : "border-border/40 hover:border-border/70 text-muted-foreground"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
+              <StaggerItem key={field.id}>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">{field.label}</label>
+                  {field.subtext && <p className="text-xs text-muted-foreground mb-2">{field.subtext}</p>}
+                  <div className="grid grid-cols-2 gap-2">
+                    {field.options.map((opt) => {
+                      const current = inputs[field.id as keyof Inputs];
+                      const active = current === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => {
+                            setInputs((prev) => ({ ...prev, [field.id]: opt.value }));
+                            setShowResult(false);
+                          }}
+                          className={`text-left px-3 py-2.5 rounded-lg border text-xs transition-all ${
+                            active
+                              ? "border-primary/60 bg-primary/8 text-foreground font-medium"
+                              : "border-border/40 hover:border-border/70 text-muted-foreground"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              </StaggerItem>
             ))}
-            <button
-              onClick={() => setShowResult(true)}
-              disabled={!allAnswered}
-              className="w-full mt-2 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg font-semibold text-sm text-background bg-primary hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all glow-cyan"
-            >
-              Calculate my risk <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+            <StaggerItem>
+              <button
+                onClick={() => setShowResult(true)}
+                disabled={!allAnswered}
+                className="w-full mt-2 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg font-semibold text-sm text-background bg-primary hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all glow-cyan"
+              >
+                Calculate my risk <ArrowRight className="w-4 h-4" />
+              </button>
+            </StaggerItem>
+          </StaggerContainer>
 
           {/* Result panel */}
           <div className="lg:sticky lg:top-24">
             {!showResult ? (
-              <div className="surface-card rounded-2xl p-8 text-center">
-                <div className="w-16 h-16 rounded-full bg-muted/10 border border-border/40 flex items-center justify-center mx-auto mb-4">
-                  <Shield className="w-7 h-7 text-muted-foreground/30" />
+              <AnimateIn delay={0.05}>
+                <div className="surface-card rounded-2xl p-8 text-center">
+                  <div className="w-16 h-16 rounded-full bg-muted/10 border border-border/40 flex items-center justify-center mx-auto mb-4">
+                    <Shield className="w-7 h-7 text-muted-foreground/30" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">Fill in all fields to see your personalised risk assessment.</p>
                 </div>
-                <p className="text-sm text-muted-foreground">Fill in all fields to see your personalised risk assessment.</p>
-              </div>
+              </AnimateIn>
             ) : (
               <div className="space-y-4">
                 {/* Score */}
-                <div className="surface-card rounded-2xl p-7 text-center relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-primary/3 to-transparent pointer-events-none" />
-                  <div className="relative">
-                    <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">Failure Risk Score</p>
-                    <div className={`text-6xl font-bold tracking-tight mb-1 ${riskLabel.color}`}>{riskScore}%</div>
-                    <div className={`text-base font-semibold mb-3 ${riskLabel.color}`}>{riskLabel.label}</div>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-4">{riskLabel.detail}</p>
+                <AnimateIn>
+                  <div className="surface-card rounded-2xl p-7 text-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-primary/3 to-transparent pointer-events-none" />
+                    <div className="relative">
+                      <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">Failure Risk Score</p>
+                      <div className={`text-6xl font-bold tracking-tight mb-1 ${riskLabel.color}`}>{riskScore}%</div>
+                      <div className={`text-base font-semibold mb-3 ${riskLabel.color}`}>{riskLabel.label}</div>
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-4">{riskLabel.detail}</p>
 
-                    {/* Risk bar */}
-                    <div className="h-2 bg-border/30 rounded-full overflow-hidden mb-4">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${riskLabel.subColor}`}
-                        style={{ width: `${riskScore}%` }}
-                      />
-                    </div>
+                      {/* Risk bar */}
+                      <div className="h-2 bg-border/30 rounded-full overflow-hidden mb-4">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${riskLabel.subColor}`}
+                          style={{ width: `${riskScore}%` }}
+                        />
+                      </div>
 
-                    <div className="text-xs text-muted-foreground">
-                      Estimated remaining useful life: <span className="text-foreground font-medium">{lifespan}</span>
+                      <div className="text-xs text-muted-foreground">
+                        Estimated remaining useful life: <span className="text-foreground font-medium">{lifespan}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </AnimateIn>
 
                 {/* Top risks */}
                 {topRisks.length > 0 && (
-                  <div className="surface-card rounded-xl p-5 space-y-4">
-                    <h3 className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Top risk factors</h3>
-                    {topRisks.map((r, i) => (
-                      <div key={i} className={`border-l-2 pl-4 ${r.severity === "high" ? "border-red-400" : r.severity === "medium" ? "border-amber-400" : "border-cyan-400/50"}`}>
-                        <div className="text-sm font-semibold text-foreground mb-0.5">{r.component}</div>
-                        <div className="text-xs text-muted-foreground leading-relaxed">{r.reason}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <AnimateIn delay={0.05}>
+                    <div className="surface-card rounded-xl p-5 space-y-4">
+                      <h3 className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">Top risk factors</h3>
+                      {topRisks.map((r, i) => (
+                        <div key={i} className={`border-l-2 pl-4 ${r.severity === "high" ? "border-red-400" : r.severity === "medium" ? "border-amber-400" : "border-cyan-400/50"}`}>
+                          <div className="text-sm font-semibold text-foreground mb-0.5">{r.component}</div>
+                          <div className="text-xs text-muted-foreground leading-relaxed">{r.reason}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </AnimateIn>
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-2">
-                  <Link
-                    href="/health-test"
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all"
-                  >
-                    Run diagnostic <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                  <button
-                    onClick={() => { setInputs({ brand: "", age: "", hours: "", usage: "", charging: "", cooling: "", issues: "" }); setShowResult(false); }}
-                    className="px-4 py-2.5 rounded-lg text-xs font-medium border border-border/60 text-muted-foreground hover:text-foreground transition-all"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={handleShare} className="px-4 py-2.5 rounded-lg text-xs font-medium border border-border/60 text-muted-foreground hover:text-foreground transition-all">
-                    <Share2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                <AnimateIn delay={0.08}>
+                  <div className="flex gap-2">
+                    <Link
+                      href="/health-test"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all"
+                    >
+                      Run diagnostic <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                    <button
+                      onClick={() => { setInputs({ brand: "", age: "", hours: "", usage: "", charging: "", cooling: "", issues: "" }); setShowResult(false); }}
+                      className="px-4 py-2.5 rounded-lg text-xs font-medium border border-border/60 text-muted-foreground hover:text-foreground transition-all"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={handleShare} className="px-4 py-2.5 rounded-lg text-xs font-medium border border-border/60 text-muted-foreground hover:text-foreground transition-all">
+                      <Share2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
 
-                <p className="text-xs text-muted-foreground/40 text-center leading-relaxed">
-                  Model uses published failure rate data and battery chemistry research. It's a guide, not a diagnosis. Run the hardware diagnostic for real readings.
-                </p>
+                  <p className="text-xs text-muted-foreground/40 text-center leading-relaxed mt-4">
+                    Model uses published failure rate data and battery chemistry research. It's a guide, not a diagnosis. Run the hardware diagnostic for real readings.
+                  </p>
+                </AnimateIn>
               </div>
             )}
           </div>

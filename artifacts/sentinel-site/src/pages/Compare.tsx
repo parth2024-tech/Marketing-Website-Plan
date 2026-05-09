@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "wouter";
 import { ArrowRight, Check, X, Minus } from "lucide-react";
+import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
 
 type Val = "yes" | "no" | "partial" | "label";
 
@@ -116,133 +117,143 @@ export default function Compare() {
       {/* Hero */}
       <section className="relative py-20 px-6 border-b border-border/60 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/4 via-background to-accent/4 pointer-events-none" />
-        <div className="relative max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-mono mb-6">
-            FEATURE COMPARISON
+        <AnimateIn>
+          <div className="relative max-w-5xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-mono mb-6">
+              FEATURE COMPARISON
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">
+              Sentinel vs. everything else.
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              A side-by-side look at what each tool actually covers — and where the gaps are that Sentinel fills.
+            </p>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">
-            Sentinel vs. everything else.
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            A side-by-side look at what each tool actually covers — and where the gaps are that Sentinel fills.
-          </p>
-        </div>
+        </AnimateIn>
       </section>
 
       {/* Legend */}
       <section className="px-6 py-6 border-b border-border/40 bg-card/20">
-        <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-6 text-sm">
-          <span className="text-muted-foreground text-xs font-mono uppercase tracking-wide">Legend</span>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center bg-primary/20 border border-primary/40">
-              <Check className="w-3 h-3 text-primary" strokeWidth={2.5} />
+        <AnimateIn delay={0.05}>
+          <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-6 text-sm">
+            <span className="text-muted-foreground text-xs font-mono uppercase tracking-wide">Legend</span>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full flex items-center justify-center bg-primary/20 border border-primary/40">
+                <Check className="w-3 h-3 text-primary" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm text-muted-foreground">Full support</span>
             </div>
-            <span className="text-sm text-muted-foreground">Full support</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center bg-amber-500/10">
-              <Minus className="w-3 h-3 text-amber-500" strokeWidth={2.5} />
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full flex items-center justify-center bg-amber-500/10">
+                <Minus className="w-3 h-3 text-amber-500" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm text-muted-foreground">Partial / limited</span>
             </div>
-            <span className="text-sm text-muted-foreground">Partial / limited</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full flex items-center justify-center bg-muted/20">
-              <X className="w-3 h-3 text-muted-foreground/30" strokeWidth={2.5} />
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-full flex items-center justify-center bg-muted/20">
+                <X className="w-3 h-3 text-muted-foreground/30" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm text-muted-foreground">Not supported</span>
             </div>
-            <span className="text-sm text-muted-foreground">Not supported</span>
           </div>
-        </div>
+        </AnimateIn>
       </section>
 
       {/* Table */}
       <section className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
-          <div className="rounded-xl border border-border/60 overflow-hidden overflow-x-auto shadow-xl">
-            <table className="w-full border-collapse text-sm">
-              {/* Column headers */}
-              <thead>
-                <tr className="border-b border-border/60">
-                  <th className="text-left px-5 py-5 text-muted-foreground font-medium text-xs uppercase tracking-wide w-56 bg-card/60">
-                    Feature
-                  </th>
-                  {tools.map((t) => (
-                    <th
-                      key={t.id}
-                      className={`px-4 py-5 text-center min-w-[120px] ${
-                        t.highlight ? "bg-primary/8 border-x border-primary/20" : "bg-card/60"
-                      }`}
-                    >
-                      <div className="flex flex-col items-center gap-1.5">
-                        <span className={`font-semibold text-sm ${t.highlight ? "text-primary" : "text-foreground"}`}>
-                          {t.label}
-                        </span>
-                        <span className="text-xs text-muted-foreground font-normal">{t.sub}</span>
-                        <ScoreBadge tool={t} />
-                      </div>
+          <AnimateIn delay={0.08}>
+            <div className="rounded-xl border border-border/60 overflow-hidden overflow-x-auto shadow-xl">
+              <table className="w-full border-collapse text-sm">
+                {/* Column headers */}
+                <thead>
+                  <tr className="border-b border-border/60">
+                    <th className="text-left px-5 py-5 text-muted-foreground font-medium text-xs uppercase tracking-wide w-56 bg-card/60">
+                      Feature
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((cat) => {
-                  const catRows = rows.filter((r) => r.category === cat);
-                  return (
-                    <React.Fragment key={cat}>
-                      {/* Category header */}
-                      <tr className="border-b border-border/40 bg-muted/5">
-                        <td
-                          colSpan={tools.length + 1}
-                          className="px-5 py-2.5"
-                        >
-                          <span className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">
-                            {cat}
+                    {tools.map((t) => (
+                      <th
+                        key={t.id}
+                        className={`px-4 py-5 text-center min-w-[120px] ${
+                          t.highlight ? "bg-primary/8 border-x border-primary/20" : "bg-card/60"
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-1.5">
+                          <span className={`font-semibold text-sm ${t.highlight ? "text-primary" : "text-foreground"}`}>
+                            {t.label}
                           </span>
-                        </td>
-                      </tr>
-                      {catRows.map((row, i) => (
-                        <tr
-                          key={row.feature}
-
-                          className={`border-b border-border/30 hover:bg-white/[0.01] transition-colors ${
-                            i === catRows.length - 1 ? "border-border/60" : ""
-                          }`}
-                        >
-                          <td className="px-5 py-3.5">
-                            <div>
-                              <span className="text-sm text-foreground/90">{row.feature}</span>
-                              {row.note && (
-                                <p className="text-xs text-muted-foreground/50 mt-0.5 leading-relaxed">{row.note}</p>
-                              )}
-                            </div>
+                          <span className="text-xs text-muted-foreground font-normal">{t.sub}</span>
+                          <ScoreBadge tool={t} />
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {categories.map((cat) => {
+                    const catRows = rows.filter((r) => r.category === cat);
+                    return (
+                      <React.Fragment key={cat}>
+                        {/* Category header */}
+                        <tr className="border-b border-border/40 bg-muted/5">
+                          <td
+                            colSpan={tools.length + 1}
+                            className="px-5 py-2.5"
+                          >
+                            <span className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">
+                              {cat}
+                            </span>
                           </td>
-                          {tools.map((t) => (
-                            <Cell
-                              key={t.id}
-                              val={row[t.id as keyof Row] as Val}
-                              highlight={t.highlight}
-                            />
-                          ))}
                         </tr>
-                      ))}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {catRows.map((row, i) => (
+                          <tr
+                            key={row.feature}
+
+                            className={`border-b border-border/30 hover:bg-white/[0.01] transition-colors ${
+                              i === catRows.length - 1 ? "border-border/60" : ""
+                            }`}
+                          >
+                            <td className="px-5 py-3.5">
+                              <div>
+                                <span className="text-sm text-foreground/90">{row.feature}</span>
+                                {row.note && (
+                                  <p className="text-xs text-muted-foreground/50 mt-0.5 leading-relaxed">{row.note}</p>
+                                )}
+                              </div>
+                            </td>
+                            {tools.map((t) => (
+                              <Cell
+                                key={t.id}
+                                val={row[t.id as keyof Row] as Val}
+                                highlight={t.highlight}
+                              />
+                            ))}
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </AnimateIn>
 
           {/* Footnote */}
-          <p className="text-xs text-muted-foreground/50 mt-4 text-center leading-relaxed">
-            Comparison based on publicly documented capabilities as of May 2026. "Partial" indicates the feature exists but is limited in depth, frequency, or usability for non-technical users.
-          </p>
+          <AnimateIn delay={0.12}>
+            <p className="text-xs text-muted-foreground/50 mt-4 text-center leading-relaxed">
+              Comparison based on publicly documented capabilities as of May 2026. "Partial" indicates the feature exists but is limited in depth, frequency, or usability for non-technical users.
+            </p>
+          </AnimateIn>
         </div>
       </section>
 
       {/* Key differences callout */}
       <section className="px-6 py-16 border-y border-border/60 bg-card/10">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-xl font-bold tracking-tight mb-8 text-center">Three things no other tool on this list does</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <AnimateIn>
+            <h2 className="text-xl font-bold tracking-tight mb-8 text-center">Three things no other tool on this list does</h2>
+          </AnimateIn>
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-5" staggerDelay={0.08}>
             {[
               {
                 title: "Personal baseline",
@@ -257,44 +268,48 @@ export default function Compare() {
                 detail: "Every tool on this list tells you what's true right now. Sentinel models the trajectory — how fast something is changing, whether the rate is accelerating, and what that implies for the next 30–90 days.",
               },
             ].map((item) => (
-              <div key={item.title} className="surface-card rounded-xl p-6 flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                  <h3 className="font-semibold text-foreground text-sm">{item.title}</h3>
+              <StaggerItem key={item.title}>
+                <div className="surface-card rounded-xl p-6 flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                    <h3 className="font-semibold text-foreground text-sm">{item.title}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.detail}</p>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.detail}</p>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
       {/* CTA */}
       <section className="px-6 py-20">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl font-bold tracking-tight mb-4">
-            The gap is real. Sentinel fills it.
-          </h2>
-          <p className="text-muted-foreground mb-8 leading-relaxed">
-            Keep using the tools you already have — they're good at what they do. Sentinel adds the one thing they all share: no memory of the past, no model of where things are going.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/waitlist"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm text-background bg-primary hover:bg-primary/90 glow-cyan transition-all"
-            >
-              Get early access
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/sample-report"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm border border-border/60 text-foreground hover:border-primary/60 hover:text-primary transition-all"
-            >
-              See a sample weekly report
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+        <AnimateIn>
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-2xl font-bold tracking-tight mb-4">
+              The gap is real. Sentinel fills it.
+            </h2>
+            <p className="text-muted-foreground mb-8 leading-relaxed">
+              Keep using the tools you already have — they're good at what they do. Sentinel adds the one thing they all share: no memory of the past, no model of where things are going.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href="/waitlist"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm text-background bg-primary hover:bg-primary/90 glow-cyan transition-all"
+              >
+                Get early access
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/sample-report"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm border border-border/60 text-foreground hover:border-primary/60 hover:text-primary transition-all"
+              >
+                See a sample weekly report
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
-        </div>
+        </AnimateIn>
       </section>
     </div>
   );

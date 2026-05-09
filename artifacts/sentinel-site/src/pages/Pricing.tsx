@@ -1,6 +1,6 @@
-import React from "react";
 import { Link } from "wouter";
-import { ArrowRight, Check, X, Minus, Shield, Zap } from "lucide-react";
+import { ArrowRight, Check, X, Shield, Zap } from "lucide-react";
+import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
 
 const FREE_FEATURES = [
   { label: "All 60+ hardware telemetry sources",   supported: true  },
@@ -65,25 +65,28 @@ export default function Pricing() {
       {/* Hero */}
       <section className="relative py-20 px-6 border-b border-border/60 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/4 via-background to-accent/4 pointer-events-none" />
-        <div className="relative max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-mono mb-6">
-            PRICING
+        <AnimateIn>
+          <div className="relative max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-mono mb-6">
+              PRICING
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">
+              Simple pricing.{" "}
+              <span className="gradient-text">No surprises.</span>
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              Start free. Upgrade when the predictions prove their worth. Cancel anytime — your baseline data stays on your machine regardless.
+            </p>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">
-            Simple pricing.{" "}
-            <span className="text-gradient-primary">No surprises.</span>
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Start free. Upgrade when the predictions prove their worth. Cancel anytime — your baseline data stays on your machine regardless.
-          </p>
-        </div>
+        </AnimateIn>
       </section>
 
       {/* Plans */}
       <section className="px-6 py-20">
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        <StaggerContainer className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 items-start" staggerDelay={0.15}>
 
           {/* Free */}
+          <StaggerItem>
           <div className="surface-card rounded-2xl p-8 flex flex-col gap-6">
             <div>
               <div className="flex items-center gap-2 mb-4">
@@ -132,8 +135,10 @@ export default function Pricing() {
               ))}
             </div>
           </div>
+          </StaggerItem>
 
           {/* Pro */}
+          <StaggerItem>
           <div className="relative rounded-2xl p-8 flex flex-col gap-6 border border-primary/40 bg-gradient-to-b from-primary/5 to-transparent shadow-[0_0_40px_-8px] shadow-primary/20">
             {/* Popular badge */}
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
@@ -184,7 +189,8 @@ export default function Pricing() {
               </p>
             </div>
           </div>
-        </div>
+          </StaggerItem>
+        </StaggerContainer>
 
         {/* Billing note */}
         <p className="text-center text-xs text-muted-foreground/50 mt-6 max-w-lg mx-auto leading-relaxed">
@@ -195,13 +201,15 @@ export default function Pricing() {
       {/* What the intelligence unlocks */}
       <section className="px-6 py-16 border-y border-border/60 bg-card/10">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold tracking-tight mb-3">What Pro actually gives you</h2>
-            <p className="text-muted-foreground text-sm max-w-lg mx-auto">
-              Free gives you raw data. Pro gives you meaning — the difference between knowing your battery is at 78% capacity and knowing it's degrading 3× faster than expected.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <AnimateIn>
+            <div className="text-center mb-12">
+              <h2 className="text-2xl font-bold tracking-tight mb-3">What Pro actually gives you</h2>
+              <p className="text-muted-foreground text-sm max-w-lg mx-auto">
+                Free gives you raw data. Pro gives you meaning — the difference between knowing your battery is at 78% capacity and knowing it's degrading 3× faster than expected.
+              </p>
+            </div>
+          </AnimateIn>
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-5" staggerDelay={0.1}>
             {[
               {
                 before: "CPU temperature: 71°C",
@@ -219,28 +227,32 @@ export default function Pricing() {
                 label: "From metric to cause",
               },
             ].map((item) => (
-              <div key={item.label} className="surface-card rounded-xl p-6 flex flex-col gap-4">
-                <span className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wide">{item.label}</span>
-                <div className="space-y-3">
-                  <div className="rounded-lg bg-muted/10 border border-border/40 px-4 py-3">
-                    <p className="text-xs font-mono text-muted-foreground/60 mb-1">FREE</p>
-                    <p className="text-sm text-muted-foreground">{item.before}</p>
-                  </div>
-                  <div className="rounded-lg bg-primary/5 border border-primary/25 px-4 py-3">
-                    <p className="text-xs font-mono text-primary/60 mb-1">PRO</p>
-                    <p className="text-sm text-foreground/90 leading-relaxed">{item.after}</p>
+              <StaggerItem key={item.label}>
+                <div className="surface-card rounded-xl p-6 flex flex-col gap-4 h-full">
+                  <span className="text-xs font-mono text-muted-foreground/50 uppercase tracking-wide">{item.label}</span>
+                  <div className="space-y-3">
+                    <div className="rounded-lg bg-muted/10 border border-border/40 px-4 py-3">
+                      <p className="text-xs font-mono text-muted-foreground/60 mb-1">FREE</p>
+                      <p className="text-sm text-muted-foreground">{item.before}</p>
+                    </div>
+                    <div className="rounded-lg bg-primary/5 border border-primary/25 px-4 py-3">
+                      <p className="text-xs font-mono text-primary/60 mb-1">PRO</p>
+                      <p className="text-sm text-foreground/90 leading-relaxed">{item.after}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
       {/* FAQ */}
       <section className="px-6 py-20">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold tracking-tight mb-10 text-center">Common questions</h2>
+          <AnimateIn>
+            <h2 className="text-2xl font-bold tracking-tight mb-10 text-center">Common questions</h2>
+          </AnimateIn>
           <div className="space-y-px">
             {FAQ_ITEMS.map((item, i) => (
               <details key={i} className="group surface-card rounded-none first:rounded-t-xl last:rounded-b-xl border-b border-border/40 last:border-0 overflow-hidden">

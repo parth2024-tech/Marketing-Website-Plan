@@ -4,6 +4,7 @@ import { Terminal, Copy, Download, CheckCheck, Cpu, Activity, ChevronDown, Chevr
 import { parseReport, type SentinelReport } from "@/lib/report/schema";
 import { generateReport, type ReportResult } from "@/lib/report/engine";
 import { HABIT_QUESTIONS, type HabitAnswers } from "@/lib/report/habit";
+import AnimateIn from "@/components/AnimateIn";
 
 type Brand = "dell" | "lenovo" | "hp";
 
@@ -167,40 +168,44 @@ export default function HealthTest() {
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-primary/5 rounded-full blur-[120px]" />
         </div>
-        <div className="relative max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-medium mb-6">
-            <Activity className="w-3.5 h-3.5" />
-            Free Diagnostic Scripts
+        <AnimateIn>
+          <div className="relative max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-xs font-medium mb-6">
+              <Activity className="w-3.5 h-3.5" />
+              Free Diagnostic Scripts
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+              Laptop Health Test
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Run a comprehensive hardware diagnostic on your Windows laptop right
+              now — no software to install. Scripts are open-source and run
+              locally on your machine.
+            </p>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            Laptop Health Test
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Run a comprehensive hardware diagnostic on your Windows laptop right
-            now — no software to install. Scripts are open-source and run
-            locally on your machine.
-          </p>
-        </div>
+        </AnimateIn>
       </section>
 
       {/* Brand tabs */}
       <section className="px-6 pb-4">
         <div className="max-w-5xl mx-auto">
-          <div className="flex gap-2 p-1 rounded-xl border border-border/60 bg-card/50 w-fit">
-            {brands.map((b) => (
-              <button
-                key={b.id}
-                onClick={() => setActiveBrand(b.id)}
-                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                  activeBrand === b.id
-                    ? `${b.color} bg-card border border-border shadow-sm`
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {b.label}
-              </button>
-            ))}
-          </div>
+          <AnimateIn delay={0.05}>
+            <div className="flex gap-2 p-1 rounded-xl border border-border/60 bg-card/50 w-fit">
+              {brands.map((b) => (
+                <button
+                  key={b.id}
+                  onClick={() => setActiveBrand(b.id)}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                    activeBrand === b.id
+                      ? `${b.color} bg-card border border-border shadow-sm`
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {b.label}
+                </button>
+              ))}
+            </div>
+          </AnimateIn>
         </div>
       </section>
 
@@ -208,26 +213,29 @@ export default function HealthTest() {
       <section className="px-6 pb-20">
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Brand description */}
-          <div className={`rounded-xl border p-5 ${brand.accent}`}>
-            <div className="flex flex-col md:flex-row md:items-start gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Cpu className={`w-4 h-4 ${brand.color}`} />
-                  <span className={`text-sm font-semibold ${brand.color}`}>
-                    {brand.label} Diagnostic
-                  </span>
-                  <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
-                    {brand.runner} · {brand.runnerNote}
-                  </span>
+          <AnimateIn>
+            <div className={`rounded-xl border p-5 ${brand.accent}`}>
+              <div className="flex flex-col md:flex-row md:items-start gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Cpu className={`w-4 h-4 ${brand.color}`} />
+                    <span className={`text-sm font-semibold ${brand.color}`}>
+                      {brand.label} Diagnostic
+                    </span>
+                    <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">
+                      {brand.runner} · {brand.runnerNote}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {brand.description}
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {brand.description}
-                </p>
               </div>
             </div>
-          </div>
+          </AnimateIn>
 
           {/* How to run */}
+          <AnimateIn delay={0.05}>
           <div className="rounded-xl border border-border/60 bg-card/40 p-5">
             <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <Terminal className="w-4 h-4 text-primary" />
@@ -255,8 +263,10 @@ export default function HealthTest() {
               ))}
             </ol>
           </div>
+          </AnimateIn>
 
           {/* Code viewer */}
+          <AnimateIn delay={0.07}>
           <div className="rounded-xl border border-border/60 bg-[#0d1117] overflow-hidden shadow-xl">
             {/* Toolbar */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-[#161b22]">
@@ -339,22 +349,28 @@ export default function HealthTest() {
               )}
             </div>
           </div>
+          </AnimateIn>
 
           {/* Sample output */}
-          <SampleOutputPanel brand={activeBrand} />
+          <AnimateIn delay={0.08}>
+            <SampleOutputPanel brand={activeBrand} />
+          </AnimateIn>
 
           {/* Privacy note */}
-          <p className="text-xs text-muted-foreground/60 text-center leading-relaxed">
-            These scripts run entirely on your machine. No data is sent
-            anywhere. The output is saved locally to your Desktop as a text
-            file. Review the full source code above before running.
-          </p>
+          <AnimateIn delay={0.1}>
+            <p className="text-xs text-muted-foreground/60 text-center leading-relaxed">
+              These scripts run entirely on your machine. No data is sent
+              anywhere. The output is saved locally to your Desktop as a text
+              file. Review the full source code above before running.
+            </p>
+          </AnimateIn>
         </div>
       </section>
 
       {/* ── Paste-back parser ──────────────────────────────────────── */}
       <section ref={pasteRef} className="px-6 pb-24">
         <div className="max-w-5xl mx-auto">
+          <AnimateIn>
           <div className="rounded-2xl border border-primary/30 bg-primary/3 overflow-hidden">
 
             {/* Header */}
@@ -457,6 +473,7 @@ export default function HealthTest() {
               )}
             </div>
           </div>
+          </AnimateIn>
         </div>
       </section>
 
@@ -464,6 +481,7 @@ export default function HealthTest() {
       {parsedData && (
         <section className="px-6 pb-24">
           <div className="max-w-5xl mx-auto">
+            <AnimateIn>
             <div className="rounded-2xl border border-accent/30 bg-accent/3 overflow-hidden">
               <div className="px-7 py-5 border-b border-accent/20 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
@@ -552,6 +570,7 @@ export default function HealthTest() {
                 </div>
               </div>
             </div>
+            </AnimateIn>
           </div>
         </section>
       )}

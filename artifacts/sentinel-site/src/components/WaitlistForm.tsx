@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useJoinWaitlist, useGetWaitlistCount, getGetWaitlistCountQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, Loader2, ArrowRight } from "lucide-react";
+import type { WaitlistResult } from "@workspace/api-client-react";
 
 const schema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -23,7 +24,7 @@ export default function WaitlistForm({ compact = false }: WaitlistFormProps) {
 
   const mutation = useJoinWaitlist({
     mutation: {
-      onSuccess: (data) => {
+      onSuccess: (data: WaitlistResult) => {
         if (data.alreadyExists) {
           setServerError("This email is already on the waitlist.");
         } else {

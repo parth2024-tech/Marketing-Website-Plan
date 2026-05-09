@@ -1,0 +1,464 @@
+
+> @workspace/sentinel-site@0.0.0 dev /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site
+> vite --config vite.config.ts --host 0.0.0.0
+
+
+  VITE v7.3.2  ready in 406 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: http://10.3.23.35:3000/
+4:09:03 PM [vite] (client) hmr update /src/App.tsx, /src/index.css
+4:09:04 PM [vite] (client) ✨ new dependencies optimized: framer-motion
+4:09:04 PM [vite] (client) ✨ optimized dependencies changed. reloading
+[RUNTIME_ERROR]{"type":"runtime-error","timestamp":1778323145775,"name":"Error","message":"Cannot read properties of null (reading 'useContext')","stack":"\n\n\n\n\n\n\n\n\n"}
+4:10:08 PM [vite] (client) hmr update /src/pages/Home.tsx, /src/index.css
+4:10:43 PM [vite] (client) hmr update /src/pages/Features.tsx, /src/index.css
+4:11:30 PM [vite] (client) hmr update /src/pages/HowItWorks.tsx, /src/index.css
+4:12:28 PM [vite] (client) hmr update /src/pages/FAQ.tsx, /src/index.css
+4:12:30 PM [vite] (client) hmr update /src/pages/Pricing.tsx, /src/index.css
+4:12:30 PM [vite] Internal server error: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx: Expected corresponding JSX closing tag for <StaggerItem>. (139:10)
+
+  137 |           </div>
+  138 |
+> 139 |           </div>
+      |           ^
+  140 |           </StaggerItem>
+  141 |
+  142 |           {/* Pro */}
+  Plugin: vite:react-babel
+  File: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx:139:10
+  137 |            </div>
+  138 |  
+  139 |            </div>
+      |            ^
+  140 |            </StaggerItem>
+  141 |  
+      at constructor (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4727:16)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElement (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4749:17)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4759:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:39
+      at TypeScriptParserMixin.tryParse (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6907:20)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:18)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12426:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12493:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11675:28)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11331:23)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9786:20)
+      at TypeScriptParserMixin.parseExpressionBase (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10784:23)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10780:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12421:16)
+      at TypeScriptParserMixin.parseExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10780:17)
+      at TypeScriptParserMixin.parseReturnStatement (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13142:28)
+      at TypeScriptParserMixin.parseStatementContent (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12798:21)
+      at TypeScriptParserMixin.parseStatementContent (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseFunctionBodyAndFinish (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12086:10)
+      at TypeScriptParserMixin.parseFunctionBodyAndFinish (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9172:18)
+4:13:42 PM [vite] (client) hmr update /src/pages/WhySentinel.tsx, /src/index.css
+4:13:42 PM [vite] Internal server error: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/WhySentinel.tsx: Expected corresponding JSX closing tag for <StaggerItem>. (231:10)
+
+  229 |               </div>
+  230 |             ))}
+> 231 |           </div>
+      |           ^
+  232 |         </div>
+  233 |       </section>
+  234 |
+  Plugin: vite:react-babel
+  File: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/WhySentinel.tsx:231:10
+  229 |                </div>
+  230 |              ))}
+  231 |            </div>
+      |            ^
+  232 |          </div>
+  233 |        </section>
+      at constructor (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4727:16)
+      at TypeScriptParserMixin.jsxParseElement (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4749:17)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4759:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:39
+      at TypeScriptParserMixin.tryParse (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6907:20)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:18)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12426:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12493:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11675:28)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11331:23)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9786:20)
+      at TypeScriptParserMixin.parseFunctionBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12093:24)
+      at TypeScriptParserMixin.parseArrowExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12075:10)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11687:12)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11331:23)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9786:20)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12426:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12493:17)
+4:13:43 PM [vite] (client) hmr update /src/pages/not-found.tsx, /src/index.css
+4:15:30 PM [vite] (client) hmr update /src/pages/WhySentinel.tsx, /src/index.css
+4:15:49 PM [vite] (client) hmr update /src/pages/Waitlist.tsx, /src/index.css
+4:16:11 PM [vite] (client) hmr update /src/pages/WhatItMonitors.tsx, /src/index.css
+4:16:59 PM [vite] (client) hmr update /src/pages/SampleReport.tsx, /src/index.css
+4:17:37 PM [vite] (client) hmr update /src/pages/OEMFailures.tsx, /src/index.css
+4:19:00 PM [vite] (client) Pre-transform error: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx: Expected corresponding JSX closing tag for <StaggerItem>. (139:10)
+
+  137 |           </div>
+  138 |
+> 139 |           </div>
+      |           ^
+  140 |           </StaggerItem>
+  141 |
+  142 |           {/* Pro */}
+  Plugin: vite:react-babel
+  File: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx:139:10
+  137 |            </div>
+  138 |  
+  139 |            </div>
+      |            ^
+  140 |            </StaggerItem>
+  141 |  
+4:19:00 PM [vite] Internal server error: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx: Expected corresponding JSX closing tag for <StaggerItem>. (139:10)
+
+  137 |           </div>
+  138 |
+> 139 |           </div>
+      |           ^
+  140 |           </StaggerItem>
+  141 |
+  142 |           {/* Pro */}
+  Plugin: vite:react-babel
+  File: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx:139:10
+  137 |            </div>
+  138 |  
+  139 |            </div>
+      |            ^
+  140 |            </StaggerItem>
+  141 |  
+      at constructor (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4727:16)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElement (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4749:17)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4759:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:39
+      at TypeScriptParserMixin.tryParse (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6907:20)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:18)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12426:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12493:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11675:28)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11331:23)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9786:20)
+      at TypeScriptParserMixin.parseExpressionBase (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10784:23)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10780:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12421:16)
+      at TypeScriptParserMixin.parseExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10780:17)
+      at TypeScriptParserMixin.parseReturnStatement (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13142:28)
+      at TypeScriptParserMixin.parseStatementContent (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12798:21)
+      at TypeScriptParserMixin.parseStatementContent (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseFunctionBodyAndFinish (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12086:10)
+      at TypeScriptParserMixin.parseFunctionBodyAndFinish (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9172:18)
+4:19:23 PM [vite] Internal server error: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx: Expected corresponding JSX closing tag for <StaggerItem>. (139:10)
+
+  137 |           </div>
+  138 |
+> 139 |           </div>
+      |           ^
+  140 |           </StaggerItem>
+  141 |
+  142 |           {/* Pro */}
+  Plugin: vite:react-babel
+  File: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx:139:10
+  137 |            </div>
+  138 |  
+  139 |            </div>
+      |            ^
+  140 |            </StaggerItem>
+  141 |  
+      at constructor (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4727:16)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElement (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4749:17)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4759:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:39
+      at TypeScriptParserMixin.tryParse (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6907:20)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:18)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12426:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12493:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11675:28)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11331:23)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9786:20)
+      at TypeScriptParserMixin.parseExpressionBase (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10784:23)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10780:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12421:16)
+      at TypeScriptParserMixin.parseExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10780:17)
+      at TypeScriptParserMixin.parseReturnStatement (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13142:28)
+      at TypeScriptParserMixin.parseStatementContent (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12798:21)
+      at TypeScriptParserMixin.parseStatementContent (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseFunctionBodyAndFinish (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12086:10)
+      at TypeScriptParserMixin.parseFunctionBodyAndFinish (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9172:18)
+4:20:07 PM [vite] (client) hmr update /src/pages/Pricing.tsx, /src/index.css
+4:20:07 PM [vite] Internal server error: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx: Expected corresponding JSX closing tag for <div>. (137:10)
+
+  135 |               ))}
+  136 |             </div>
+> 137 |           </StaggerItem>
+      |           ^
+  138 |
+  139 |           {/* Pro */}
+  140 |           <StaggerItem>
+  Plugin: vite:react-babel
+  File: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx:137:10
+  135 |                ))}
+  136 |              </div>
+  137 |            </StaggerItem>
+      |            ^
+  138 |  
+  139 |            {/* Pro */}
+      at constructor (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4727:16)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElement (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4749:17)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4759:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:39
+      at TypeScriptParserMixin.tryParse (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6907:20)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:18)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12426:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12493:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11675:28)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11331:23)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9786:20)
+      at TypeScriptParserMixin.parseExpressionBase (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10784:23)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10780:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12421:16)
+      at TypeScriptParserMixin.parseExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10780:17)
+      at TypeScriptParserMixin.parseReturnStatement (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13142:28)
+      at TypeScriptParserMixin.parseStatementContent (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12798:21)
+      at TypeScriptParserMixin.parseStatementContent (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseFunctionBodyAndFinish (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12086:10)
+4:20:07 PM [vite] (client) Pre-transform error: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx: Expected corresponding JSX closing tag for <div>. (137:10)
+
+  135 |               ))}
+  136 |             </div>
+> 137 |           </StaggerItem>
+      |           ^
+  138 |
+  139 |           {/* Pro */}
+  140 |           <StaggerItem>
+  Plugin: vite:react-babel
+  File: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx:137:10
+  135 |                ))}
+  136 |              </div>
+  137 |            </StaggerItem>
+      |            ^
+  138 |  
+  139 |            {/* Pro */}
+4:20:07 PM [vite] Internal server error: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx: Expected corresponding JSX closing tag for <div>. (137:10)
+
+  135 |               ))}
+  136 |             </div>
+> 137 |           </StaggerItem>
+      |           ^
+  138 |
+  139 |           {/* Pro */}
+  140 |           <StaggerItem>
+  Plugin: vite:react-babel
+  File: /home/thor/Desktop/health/Marketing-Website-Plan/artifacts/sentinel-site/src/pages/Pricing.tsx:137:10
+  135 |                ))}
+  136 |              </div>
+  137 |            </StaggerItem>
+      |            ^
+  138 |  
+  139 |            {/* Pro */}
+      at constructor (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:365:19)
+      at TypeScriptParserMixin.raise (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6599:19)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4727:16)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElementAt (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4698:32)
+      at TypeScriptParserMixin.jsxParseElement (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4749:17)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4759:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:39
+      at TypeScriptParserMixin.tryParse (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:6907:20)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9775:18)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12426:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10800:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12493:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11675:28)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11331:23)
+      at TypeScriptParserMixin.parseExprAtom (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:4764:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11081:23)
+      at TypeScriptParserMixin.parseUpdate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11066:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:11046:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9837:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10899:61)
+      at TypeScriptParserMixin.parseExprOps (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10904:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10881:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10831:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9786:20)
+      at TypeScriptParserMixin.parseExpressionBase (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10784:23)
+      at /home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10780:39
+      at TypeScriptParserMixin.allowInAnd (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12421:16)
+      at TypeScriptParserMixin.parseExpression (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:10780:17)
+      at TypeScriptParserMixin.parseReturnStatement (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13142:28)
+      at TypeScriptParserMixin.parseStatementContent (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12798:21)
+      at TypeScriptParserMixin.parseStatementContent (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:9508:18)
+      at TypeScriptParserMixin.parseStatementLike (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12767:17)
+      at TypeScriptParserMixin.parseStatementListItem (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12747:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13316:61)
+      at TypeScriptParserMixin.parseBlockBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13309:10)
+      at TypeScriptParserMixin.parseBlock (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:13297:10)
+      at TypeScriptParserMixin.parseFunctionBody (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12100:24)
+      at TypeScriptParserMixin.parseFunctionBodyAndFinish (/home/thor/Desktop/health/Marketing-Website-Plan/node_modules/.pnpm/@babel+parser@7.29.0/node_modules/@babel/parser/lib/index.js:12086:10)
+4:20:17 PM [vite] (client) hmr update /src/pages/Pricing.tsx, /src/index.css
+start_site.sh: line 5:  6245 Killed                     pnpm --filter @workspace/sentinel-site run dev

@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { ArrowRight, Calendar, Shield, TrendingDown, AlertTriangle, CheckCircle, Lightbulb, Activity } from "lucide-react";
+import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
 
 const componentScores = [
   { label: "Battery",   score: 71, status: "Degrading",  color: "text-amber-400",  bar: "bg-amber-400",   note: "412 cycles · 78.2% capacity" },
@@ -122,189 +123,213 @@ export default function SampleReport() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header band */}
-      <div className="border-b border-border/60 bg-card/40 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
-              <Shield className="w-3.5 h-3.5 text-primary" />
+      <AnimateIn direction="down" delay={0.1}>
+        <div className="border-b border-border/60 bg-card/40 px-6 py-4">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+                <Shield className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs font-mono text-muted-foreground">SENTINEL WEEKLY HEALTH REPORT</p>
+                <p className="text-sm font-semibold text-foreground">Dell XPS 15 9520 — Serial 7XK2P93</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-mono text-muted-foreground">SENTINEL WEEKLY HEALTH REPORT</p>
-              <p className="text-sm font-semibold text-foreground">Dell XPS 15 9520 — Serial 7XK2P93</p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
+              <Calendar className="w-3.5 h-3.5" />
+              Week of May 5, 2026
             </div>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
-            <Calendar className="w-3.5 h-3.5" />
-            Week of May 5, 2026
           </div>
         </div>
-      </div>
+      </AnimateIn>
 
       <div className="max-w-4xl mx-auto px-6 py-12 space-y-10">
 
         {/* Hero score */}
-        <div className="surface-card rounded-2xl p-8 flex flex-col md:flex-row items-center gap-10">
-          <ScoreRing score={overallScore} />
-          <div className="flex-1 text-center md:text-left">
-            <p className="text-xs font-mono text-muted-foreground mb-1">OVERALL HEALTH</p>
-            <h1 className={`text-4xl font-bold font-mono mb-1 ${overallColor}`}>{overallGrade}</h1>
-            <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-              Your laptop is in generally good shape. Two issues need attention this week — disk space and thermals — and your battery is degrading faster than expected for its age.
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-              <div className="flex items-center gap-1.5 text-sm">
-                <span className="w-2 h-2 rounded-full bg-red-400" />
-                <span className="text-muted-foreground">{criticalCount} critical</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-sm">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span className="text-muted-foreground">{warningCount} warnings</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-sm">
-                <span className="w-2 h-2 rounded-full bg-green-400" />
-                <span className="text-muted-foreground">{healthyCount} components healthy</span>
+        <AnimateIn>
+          <div className="surface-card rounded-2xl p-8 flex flex-col md:flex-row items-center gap-10">
+            <ScoreRing score={overallScore} />
+            <div className="flex-1 text-center md:text-left">
+              <p className="text-xs font-mono text-muted-foreground mb-1">OVERALL HEALTH</p>
+              <h1 className={`text-4xl font-bold font-mono mb-1 ${overallColor}`}>{overallGrade}</h1>
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+                Your laptop is in generally good shape. Two issues need attention this week — disk space and thermals — and your battery is degrading faster than expected for its age.
+              </p>
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                <div className="flex items-center gap-1.5 text-sm">
+                  <span className="w-2 h-2 rounded-full bg-red-400" />
+                  <span className="text-muted-foreground">{criticalCount} critical</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  <span className="text-muted-foreground">{warningCount} warnings</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm">
+                  <span className="w-2 h-2 rounded-full bg-green-400" />
+                  <span className="text-muted-foreground">{healthyCount} components healthy</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </AnimateIn>
 
         {/* Component scores */}
         <div className="space-y-4">
-          <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest">Component Breakdown</h2>
-          <div className="surface-card rounded-xl overflow-hidden divide-y divide-border/40">
+          <AnimateIn>
+            <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest">Component Breakdown</h2>
+          </AnimateIn>
+          <StaggerContainer className="surface-card rounded-xl overflow-hidden divide-y divide-border/40" staggerDelay={0.05}>
             {componentScores.map((c) => (
-              <div key={c.label} className="flex items-center gap-4 px-6 py-4">
-                <span className="text-sm font-medium text-foreground w-20 shrink-0">{c.label}</span>
-                <div className="flex-1 h-1.5 rounded-full bg-muted/30 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${c.bar} transition-all duration-1000`}
-                    style={{ width: `${c.score}%` }}
-                  />
+              <StaggerItem key={c.label}>
+                <div className="flex items-center gap-4 px-6 py-4">
+                  <span className="text-sm font-medium text-foreground w-20 shrink-0">{c.label}</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${c.bar} transition-all duration-1000`}
+                      style={{ width: `${c.score}%` }}
+                    />
+                  </div>
+                  <span className={`text-xs font-mono w-24 text-right shrink-0 ${c.color}`}>
+                    {c.score}/100 · {c.status}
+                  </span>
+                  <span className="text-xs text-muted-foreground hidden lg:block w-52 shrink-0 text-right">
+                    {c.note}
+                  </span>
                 </div>
-                <span className={`text-xs font-mono w-24 text-right shrink-0 ${c.color}`}>
-                  {c.score}/100 · {c.status}
-                </span>
-                <span className="text-xs text-muted-foreground hidden lg:block w-52 shrink-0 text-right">
-                  {c.note}
-                </span>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
 
         {/* Urgent findings */}
         <div className="space-y-4">
-          <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest">Findings Requiring Attention</h2>
-          <div className="space-y-4">
+          <AnimateIn>
+            <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest">Findings Requiring Attention</h2>
+          </AnimateIn>
+          <StaggerContainer className="space-y-4" staggerDelay={0.1}>
             {urgentFindings.map((f, i) => (
-              <div key={i} className={`rounded-xl border p-6 ${f.color}`}>
-                <div className="flex items-start gap-4">
-                  <div className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${f.iconBg}`}>
-                    <f.icon className={`w-4 h-4 ${f.iconColor}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span className={`text-xs font-mono px-2 py-0.5 rounded border ${f.badge}`}>
-                        {f.component}
-                      </span>
+              <StaggerItem key={i}>
+                <div className={`rounded-xl border p-6 ${f.color}`}>
+                  <div className="flex items-start gap-4">
+                    <div className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${f.iconBg}`}>
+                      <f.icon className={`w-4 h-4 ${f.iconColor}`} />
                     </div>
-                    <h3 className="font-semibold text-foreground mb-2 leading-snug">{f.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-3">{f.detail}</p>
-                    <div className="rounded-lg bg-background/40 border border-border/40 px-4 py-3">
-                      <p className="text-xs font-mono text-primary mb-1">WHAT TO DO</p>
-                      <p className="text-sm text-foreground leading-relaxed">{f.action}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className={`text-xs font-mono px-2 py-0.5 rounded border ${f.badge}`}>
+                          {f.component}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold text-foreground mb-2 leading-snug">{f.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-3">{f.detail}</p>
+                      <div className="rounded-lg bg-background/40 border border-border/40 px-4 py-3">
+                        <p className="text-xs font-mono text-primary mb-1">WHAT TO DO</p>
+                        <p className="text-sm text-foreground leading-relaxed">{f.action}</p>
+                      </div>
+                      {f.prediction && (
+                        <p className="text-xs text-muted-foreground mt-3 italic">
+                          Sentinel prediction: {f.prediction}
+                        </p>
+                      )}
                     </div>
-                    {f.prediction && (
-                      <p className="text-xs text-muted-foreground mt-3 italic">
-                        Sentinel prediction: {f.prediction}
-                      </p>
-                    )}
                   </div>
                 </div>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
 
         {/* Cross-component patterns */}
         <div className="space-y-4">
-          <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest">
-            <Activity className="w-3.5 h-3.5 inline mr-2 text-primary" />
-            Patterns Detected
-          </h2>
-          <div className="space-y-3">
+          <AnimateIn>
+            <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest">
+              <Activity className="w-3.5 h-3.5 inline mr-2 text-primary" />
+              Patterns Detected
+            </h2>
+          </AnimateIn>
+          <StaggerContainer className="space-y-3" staggerDelay={0.1}>
             {patterns.map((p, i) => (
-              <div key={i} className="rounded-xl border border-primary/20 bg-primary/5 p-5">
-                <p className="text-xs font-mono text-primary mb-2">🔍 {p.title.toUpperCase()}</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">{p.detail}</p>
-              </div>
+              <StaggerItem key={i}>
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+                  <p className="text-xs font-mono text-primary mb-2">🔍 {p.title.toUpperCase()}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{p.detail}</p>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
 
         {/* Habit coaching */}
         <div className="space-y-4">
-          <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest">
-            <Lightbulb className="w-3.5 h-3.5 inline mr-2 text-primary" />
-            Usage Habits
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <AnimateIn>
+            <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest">
+              <Lightbulb className="w-3.5 h-3.5 inline mr-2 text-primary" />
+              Usage Habits
+            </h2>
+          </AnimateIn>
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-4" staggerDelay={0.1}>
             {habits.map((h, i) => (
-              <div key={i} className="surface-card rounded-xl p-5">
-                <div className="text-2xl mb-3">{h.icon}</div>
-                <p className="text-xs font-mono text-muted-foreground mb-2 uppercase tracking-wide">{h.title}</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">{h.tip}</p>
-              </div>
+              <StaggerItem key={i}>
+                <div className="surface-card rounded-xl p-5 h-full">
+                  <div className="text-2xl mb-3">{h.icon}</div>
+                  <p className="text-xs font-mono text-muted-foreground mb-2 uppercase tracking-wide">{h.title}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{h.tip}</p>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
 
         {/* All-clear items */}
-        <div className="surface-card rounded-xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <CheckCircle className="w-4 h-4 text-green-400" />
-            <h2 className="text-sm font-semibold text-foreground">All-clear items this week</h2>
+        <AnimateIn>
+          <div className="surface-card rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircle className="w-4 h-4 text-green-400" />
+              <h2 className="text-sm font-semibold text-foreground">All-clear items this week</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {[
+                "GPU — no driver crashes or TDR events",
+                "RAM — no hardware errors detected via HCI memtest",
+                "Network — zero Wi-Fi drop events, DNS responding normally",
+                "SMART — NVMe SSD passed all S.M.A.R.T. attribute checks",
+                "Boot — 11.2 s average, no startup delay events",
+                "System integrity — SFC scan: 0 corrupt files",
+                "BSOD history — 0 unexpected shutdowns in last 30 days",
+                "Drivers — all critical drivers have no error codes in Device Manager",
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <span className="text-green-400 shrink-0 mt-0.5">✓</span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {[
-              "GPU — no driver crashes or TDR events",
-              "RAM — no hardware errors detected via HCI memtest",
-              "Network — zero Wi-Fi drop events, DNS responding normally",
-              "SMART — NVMe SSD passed all S.M.A.R.T. attribute checks",
-              "Boot — 11.2 s average, no startup delay events",
-              "System integrity — SFC scan: 0 corrupt files",
-              "BSOD history — 0 unexpected shutdowns in last 30 days",
-              "Drivers — all critical drivers have no error codes in Device Manager",
-            ].map((item, i) => (
-              <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                <span className="text-green-400 shrink-0 mt-0.5">✓</span>
-                <span>{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        </AnimateIn>
 
         {/* Footer */}
-        <div className="text-center pt-4 pb-8 space-y-6">
-          <div className="border-t border-border/60 pt-8">
-            <p className="text-xs text-muted-foreground mb-1">Next recommended scan: May 12, 2026</p>
-            <p className="text-xs text-muted-foreground">All analysis ran locally on your device. No data was sent anywhere.</p>
-          </div>
+        <AnimateIn delay={0.2}>
+          <div className="text-center pt-4 pb-8 space-y-6">
+            <div className="border-t border-border/60 pt-8">
+              <p className="text-xs text-muted-foreground mb-1">Next recommended scan: May 12, 2026</p>
+              <p className="text-xs text-muted-foreground">All analysis ran locally on your device. No data was sent anywhere.</p>
+            </div>
 
-          <div className="surface-card rounded-xl p-6 max-w-md mx-auto">
-            <p className="text-sm font-semibold text-foreground mb-2">This is what Sentinel sends you every week.</p>
-            <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-              No numbers without context. No alerts without action steps. No doom — just what matters and what to do about it.
-            </p>
-            <Link
-              href="/waitlist"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm text-background bg-primary hover:bg-primary/90 glow-cyan transition-all"
-            >
-              Get this for your laptop
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="surface-card rounded-xl p-6 max-w-md mx-auto">
+              <p className="text-sm font-semibold text-foreground mb-2">This is what Sentinel sends you every week.</p>
+              <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                No numbers without context. No alerts without action steps. No doom — just what matters and what to do about it.
+              </p>
+              <Link
+                href="/waitlist"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm text-background bg-primary hover:bg-primary/90 glow-cyan transition-all"
+              >
+                Get this for your laptop
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
-        </div>
+        </AnimateIn>
       </div>
     </div>
   );

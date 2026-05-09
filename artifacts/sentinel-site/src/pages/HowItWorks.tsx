@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Download, Eye, Zap, MessageSquare, ArrowRight, Database, Brain, Lock, BarChart2 } from "lucide-react";
+import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
 
 const steps = [
   {
@@ -82,7 +83,9 @@ function WeeklyLetterMock() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <p className="text-xs font-mono text-muted-foreground mb-1">WEEKLY HEALTH REPORT</p>
-          <p className="font-semibold text-foreground">Week of May 5, 2025</p>
+          <p className="font-semibold text-foreground">
+            Week of {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+          </p>
         </div>
         <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
           <div className="w-2.5 h-2.5 rounded-full bg-primary animate-glow-pulse" />
@@ -119,58 +122,64 @@ export default function HowItWorks() {
     <div className="px-6 py-20">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="max-w-2xl mb-20">
-          <div className="mb-4">
-            <span className="text-xs font-mono font-medium px-3 py-1 rounded-full border border-primary/30 text-primary bg-primary/10">
-              HOW IT WORKS
-            </span>
+        <AnimateIn>
+          <div className="max-w-2xl mb-20">
+            <div className="mb-4">
+              <span className="text-xs font-mono font-medium px-3 py-1 rounded-full border border-primary/30 text-primary bg-primary/10">
+                HOW IT WORKS
+              </span>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6" data-testid="heading-how-it-works">
+              Four steps to{" "}
+              <span className="gradient-text">hardware foresight.</span>
+            </h1>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Sentinel is designed to be invisible until you need it. Here's what happens from installation to your first insight.
+            </p>
           </div>
-          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6" data-testid="heading-how-it-works">
-            Four steps to{" "}
-            <span className="gradient-text">hardware foresight.</span>
-          </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            Sentinel is designed to be invisible until you need it. Here's what happens from installation to your first insight.
-          </p>
-        </div>
+        </AnimateIn>
 
-        {/* Steps */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-24">
+        {/* Steps — staggered */}
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-24" staggerDelay={0.1}>
           {steps.map((step) => (
-            <div
-              key={step.number}
-              className="surface-card rounded-xl p-8 flex flex-col gap-5 hover:border-primary/40 transition-all duration-300 group"
-              data-testid={`card-step-${step.number}`}
-            >
-              <div className="flex items-start gap-5">
-                <div className="flex flex-col items-center gap-3">
-                  <span className={`text-4xl font-bold font-mono ${step.color} opacity-30 leading-none`}>
-                    {step.number}
-                  </span>
-                  <div className={`w-10 h-10 rounded-xl bg-card border ${step.borderColor} flex items-center justify-center ${step.color} group-hover:border-primary/40 transition-colors`}>
-                    <step.icon className="w-5 h-5" />
+            <StaggerItem key={step.number}>
+              <div
+                className="surface-card rounded-xl p-8 flex flex-col gap-5 hover:border-primary/40 transition-all duration-300 group h-full"
+                data-testid={`card-step-${step.number}`}
+              >
+                <div className="flex items-start gap-5">
+                  <div className="flex flex-col items-center gap-3">
+                    <span className={`text-4xl font-bold font-mono ${step.color} opacity-30 leading-none`}>
+                      {step.number}
+                    </span>
+                    <div className={`w-10 h-10 rounded-xl bg-card border ${step.borderColor} flex items-center justify-center ${step.color} group-hover:border-primary/40 transition-colors`}>
+                      <step.icon className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-3">{step.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
                   </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
-                </div>
               </div>
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
 
         {/* Technical credibility */}
         <div className="border-t border-border/60 pt-20 mb-20">
-          <div className="text-center mb-14">
-            <h2 className="text-2xl font-bold tracking-tight mb-3">How it actually works</h2>
-            <p className="text-muted-foreground text-sm max-w-xl mx-auto">
-              No vague "AI". No magic. Here's the exact mechanism behind every prediction Sentinel makes.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AnimateIn>
+            <div className="text-center mb-14">
+              <h2 className="text-2xl font-bold tracking-tight mb-3">How it actually works</h2>
+              <p className="text-muted-foreground text-sm max-w-xl mx-auto">
+                No vague "AI". No magic. Here's the exact mechanism behind every prediction Sentinel makes.
+              </p>
+            </div>
+          </AnimateIn>
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-6" staggerDelay={0.1}>
 
             {/* Telemetry */}
+            <StaggerItem>
             <div className="surface-card rounded-xl p-7 flex flex-col gap-5">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
@@ -193,8 +202,10 @@ export default function HowItWorks() {
                 <div className="text-cyan-400">MSFT_PhysicalDisk      <span className="text-slate-400">→ NVMe endurance</span></div>
               </div>
             </div>
+            </StaggerItem>
 
             {/* Baseline learning */}
+            <StaggerItem>
             <div className="surface-card rounded-xl p-7 flex flex-col gap-5">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/30 flex items-center justify-center shrink-0">
@@ -216,8 +227,10 @@ export default function HowItWorks() {
                 <div className="text-violet-400">z_score <span className="text-slate-400">= (reading − μ) / σ</span></div>
               </div>
             </div>
+            </StaggerItem>
 
             {/* Local processing */}
+            <StaggerItem>
             <div className="surface-card rounded-xl p-7 flex flex-col gap-5">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
@@ -239,8 +252,10 @@ export default function HowItWorks() {
                 <div className="text-red-400/70">hardware_data  <span className="text-slate-400">→ NEVER. Stays on your device.</span></div>
               </div>
             </div>
+            </StaggerItem>
 
             {/* Anomaly scoring */}
+            <StaggerItem>
             <div className="surface-card rounded-xl p-7 flex flex-col gap-5">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/30 flex items-center justify-center shrink-0">
@@ -262,39 +277,48 @@ export default function HowItWorks() {
                 <div className="text-amber-400">weight         <span className="text-slate-400">severity × component_criticality</span></div>
               </div>
             </div>
+            </StaggerItem>
 
-          </div>
+          </StaggerContainer>
         </div>
 
         {/* Mocks section */}
         <div className="border-t border-border/60 pt-20">
-          <div className="text-center mb-14">
-            <h2 className="text-2xl font-bold tracking-tight mb-3">What it actually looks like</h2>
-            <p className="text-muted-foreground text-sm">Precise, readable, calm. Not a wall of numbers.</p>
-          </div>
-          <div className="flex flex-col md:flex-row items-start justify-center gap-8">
-            <div className="flex flex-col gap-3 items-center">
-              <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Sample Alert</span>
-              <AlertMock />
+          <AnimateIn>
+            <div className="text-center mb-14">
+              <h2 className="text-2xl font-bold tracking-tight mb-3">What it actually looks like</h2>
+              <p className="text-muted-foreground text-sm">Precise, readable, calm. Not a wall of numbers.</p>
             </div>
-            <div className="flex flex-col gap-3 items-center">
-              <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Weekly Report</span>
-              <WeeklyLetterMock />
-            </div>
-          </div>
+          </AnimateIn>
+          <StaggerContainer className="flex flex-col md:flex-row items-start justify-center gap-8" staggerDelay={0.15}>
+            <StaggerItem>
+              <div className="flex flex-col gap-3 items-center">
+                <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Sample Alert</span>
+                <AlertMock />
+              </div>
+            </StaggerItem>
+            <StaggerItem>
+              <div className="flex flex-col gap-3 items-center">
+                <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Weekly Report</span>
+                <WeeklyLetterMock />
+              </div>
+            </StaggerItem>
+          </StaggerContainer>
         </div>
 
         {/* CTA */}
-        <div className="mt-20 text-center">
-          <Link
-            href="/waitlist"
-            className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all duration-200"
-            data-testid="button-how-it-works-waitlist"
-          >
-            Get early access
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
+        <AnimateIn delay={0.1}>
+          <div className="mt-20 text-center">
+            <Link
+              href="/waitlist"
+              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-background bg-primary hover:bg-primary/90 glow-cyan transition-all duration-200"
+              data-testid="button-how-it-works-waitlist"
+            >
+              Get early access
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </AnimateIn>
       </div>
     </div>
   );
