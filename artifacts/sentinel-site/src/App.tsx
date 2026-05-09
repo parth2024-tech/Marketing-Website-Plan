@@ -24,6 +24,8 @@ import RiskCalculator from "@/pages/RiskCalculator";
 import Report from "@/pages/Report";
 import MyReports from "@/pages/MyReports";
 import Troubleshoot from "@/pages/Troubleshoot";
+import GetStarted from "@/pages/GetStarted";
+import Pair from "@/pages/Pair";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -81,6 +83,8 @@ function AnimatedRoutes() {
           <Route path="/troubleshoot"    component={Troubleshoot} />
           <Route path="/r/:id"           component={Report} />
           <Route path="/my-reports"      component={MyReports} />
+          <Route path="/get-started"     component={GetStarted} />
+          <Route path="/pair"            component={Pair} />
           <Route                         component={NotFound} />
         </Switch>
       </motion.div>

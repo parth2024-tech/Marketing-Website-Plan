@@ -5,3 +5,4 @@ export * from "./rateLimits";
 export * from "./reportHabitAnswers";
 export * from "./myReportsSessions";
 export * from "./magicLinkTokens";
+export * from "./devices";

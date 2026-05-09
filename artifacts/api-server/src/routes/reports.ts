@@ -1,6 +1,6 @@
 import { Router, type Request } from "express";
 import { z } from "zod";
-import { db, reportsTable, idempotencyKeysTable, rateLimitsTable, reportHabitAnswersTable } from "@workspace/db";
+import { db, reportsTable, idempotencyKeysTable, rateLimitsTable, reportHabitAnswersTable, devicesTable } from "@workspace/db";
 import { SentinelReportSchema, generateReport, computeHabitScore, combinedScore } from "@workspace/report-engine";
 import { eq, and, sql, isNull } from "drizzle-orm";
 import { newReportId, newClaimToken, sha256hex } from "../lib/ids";
@@ -67,6 +67,25 @@ router.post("/", async (req, res) => {
   if (contentLength > 256 * 1024) {
     res.status(413).json({ error: "Payload too large. Maximum 256 KB." });
     return;
+  }
+
+  // Check for agent device-token auth (Bearer token from Tier 1/2 agent)
+  let agentDeviceEmail: string | null = null;
+  const authHeader = req.headers["authorization"];
+  if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
+    const deviceToken = authHeader.slice(7).trim();
+    if (deviceToken.length >= 10) {
+      const deviceRows = await db
+        .select()
+        .from(devicesTable)
+        .where(eq(devicesTable.deviceToken, deviceToken))
+        .limit(1);
+      if (deviceRows.length === 0) {
+        res.status(401).json({ error: "Invalid device token" });
+        return;
+      }
+      agentDeviceEmail = deviceRows[0].email ?? null;
+    }
   }
 
   // Parse body
@@ -147,6 +166,8 @@ router.post("/", async (req, res) => {
         claimToken,
         ipHash,
         legacy: legacy ?? false,
+        // Auto-claim when uploaded by a paired agent
+        ...(agentDeviceEmail ? { claimed: true, email: agentDeviceEmail } : {}),
       });
 
       // Store habit answers alongside the report
