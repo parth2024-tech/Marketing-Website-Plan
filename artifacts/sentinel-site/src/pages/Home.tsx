@@ -2,9 +2,7 @@ import { Link } from "wouter";
 import { Download, ArrowRight, Cpu, Battery, HardDrive, Thermometer, Wifi, AlertTriangle, CheckCircle, TrendingUp, Activity } from "lucide-react";
 import WaitlistForm, { WaitlistCount } from "@/components/WaitlistForm";
 import HealthFeed from "@/components/HealthFeed";
-<<<<<<< HEAD
 import { useState, useEffect } from "react";
-=======
 import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
 
 const metrics = [
@@ -13,7 +11,6 @@ const metrics = [
   { label: "Warning Time",value: "Weeks Early", color: "text-accent" },
   { label: "Windows",     value: "10 & 11",     color: "text-muted-foreground" },
 ];
->>>>>>> 0b1895b (Eleveate brand aesthetic with high-ROI motion design and quality refinements)
 
 const differentiators = [
   {

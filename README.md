@@ -5,12 +5,16 @@ A dark, futuristic multi-page marketing website and application for a Windows la
 ## 🌟 Features
 
 - **Multi-page Marketing Site**: Fully responsive and beautifully designed dark, futuristic aesthetic.
+- **High-Fidelity Motion Design**: Standardized scroll-triggered entrance animations and premium micro-interactions across the site.
 - **Diagnostic Scripts**: Support for Dell (PowerShell), Lenovo (PowerShell), and HP (Python) laptops.
 - **Hardware Health Report Flow**: Users paste JSON output → complete a habit audit → receive a scored report with a detailed component breakdown.
+- **Intelligent Troubleshooting Assistant**: Local troubleshooting assistant with a chat-style knowledge base for step-by-step diagnostic solutions.
+- **Risk Calculator & Dashboards**: Interactive components to calculate potential hardware failure risks and dedicated dashboards to compare reports over time.
 - **Server-Side Scoring Algorithm**: Robust, trustworthy scoring executed server-side.
 - **Report Sharing**: Server-stored reports with cross-device links and offline localStorage fallbacks.
 - **Account & Claim System**: "Magic-link" passwordless authentication. Users can save reports to their email-based session.
 - **Waitlist Gate**: "Pro" findings and premium features blurred behind a waitlist capture form.
+- **Custom 404 Page**: Brand-aligned error page to improve user experience when navigating to non-existent pages.
 
 ## 🛠 Tech Stack
 
@@ -67,18 +71,21 @@ A dark, futuristic multi-page marketing website and application for a Windows la
 
 ### Running the Application Locally
 
-You will need to run the API server and the frontend site concurrently.
+You can use the provided bash scripts to start the server and the frontend with the correct environment variables concurrently.
 
 **1. Start the API Server:**
 ```bash
-pnpm --filter @workspace/api-server run dev
+chmod +x start_api.sh
+./start_api.sh
 ```
-*(Runs on port 5000 or the `$PORT` environment variable)*
+*(Runs on port 5000 and connects to the local PostgreSQL database)*
 
 **2. Start the Frontend Application:**
 ```bash
-pnpm --filter @workspace/sentinel-site run dev
+chmod +x start_site.sh
+./start_site.sh
 ```
+*(Runs on port 3000)*
 
 ### Useful Commands
 
