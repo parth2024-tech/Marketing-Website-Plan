@@ -47,7 +47,7 @@ function AlertMock() {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-mono text-amber-400">PREDICTIVE ALERT</span>
+            <span className="text-xs font-mono text-amber-400">DIAGNOSTIC ALERT</span>
             <span className="text-xs text-muted-foreground font-mono">2 days ago</span>
           </div>
           <p className="text-sm text-foreground leading-snug font-medium mb-2">
@@ -172,7 +172,7 @@ export default function HowItWorks() {
             <div className="text-center mb-14">
               <h2 className="text-2xl font-bold tracking-tight mb-3">How it actually works</h2>
               <p className="text-muted-foreground text-sm max-w-xl mx-auto">
-                No vague "AI". No magic. Here's the exact mechanism behind every prediction Sentinel makes.
+                No black-box AI. No magic. Here's the exact mechanism behind every finding Sentinel surfaces.
               </p>
             </div>
           </AnimateIn>

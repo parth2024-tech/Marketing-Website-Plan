@@ -15,8 +15,8 @@ const metrics = [
 const differentiators = [
   {
     icon: TrendingUp,
-    title: "Predictive, not reactive",
-    description: "Sentinel spots degradation patterns weeks before hardware fails — giving you time to act, not just react.",
+    title: "Diagnostic, not reactive",
+    description: "Sentinel runs 40+ deterministic checks and surfaces degradation trends weeks before hardware fails — with the reasoning shown.",
     color: "text-primary",
   },
   {
@@ -27,17 +27,17 @@ const differentiators = [
   },
   {
     icon: AlertTriangle,
-    title: "Runs completely offline",
-    description: "All analysis happens on your machine. Nothing is sent to any server. Your hardware data stays yours.",
+    title: "Explainable scoring",
+    description: "Every score is reproducible from your data. Same inputs always produce the same output. No black-box logic.",
     color: "text-primary",
   },
 ];
 
 const featureHighlights = [
-  { icon: Battery,     label: "Battery health prediction",   color: "text-primary" },
+  { icon: Battery,     label: "Battery health tracking",     color: "text-primary" },
   { icon: HardDrive,   label: "SSD wear detection",          color: "text-accent" },
   { icon: Thermometer, label: "Thermal pattern analysis",    color: "text-primary" },
-  { icon: Cpu,         label: "CPU anomaly detection",       color: "text-accent" },
+  { icon: Cpu,         label: "CPU load & throttle checks",  color: "text-accent" },
   { icon: Wifi,        label: "Network stability tracking",  color: "text-primary" },
 ];
 
@@ -156,14 +156,14 @@ export default function Home() {
 
             <AnimateIn delay={0.1} duration={0.5}>
               <h1 className="text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08]" data-testid="heading-hero">
-                Knows your laptop is sick{" "}
-                <span className="gradient-text">weeks before you do.</span>
+                See exactly why{" "}
+                <span className="gradient-text">your laptop is slowing down.</span>
               </h1>
             </AnimateIn>
 
             <AnimateIn delay={0.2} duration={0.5}>
               <p className="text-lg text-muted-foreground leading-relaxed max-w-lg">
-                Sentinel watches your hardware 24/7 and surfaces problems in plain English — before a failure ruins your day, your data, or your deadline.
+                Sentinel runs deterministic, explainable diagnostics across battery, thermals, storage, memory and CPU — and tells you what's wearing out, with the reasoning shown.
               </p>
             </AnimateIn>
 
@@ -323,7 +323,7 @@ export default function Home() {
             </div>
             <h2 className="text-3xl font-bold tracking-tight text-white">See Sentinel in action.</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Don't just take our word for it. View a simulated live dashboard mirroring the exact interface, metrics, and AI anomaly detection Sentinel provides for real systems.
+              Don't just take our word for it. View a simulated live dashboard mirroring the exact interface, metrics, and rules-based anomaly checks Sentinel runs on real systems.
             </p>
           </div>
           

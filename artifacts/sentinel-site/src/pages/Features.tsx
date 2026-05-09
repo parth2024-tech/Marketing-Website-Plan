@@ -5,22 +5,22 @@ import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn
 const features = [
   {
     icon: TrendingUp,
-    title: "Predictive diagnosis",
+    title: "Deterministic diagnostics",
     badge: "CORE",
     badgeColor: "text-primary border-primary/30 bg-primary/10",
-    description: "Detects degradation trends in hardware metrics before they cross critical thresholds. Sentinel flags a problem weeks before it would appear in a traditional monitor.",
+    description: "Runs 40+ expert rules against your hardware readings. Every score is computed from a documented formula — not a black box. Same data always produces the same result.",
   },
   {
     icon: Fingerprint,
-    title: "Learns your machine",
-    badge: "ADAPTIVE",
+    title: "Baseline deviation detection",
+    badge: "PRECISE",
     badgeColor: "text-accent border-accent/30 bg-accent/10",
     description: "Every laptop behaves differently based on usage patterns, environment, and age. Sentinel builds a personalized baseline over the first few days — then alerts only when your machine deviates from its own normal.",
   },
   {
     icon: BookOpen,
     title: "Habit coaching",
-    badge: "SMART",
+    badge: "ACCURATE",
     badgeColor: "text-primary border-primary/30 bg-primary/10",
     description: "Identifies usage behaviors that accelerate wear — like always running at 100% charge or blocking vents during heavy workloads — and suggests simple changes to extend hardware life.",
   },
@@ -40,24 +40,24 @@ const features = [
   },
   {
     icon: Lightbulb,
-    title: "Personalized tips",
-    badge: "TAILORED",
+    title: "Explainable findings",
+    badge: "TRANSPARENT",
     badgeColor: "text-accent border-accent/30 bg-accent/10",
-    description: "Advice generated specifically for your machine and usage — not generic tech tips. If your battery is degrading faster than it should for your laptop's age, Sentinel explains why and what to do.",
+    description: "Every finding shows its reasoning. If your battery is degrading faster than expected for its cycle count, Sentinel shows you the gap — not just the conclusion.",
   },
   {
     icon: GitBranch,
-    title: "Correlation detection",
-    badge: "INTELLIGENT",
+    title: "Cross-metric correlation",
+    badge: "PRECISE",
     badgeColor: "text-primary border-primary/30 bg-primary/10",
-    description: "Finds non-obvious connections between metrics. High thermals correlating with driver crashes. Startup slowdowns correlating with SSD write amplification. Patterns humans miss.",
+    description: "Finds non-obvious connections between metrics. High thermals correlating with driver crashes. Startup slowdowns correlating with SSD write amplification. Patterns a single-metric tool misses.",
   },
   {
     icon: Brain,
-    title: "Gets smarter over time",
-    badge: "LEARNING",
+    title: "Reproducible reports",
+    badge: "OPEN METHODOLOGY",
     badgeColor: "text-accent border-accent/30 bg-accent/10",
-    description: "The longer Sentinel runs, the better it knows your machine. Its models improve with every data point, making predictions more accurate as your laptop ages.",
+    description: "The scoring formulas are publicly documented. Any power user can verify Sentinel's output by hand. Transparency is the feature — not a footnote.",
   },
 ];
 
@@ -78,7 +78,7 @@ export default function Features() {
               <span className="gradient-text">One quiet guardian.</span>
             </h1>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Sentinel does things no other Windows diagnostic tool does — because it's built around prediction, not observation.
+              Sentinel does things no other Windows diagnostic tool does — because it's built around explainable diagnostics, not observation.
             </p>
           </div>
         </AnimateIn>

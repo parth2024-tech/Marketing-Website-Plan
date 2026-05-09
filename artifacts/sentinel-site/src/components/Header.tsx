@@ -4,8 +4,8 @@ import { Menu, X, Shield } from "lucide-react";
 
 const navLinks = [
   { href: "/why", label: "Why Sentinel" },
+  { href: "/scoring", label: "How Scoring Works" },
   { href: "/risk-calculator", label: "Risk Calculator" },
-  { href: "/habit-audit", label: "Habit Audit" },
   { href: "/health-test", label: "Health Test" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/troubleshoot", label: "Troubleshoot" },
@@ -53,11 +53,11 @@ export default function Header() {
         {/* CTA */}
         <div className="hidden md:flex items-center gap-3">
           <Link
-            href="/waitlist"
-            className="px-4 py-2 text-sm font-medium rounded-lg border border-primary/40 text-primary hover:bg-primary/10 hover:border-primary transition-all duration-200"
-            data-testid="button-join-waitlist-header"
+            href="/get-started"
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-background hover:bg-primary/90 transition-all duration-200 glow-cyan"
+            data-testid="button-get-started-header"
           >
-            Join Waitlist
+            Get Started
           </Link>
         </div>
 

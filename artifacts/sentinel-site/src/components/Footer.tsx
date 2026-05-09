@@ -7,9 +7,11 @@ const links = [
   { href: "/compare", label: "Compare Tools" },
   { href: "/features", label: "Features" },
   { href: "/how-it-works", label: "How It Works" },
+  { href: "/scoring", label: "How Scoring Works" },
   { href: "/what-it-monitors", label: "What It Monitors" },
   { href: "/risk-calculator", label: "Risk Calculator" },
   { href: "/habit-audit", label: "Habit Audit" },
+  { href: "/get-started", label: "Get Started" },
   { href: "/health-test", label: "Health Test" },
   { href: "/sample-report", label: "Sample Report" },
   { href: "/pricing", label: "Pricing" },
@@ -29,7 +31,7 @@ export default function Footer() {
               <span className="text-base font-semibold tracking-tight text-foreground">Sentinel</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Predictive hardware intelligence for Windows laptops. Know before it breaks.
+              Transparent hardware diagnostics for Windows laptops. Know what's wearing out and why.
             </p>
           </div>
 
