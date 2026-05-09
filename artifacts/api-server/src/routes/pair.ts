@@ -1,6 +1,6 @@
 import { Router, type Request } from "express";
 import { z } from "zod";
-import { db, pairSessionsTable, reportsTable, rateLimitsTable, reportHabitAnswersTable } from "@workspace/db";
+import { db, pairSessionsTable, reportsTable, rateLimitsTable } from "@workspace/db";
 import { SentinelReportSchema, generateReport } from "@workspace/report-engine";
 import { eq, and, lt, sql } from "drizzle-orm";
 import { newPairCode, newReportId, newClaimToken, sha256hex } from "../lib/ids";
