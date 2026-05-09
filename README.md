@@ -1,109 +1,114 @@
-# Sentinel - Predictive Health Monitor
+# Sentinel — Hardware Diagnostic Monitor
 
-A dark, futuristic multi-page marketing website and application for a Windows laptop hardware prediction tool. Users can download a diagnostic script (PowerShell/Python), run it locally on their machine, paste the JSON output into the site, and receive a comprehensive, scored, and shareable hardware health report which is persisted in a PostgreSQL database.
+A dark, precision-designed multi-page marketing website and application for a Windows laptop hardware diagnostic tool. Users run a local diagnostic script (PowerShell/Python), paste the JSON output into the site, and receive a scored, explainable hardware health report persisted in PostgreSQL.
 
-## 🌟 Features
+Scoring is fully deterministic and publicly documented — no black-box AI, no machine learning. The same inputs always produce the same output.
 
-- **Multi-page Marketing Site**: Fully responsive and beautifully designed dark, futuristic aesthetic.
-- **High-Fidelity Motion Design**: Standardized scroll-triggered entrance animations and premium micro-interactions across the site.
-- **Diagnostic Scripts**: Support for Dell (PowerShell), Lenovo (PowerShell), and HP (Python) laptops.
-- **Hardware Health Report Flow**: Users paste JSON output → complete a habit audit → receive a scored report with a detailed component breakdown.
-- **Intelligent Troubleshooting Assistant**: Local troubleshooting assistant with a chat-style knowledge base for step-by-step diagnostic solutions.
-- **Risk Calculator & Dashboards**: Interactive components to calculate potential hardware failure risks and dedicated dashboards to compare reports over time.
-- **Server-Side Scoring Algorithm**: Robust, trustworthy scoring executed server-side.
-- **Report Sharing**: Server-stored reports with cross-device links and offline localStorage fallbacks.
-- **Account & Claim System**: "Magic-link" passwordless authentication. Users can save reports to their email-based session.
-- **Waitlist Gate**: "Pro" findings and premium features blurred behind a waitlist capture form.
-- **Custom 404 Page**: Brand-aligned error page to improve user experience when navigating to non-existent pages.
+## Features
 
-## 🛠 Tech Stack
+- **Multi-page Marketing Site** — Fully responsive dark/futuristic design with scroll-triggered animations and premium micro-interactions.
+- **Deterministic Scoring Engine** — Five-component weighted health score (Battery 30%, Thermals 25%, Storage 25%, Memory 10%, CPU 10%) computed server-side from documented formulas. Algorithm version is stamped on every report.
+- **Public Scoring Methodology** — `/scoring` page documents every formula, threshold, and weight with worked examples so any user can reproduce a score by hand.
+- **Health Forecast Timeline** — Population-curve baseline (cold start) graduating to per-device linear regression with 95% CI intervals as scan history accumulates. Model source is labelled on every projection.
+- **Diagnostic Scripts** — Dell (PowerShell), Lenovo (PowerShell), and HP (Python) collection scripts.
+- **Hardware Health Report Flow** — Paste JSON → complete habit audit → receive scored report with component breakdown, findings, and forecast timeline.
+- **Troubleshooting Assistant** — Chat-style knowledge base with step-by-step diagnostic guidance.
+- **Risk Calculator & Dashboard** — Interactive failure-risk estimation and multi-report comparison views.
+- **Account & Claim System** — Passwordless magic-link auth (15-min token → 30-day session cookie). Reports are claimable by email after submission.
+- **Device Pairing** — Agent-friendly pairing flow (`/pair`) with `pairToken`/`deviceToken` handshake so a local agent can push reports and auto-claim them to an email.
+- **Three-tier Onboarding** — `/get-started` routes users to Tier 1 (agent), Tier 2 (one-shot paste), or Tier 3 (legacy hidden flow) based on capability.
+- **Waitlist Gate** — Pro findings blurred behind a waitlist capture form.
+- **Custom 404** — Brand-aligned error page.
 
-- **Monorepo Strategy**: `pnpm` workspaces, Node.js 24, TypeScript 5.9
-- **Frontend**: React 19 + Vite, Tailwind CSS v4, `wouter` for routing, `framer-motion` for animations.
-- **Backend API**: Express 5 + `cookie-parser` + `cors` + `pino` logging.
-- **Database**: PostgreSQL with Drizzle ORM.
-- **Validation & Schema**: Zod (`zod/v4`) and `drizzle-zod`.
-- **Shared Library**: `@workspace/report-engine` for shared schemas, scoring engine, and habit scoring logic.
+## Tech Stack
 
-## 📂 Project Structure
+- **Monorepo** — `pnpm` workspaces, Node.js 24, TypeScript 5.9
+- **Frontend** — React 19 + Vite, Tailwind CSS v4, `wouter` routing, `framer-motion` animations
+- **Backend API** — Express 5, `cookie-parser`, `cors`, `pino` logging
+- **Database** — PostgreSQL via Drizzle ORM
+- **Validation** — Zod (`zod/v4`) + `drizzle-zod`
+- **Shared Libraries** — `@workspace/report-engine` (schema, scoring engine, habit scoring, forecast), `@workspace/db` (Drizzle schema + client)
+
+## Project Structure
 
 ```text
 ├── artifacts/
-│   ├── api-server/         # Express API Server (handles reporting, auth, waitlist)
-│   └── sentinel-site/      # React/Vite frontend marketing site
+│   ├── api-server/         # Express API (reports, auth, waitlist, device pairing)
+│   └── sentinel-site/      # React/Vite marketing + app frontend
 ├── lib/
 │   ├── db/                 # Drizzle ORM schema and database client
-│   └── report-engine/      # Shared Sentinel report schema, scoring algorithms
-├── scripts/                # Utility and build scripts
-└── pnpm-workspace.yaml     # pnpm workspace configuration
+│   │   └── src/schema/
+│   │       ├── reports.ts
+│   │       ├── devices.ts          # Device pairing tokens
+│   │       ├── scans.ts            # Per-device scan history (Track 2A)
+│   │       ├── waitlist.ts
+│   │       ├── magicLinkTokens.ts
+│   │       └── ...
+│   └── report-engine/      # Shared scoring logic
+│       └── src/
+│           ├── engine.ts           # Deterministic scoring formulas
+│           ├── forecast.ts         # Population curve + per-device regression (Track 2C)
+│           ├── habit.ts
+│           └── schema.ts
+└── pnpm-workspace.yaml
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- [Node.js 24+](https://nodejs.org/)
-- [pnpm](https://pnpm.io/)
-- A running PostgreSQL database instance
+- Node.js 24+
+- pnpm
+- PostgreSQL database
 
 ### Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/parth2024-tech/Marketing-Website-Plan.git
-   cd Marketing-Website-Plan
-   ```
-
-2. Install dependencies:
-   ```bash
-   pnpm install
-   ```
-
-3. Configure Environment Variables:
-   Set up your environment variables, specifically the `DATABASE_URL` for PostgreSQL connections. You may need to create a `.env` file in `artifacts/api-server/` or configure it globally.
-   ```env
-   DATABASE_URL="postgres://user:password@localhost:5432/sentinel"
-   ```
-
-4. Push Database Schema (Dev Only):
-   ```bash
-   pnpm --filter @workspace/db run push
-   ```
-
-### Running the Application Locally
-
-You can use the provided bash scripts to start the server and the frontend with the correct environment variables concurrently.
-
-**1. Start the API Server:**
 ```bash
-chmod +x start_api.sh
-./start_api.sh
+git clone https://github.com/parth2024-tech/Marketing-Website-Plan.git
+cd Marketing-Website-Plan
+pnpm install
 ```
-*(Runs on port 5000 and connects to the local PostgreSQL database)*
 
-**2. Start the Frontend Application:**
-```bash
-chmod +x start_site.sh
-./start_site.sh
+### Environment Variables
+
+Set `DATABASE_URL` in `artifacts/api-server/.env`:
+
+```env
+DATABASE_URL="postgres://user:password@localhost:5432/sentinel"
 ```
-*(Runs on port 3000)*
+
+### Push Database Schema
+
+```bash
+pnpm --filter @workspace/db run push
+```
+
+### Running Locally
+
+**API Server** (port 8080):
+```bash
+PORT=8080 pnpm --filter @workspace/api-server run dev
+```
+
+**Frontend** (port 3000):
+```bash
+PORT=3000 BASE_PATH=/ API_PORT=8080 pnpm --filter @workspace/sentinel-site run dev
+```
 
 ### Useful Commands
 
-- **Full Typecheck**: `pnpm run typecheck`
-- **Build All Packages**: `pnpm run build`
-- **Regenerate API Hooks/Zod Schemas**: `pnpm --filter @workspace/api-spec run codegen`
-
-## 🧠 Architecture Decisions
-
-- **Server-Side Trust**: `generateReport` executes strictly on the API server. Client-side input is considered untrusted and only pre-validated for fast UI feedback.
-- **Wear Level Semantics**: High percentages equate to healthy status (percentage of life remaining).
-- **Habit Scoring**: Accounts for 30% of the combined health score, stored securely in the database.
-- **Magic-Link Auth**: No passwords. An email initiates a 15-minute token leading to a session cookie with a 30-day TTL.
-- **Composite Library Building**: `@workspace/report-engine` is bundled directly into the backend via `esbuild` and resolved in the frontend via Vite symlinking.
-
-## 🤝 Contributing
-
-Ensure all code changes pass type checking and build steps before committing:
 ```bash
-pnpm run typecheck && pnpm run build
+pnpm run typecheck          # Full type check across all packages
+pnpm run build              # Build all packages
+pnpm --filter @workspace/db run push   # Apply schema changes to DB
 ```
+
+## Architecture Decisions
+
+- **Server-side trust** — `generateReport` runs exclusively on the API server. Client input is untreated; only pre-validated for fast UI feedback.
+- **Deterministic scoring** — No ML, no randomness. `ALGORITHM_VERSION` is incremented whenever formulas change; old reports retain their original version stamp.
+- **Wear level semantics** — Higher percentages mean healthier (percentage of life remaining, not consumed).
+- **Forecast honesty** — Cold-start projections use a population curve and are labelled as such. Warm projections use the device's own scan history with a 95% CI range, never a false-precision single number.
+- **Habit scoring** — Accounts for 30% of the combined health score (`0.7 × hw_score + 0.3 × habit_score`), stored in the database.
+- **Magic-link auth** — No passwords. Email initiates a 15-minute token; successful claim sets a 30-day session cookie.
+- **Device pairing** — `POST /api/devices/pair` → short-lived `pairToken` → `POST /api/devices/claim` with email → persistent `deviceToken`. Reports submitted with `Authorization: Bearer <deviceToken>` are auto-claimed.
+- **Library bundling** — `@workspace/report-engine` is bundled into the backend via `esbuild` and resolved in the frontend via Vite workspace symlinking.
