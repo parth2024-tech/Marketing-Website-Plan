@@ -1,0 +1,109 @@
+IS THIS IDEA GOOD??  # Solving Sentinel's Paste-Back Friction
+
+## The core problem
+
+Today's loop:
+
+```text
+Download .ps1  →  Unblock + run in PowerShell  →  Script copies base64 JSON
+              →  User opens website  →  User pastes blob  →  Report
+```
+
+Every arrow is a drop-off point. PowerShell scares non-technical users, and the email "run it again" nudge every 7/30 days has near-zero compliance. The fix is to remove the human from the transport layer entirely, and only fall back to manual paste for users who refuse to install anything.
+
+## Strategy: three tiers, pick per user willingness
+
+Offer three onboarding paths on the site, ranked by friction:
+
+```text
+Tier 1 (default):  One-click installer  →  Background agent  →  Auto-upload on schedule
+Tier 2 (fallback): Signed one-click .exe →  Runs once         →  Auto-uploads, exits
+Tier 3 (legacy):   Current paste-back   →  Power users / locked-down corp machines only
+```
+
+Tier 1 solves both friction *and* retention. Tier 2 solves friction for users who won't install background software. Tier 3 stays for completeness but is de-emphasized in the UI.
+
+## Tier 1 — Sentinel Agent (recommended primary path)
+
+A tiny signed Windows app (~5–10 MB) that the user installs once. It collects the same diagnostic data the PowerShell scripts collect today, then POSTs it to the API on a schedule. No clipboard, no paste, no terminal.
+
+User flow:
+
+```text
+Site:  "Get my report" button
+  → Download SentinelSetup.exe (code-signed, SmartScreen-friendly)
+  → Installer runs, asks for email, creates a device pairing token
+  → Agent silently uploads first report
+  → Browser auto-opens to /report/<id> when upload completes
+  → Agent registers a Windows Scheduled Task to re-run every 7 days
+```
+
+Retention loop becomes automatic: the agent uploads on schedule, the server emails the user "your new report is ready" with a deep link. The user never has to remember anything.
+
+Key UX details:
+- **Pairing without typing**: installer opens a browser tab to `/pair?token=<one-time>` so the email/account is captured in the web UI, not a console prompt.
+- **Auto-open report**: the agent watches for the API's 200 response and opens the default browser to the new report URL.
+- **Uninstall is one click**: standard Add/Remove Programs entry. Trust signal.
+- **Visible in tray**: small tray icon with "Run now", "View latest report", "Pause", "Uninstall". Reassures users it's not spyware.
+
+## Tier 2 — One-shot signed executable
+
+For users who refuse to install a background service. Same binary, different mode: runs once, uploads, exits, deletes itself. Replaces the PowerShell + paste-back flow with literally one double-click.
+
+```text
+Download SentinelOneShot.exe
+  → Double-click → UAC prompt → 10s scan → browser opens to report
+```
+
+This alone removes ~95% of today's friction without requiring a long-lived agent. Ship this first if Tier 1 is too much engineering for the next sprint.
+
+## Tier 3 — Keep PowerShell paste-back, but hide it
+
+Move it behind a "Advanced / IT admin" disclosure on the download page. Useful for:
+- Locked-down corporate machines where users can't install signed binaries
+- Users who explicitly want to inspect the script before running
+
+Don't advertise it as the default — that's the current mistake.
+
+## Server changes required (small)
+
+Today's API already accepts a JSON report blob. To support agents:
+
+1. **Device pairing endpoint**: `POST /api/devices/pair` returns a one-time token; `POST /api/devices/claim` (called from the browser after agent install) binds device_id → user email.
+2. **Authenticated upload endpoint**: `POST /api/reports` already exists — add an `Authorization: Bearer <device-token>` path so the agent can upload without a session cookie.
+3. **Auto-link reports**: when an agent uploads, the report is pre-claimed to the paired user. No "claim panel" needed for agent users.
+4. **Notification on new report**: existing email infra (M6 milestone) sends "your weekly report is ready" with a magic link.
+
+The existing `report-engine` and DB schema don't change. This is purely a transport upgrade.
+
+## Engineering scope (rough)
+
+| Tier | Build effort | Friction removed |
+|------|--------------|-------------------|
+| Tier 2 (one-shot .exe) | 1–2 weeks: port PS scripts to a small Go/Rust/.NET binary, add code signing, add upload-and-open-browser logic | ~95% |
+| Tier 1 (agent + scheduler) | +2–3 weeks on top of Tier 2: tray UI, scheduled task, pair flow, server pairing endpoints | Retention loop becomes automatic |
+| Tier 3 (keep legacy) | 0 — already works | n/a |
+
+Recommend: ship **Tier 2 first** (immediate friction win), then layer Tier 1 on the same binary for retention.
+
+## Technical notes
+
+- **Language for the binary**: Go or .NET produce single-file Windows executables with no runtime install. .NET has best access to WMI / SMART data the current PS scripts already query, so it's the lowest-risk port.
+- **Code signing**: required to avoid SmartScreen "Unknown publisher" warnings that kill installer conversion. Budget ~$200–400/yr for an OV cert, or use Azure Trusted Signing.
+- **Scheduled Task vs Windows Service**: Scheduled Task is simpler, doesn't need elevation to run on a schedule, and is easy to uninstall. Prefer it over a service.
+- **Telemetry minimum**: agent should report install/uninstall/upload events so you can measure the funnel improvement vs the paste-back baseline.
+- **macOS / Linux**: out of scope — Sentinel is Windows laptop hardware. Don't get distracted.
+
+## What this does NOT change
+
+- The marketing site, report rendering, scoring engine, habit audit, magic-link auth, and DB schema all stay as-is.
+- The paste-back flow keeps working for users who land on it directly.
+- No Lovable Cloud / Supabase introduction — stays on the Replit Postgres stack per the project's stated preference.
+
+## Suggested rollout order
+
+1. Build the one-shot .exe (Tier 2). A/B test it against the PS download on the Home page.
+2. Add device pairing + authenticated upload endpoints on the API.
+3. Extend the .exe into a tray agent with a Scheduled Task (Tier 1).
+4. Wire the existing email cron (M6) to send "new report ready" notifications triggered by agent uploads.
+5. Demote the PowerShell flow to an "Advanced" disclosure.
