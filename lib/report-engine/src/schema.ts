@@ -8,6 +8,8 @@ export const StorageDeviceSchema = z.object({
   wearLevelPct: z.number().optional(),
   freeSpacePct: z.number().optional(),
   totalGB: z.number().optional(),
+  powerOnHours: z.number().optional(),
+  dataSource: z.string().optional(),
 });
 
 export const ThermalZoneSchema = z.object({
@@ -42,6 +44,8 @@ export const SentinelReportSchema = z.object({
       zones: z.array(ThermalZoneSchema).optional(),
       zoneCount: z.number().optional(),
       throttleEvents30min: z.number().optional(),
+      thermalSource: z.string().optional(),
+      thermalSamples: z.number().optional(),
     })
     .optional(),
   storage: z.array(StorageDeviceSchema).optional(),

@@ -10,8 +10,10 @@ Scoring is fully deterministic and publicly documented — no black-box AI, no m
 - **Deterministic Scoring Engine** — Five-component weighted health score (Battery 30%, Thermals 25%, Storage 25%, Memory 10%, CPU 10%) computed server-side from documented formulas. Algorithm version is stamped on every report.
 - **Public Scoring Methodology** — `/scoring` page documents every formula, threshold, and weight with worked examples so any user can reproduce a score by hand.
 - **Health Forecast Timeline** — Population-curve baseline (cold start) graduating to per-device linear regression with 95% CI intervals as scan history accumulates. Model source is labelled on every projection.
-- **Diagnostic Scripts** — Dell (PowerShell), Lenovo (PowerShell), and HP (Python) collection scripts.
-- **Hardware Health Report Flow** — Paste JSON → complete habit audit → receive scored report with component breakdown, findings, and forecast timeline.
+- **Diagnostic Scripts** — Dell (PowerShell), Lenovo (PowerShell), and HP (Python) collection scripts. Implements multi-source telemetry (WMI, Performance Counters, OHM/LHM) with tiered fallback and hardware-level IOCTL querying for NVMe SMART health.
+- **Diagnostic Transparency** — Integrated sensor validation (e.g., detecting static ACPI readings) with real-time UI warnings ("Data Collection Notes") when telemetry quality is suspect.
+- **Unified Diagnostic Schema** — Standardized `sentinelSchema:1` format used across all collection scripts (PS1/PY) and the core scoring engine to ensure data integrity and source attribution.
+- **Hardware Health Report Flow** — Paste JSON → complete habit audit → receive scored report with component breakdown, findings, and forecast timeline. Includes high-visibility "Unverified" banners for locally-scored reports.
 - **Troubleshooting Assistant** — Chat-style knowledge base with step-by-step diagnostic guidance.
 - **Risk Calculator & Dashboard** — Interactive failure-risk estimation and multi-report comparison views.
 - **Account & Claim System** — Passwordless magic-link auth (15-min token → 30-day session cookie). Reports are claimable by email after submission.
@@ -106,6 +108,8 @@ pnpm --filter @workspace/db run push   # Apply schema changes to DB
 
 - **Server-side trust** — `generateReport` runs exclusively on the API server. Client input is untreated; only pre-validated for fast UI feedback.
 - **Deterministic scoring** — No ML, no randomness. `ALGORITHM_VERSION` is incremented whenever formulas change; old reports retain their original version stamp.
+- **Diagnostic Transparency** — The engine tracks `dataSource` and `thermalSource` metadata. Suspect telemetry (like static ACPI zones) is flagged in `dataQuality.warnings` and excluded from scoring to prevent false penalties.
+- **Layered Telemetry Fallback** — Collection scripts attempt high-fidelity WMI/IOCTL sources first, falling back to performance counters or third-party drivers (OHM/LHM) only when necessary.
 - **Wear level semantics** — Higher percentages mean healthier (percentage of life remaining, not consumed).
 - **Forecast honesty** — Cold-start projections use a population curve and are labelled as such. Warm projections use the device's own scan history with a 95% CI range, never a false-precision single number.
 - **Habit scoring** — Accounts for 30% of the combined health score (`0.7 × hw_score + 0.3 × habit_score`), stored in the database.

@@ -103,6 +103,7 @@ export default function HealthTest() {
   // Paste-back parser state
   const [pasteValue, setPasteValue] = useState("");
   const [parseError, setParseError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState(false);
   const [parsedResult, setParsedResult] = useState<ReportResult | null>(null);
   const [parsedData, setParsedData] = useState<SentinelReport | null>(null);
   const [isParsing, setIsParsing] = useState(false);
@@ -527,46 +528,54 @@ export default function HealthTest() {
                 ))}
 
                 {/* Generate button */}
-                <div className="pt-2 flex items-center gap-4">
-                  <button
-                    onClick={() => {
-                      if (!parsedData) return;
-                      setIsParsing(true);
-                      const tempId = Math.random().toString(36).slice(2, 10);
-                      try { localStorage.setItem(`sentinel_report_${tempId}`, JSON.stringify(parsedData)); } catch {}
-                      const answers = habitComplete ? habitAnswers : undefined;
-                      fetch("/api/reports", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ rawJson: parsedData, ...(answers ? { habitAnswers: answers } : {}) }),
-                      })
-                        .then(async (res) => {
-                          if (res.ok) {
-                            const { id, claimToken } = await res.json() as { id: string; claimToken: string };
-                            try {
-                              localStorage.setItem(`sentinel_report_${id}`, JSON.stringify(parsedData));
-                              if (claimToken) localStorage.setItem(`sentinel_claim_${id}`, claimToken);
-                            } catch {}
-                            setIsParsing(false);
-                            navigate(`/r/${id}`);
-                          } else {
-                            setIsParsing(false);
-                            navigate(`/r/${tempId}`);
-                          }
+                <div className="pt-2 flex flex-col gap-4">
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => {
+                        if (!parsedData) return;
+                        setIsParsing(true);
+                        const answers = habitComplete ? habitAnswers : undefined;
+                        
+                        const handleFallback = () => {
+                          window.alert('Server unavailable. Falling back to local offline scoring.');
+                          const tempId = Math.random().toString(36).slice(2, 10);
+                          try { localStorage.setItem(`sentinel_report_${tempId}`, JSON.stringify(parsedData)); } catch {}
+                          setIsParsing(false);
+                          navigate(`/r/${tempId}`);
+                        };
+
+                        fetch("/api/reports", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ rawJson: parsedData, ...(answers ? { habitAnswers: answers } : {}) }),
                         })
-                        .catch(() => { setIsParsing(false); navigate(`/r/${tempId}`); });
-                    }}
-                    disabled={isParsing}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-background bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed glow-cyan transition-all"
-                  >
-                    {isParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-                    {isParsing ? "Generating…" : habitComplete ? "Generate full report →" : "Skip & generate report →"}
-                  </button>
-                  {!habitComplete && (
-                    <span className="text-xs text-muted-foreground/60">
-                      {HABIT_QUESTIONS.length - habitAnsweredCount} question{HABIT_QUESTIONS.length - habitAnsweredCount !== 1 ? "s" : ""} remaining
-                    </span>
-                  )}
+                          .then(async (res) => {
+                            if (res.ok) {
+                              const { id, claimToken } = await res.json() as { id: string; claimToken: string };
+                              try {
+                                localStorage.setItem(`sentinel_report_${id}`, JSON.stringify(parsedData));
+                                if (claimToken) localStorage.setItem(`sentinel_claim_${id}`, claimToken);
+                              } catch {}
+                              setIsParsing(false);
+                              navigate(`/r/${id}`);
+                            } else {
+                              handleFallback();
+                            }
+                          })
+                          .catch(() => { handleFallback(); });
+                      }}
+                      disabled={isParsing}
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-background bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed glow-cyan transition-all"
+                    >
+                      {isParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+                      {isParsing ? "Generating…" : habitComplete ? "Generate full report →" : "Skip & generate report →"}
+                    </button>
+                    {!habitComplete && (
+                      <span className="text-xs text-muted-foreground/60">
+                        {HABIT_QUESTIONS.length - habitAnsweredCount} question{HABIT_QUESTIONS.length - habitAnsweredCount !== 1 ? "s" : ""} remaining
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

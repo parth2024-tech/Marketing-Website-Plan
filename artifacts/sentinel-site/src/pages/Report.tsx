@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Link, useParams } from "wouter";
+import { Link, useParams, useLocation } from "wouter";
 import {
   ArrowRight, Shield, AlertTriangle, Info, Lock,
   Share2, Check, Copy, Mail, ChevronDown, TrendingDown, Clock, CheckCircle2,
@@ -72,7 +72,7 @@ function ScoreRing({ score }: { score: number }) {
 
 // ── Share row ─────────────────────────────────────────────────────────────────
 
-function ShareRow({ id }: { id: string }) {
+function ShareRow({ id, isLocal }: { id: string, isLocal?: boolean }) {
   const [copied, setCopied] = useState(false);
   const url = `${window.location.origin}/r/${id}`;
   const copy = () => {
@@ -83,13 +83,15 @@ function ShareRow({ id }: { id: string }) {
   };
   return (
     <div className="surface-card rounded-xl p-5 flex items-center justify-between flex-wrap gap-4">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className={`flex items-center gap-2 text-sm text-muted-foreground ${isLocal ? 'opacity-40 blur-[2px] select-none pointer-events-none' : ''}`}>
         <Share2 className="w-4 h-4 text-primary/60" />
         <span className="font-mono text-xs text-muted-foreground/60 truncate max-w-[220px]">{url}</span>
       </div>
       <button
         onClick={copy}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border/60 text-foreground hover:border-primary/60 hover:text-primary transition-all"
+        disabled={isLocal}
+        title={isLocal ? "Save to server to get a shareable link." : undefined}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border/60 text-foreground transition-all ${isLocal ? 'opacity-40 blur-[1px] cursor-not-allowed' : 'hover:border-primary/60 hover:text-primary'}`}
       >
         {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
         {copied ? "Copied!" : "Copy link"}
@@ -210,6 +212,7 @@ export default function Report() {
   const [combinedScoreVal, setCombinedScoreVal] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadedFrom, setLoadedFrom] = useState<"server" | "local" | null>(null);
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     const id = params?.id;
@@ -236,7 +239,14 @@ export default function Report() {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Idempotency-Key": `legacy-${id}` },
                 body: JSON.stringify({ rawJson: JSON.parse(stored), legacy: true }),
-              }).catch(() => {});
+              })
+                .then(async (upRes) => {
+                  if (upRes.ok) {
+                    const { id: newId } = await upRes.json() as { id: string };
+                    navigate(`/r/${newId}`);
+                  }
+                })
+                .catch(() => {});
             } catch {}
           }
           return;
@@ -297,6 +307,14 @@ export default function Report() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {loadedFrom === "local" && (
+        <div className="w-full bg-amber-500 text-amber-950 px-6 py-4 flex items-center justify-center gap-3 shadow-md z-50 relative">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <p className="text-sm font-bold">
+            This report was scored offline and has not been verified by Sentinel servers. Scores may differ from the server-computed result.
+          </p>
+        </div>
+      )}
 
       {/* Report header */}
       <div className="border-b border-border/60 bg-card/20 px-6 py-5">
@@ -338,7 +356,14 @@ export default function Report() {
                   </div>
                 </div>
                 <div className="flex-1">
-                  <div className="text-2xl font-bold mb-1">{result.grade} — {result.gradeLabel}</div>
+                  <div className="text-2xl font-bold mb-1 flex items-center gap-3">
+                    {result.grade} — {result.gradeLabel}
+                    {loadedFrom === "local" && (
+                      <span className="text-xs font-mono text-amber-500 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 rounded-full font-normal tracking-wide flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> unverified
+                      </span>
+                    )}
+                  </div>
                   {combinedScoreVal !== null && (
                     <div className="flex items-center gap-3 mb-3 text-xs font-mono">
                       <span className="text-muted-foreground/60">Hardware</span>
@@ -372,6 +397,36 @@ export default function Report() {
               </div>
             </div>
           </AnimateIn>
+
+          {/* Data Collection Notes */}
+          {result.dataQuality && result.dataQuality.warnings && result.dataQuality.warnings.length > 0 && (
+            <AnimateIn delay={0.04}>
+              <div className="surface-card rounded-xl p-5 border border-amber-500/20 bg-amber-500/5">
+                <div className="flex items-center gap-3 mb-3">
+                  <Info className="w-4 h-4 text-amber-500" />
+                  <h2 className="text-sm font-bold text-amber-500 uppercase tracking-wider">Data Collection Notes</h2>
+                </div>
+                <ul className="space-y-2">
+                  {result.dataQuality.warnings.some((w: string) => w.includes('thermal')) && (
+                    <li className="text-sm text-amber-500/80 list-disc list-inside">
+                      Thermal sensors unavailable or reporting static values. Falling back to estimation model.
+                    </li>
+                  )}
+                  {result.dataQuality.warnings.some((w: string) => w.includes('storage')) && (
+                    <li className="text-sm text-amber-500/80 list-disc list-inside">
+                      Primary NVMe health data unavailable. Using standard SMART fallback.
+                    </li>
+                  )}
+                  {result.dataQuality.warnings.map((w: string, i: number) => {
+                    if (w.includes('thermal') || w.includes('storage')) return null;
+                    return (
+                      <li key={i} className="text-sm text-amber-500/80 list-disc list-inside">{w}</li>
+                    )
+                  })}
+                </ul>
+              </div>
+            </AnimateIn>
+          )}
 
           {/* Component breakdown */}
           <AnimateIn delay={0.05}>
@@ -535,7 +590,7 @@ export default function Report() {
 
           {/* Share row */}
           <AnimateIn delay={0.07}>
-            <ShareRow id={id} />
+            <ShareRow id={id} isLocal={loadedFrom === "local"} />
           </AnimateIn>
 
           {/* Footer */}

@@ -35,6 +35,11 @@ export interface ReportResult {
   system: { model: string; hostname: string; os: string };
   generatedAt: string;
   algoVersion: number;
+  dataQuality: {
+    thermalSource?: string;
+    storageSource?: string;
+    warnings: string[];
+  };
 }
 
 function clamp(n: number, min = 0, max = 100) {
@@ -93,6 +98,7 @@ function batteryScore(r: SentinelReport): ComponentScore | null {
 function thermalScore(r: SentinelReport): ComponentScore | null {
   const t = r.thermals;
   if (!t || t.maxTempC == null) return null;
+  if (t.thermalSource === "unavailable" || t.thermalSource === "acpi_static_suspect") return null;
   const max = t.maxTempC;
   let score =
     max > 95 ? 10 :
@@ -112,6 +118,7 @@ function thermalScore(r: SentinelReport): ComponentScore | null {
 function storageScore(r: SentinelReport): ComponentScore | null {
   if (!r.storage?.length) return null;
   const primary = r.storage[0];
+  if (primary.dataSource === "unavailable" && (primary.type?.includes("NVMe") || primary.model?.includes("NVMe"))) return null;
   const wear = primary.wearLevelPct ?? primary.healthPct;
   const realloc = primary.reallocatedSectors ?? 0;
   const free = primary.freeSpacePct ?? 100;
@@ -433,11 +440,21 @@ export function generateReport(r: SentinelReport): ReportResult {
     weightedSum += c.score * w;
     totalWeight += w;
   }
-  const overall = clamp(Math.round(weightedSum / totalWeight));
+  const overall = clamp(Math.round(weightedSum / (totalWeight || 1)));
   const grade =
     overall < 40 ? "F" : overall < 55 ? "D" : overall < 65 ? "C" : overall < 80 ? "B" : "A";
   const gradeLabel =
     overall < 40 ? "Critical" : overall < 55 ? "Poor" : overall < 65 ? "Fair" : overall < 80 ? "Good" : "Excellent";
+
+  const warnings: string[] = [];
+  const t = r.thermals;
+  if (!t || t.thermalSource === "unavailable" || t.thermalSource === "acpi_static_suspect") {
+    warnings.push("Thermal data unavailable on this hardware — thermal score excluded from overall calculation.");
+  }
+  const s = r.storage?.[0];
+  if (s && s.dataSource === "unavailable" && (s.type?.includes("NVMe") || s.model?.includes("NVMe"))) {
+    warnings.push("NVMe wear data could not be retrieved — storage score excluded from overall calculation.");
+  }
 
   return {
     overall, grade, gradeLabel, components,
@@ -446,5 +463,10 @@ export function generateReport(r: SentinelReport): ReportResult {
     system: { model: r.system.model, hostname: r.system.hostname, os: r.system.os ?? "" },
     generatedAt: r.generatedAt,
     algoVersion: ALGORITHM_VERSION,
+    dataQuality: {
+      thermalSource: t?.thermalSource,
+      storageSource: s?.dataSource,
+      warnings,
+    },
   };
 }

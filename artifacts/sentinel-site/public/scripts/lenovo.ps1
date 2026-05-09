@@ -252,6 +252,7 @@ foreach ($disk in $disks) {
             $spStatus = if ($usedPct -gt 90) { "CRIT" } elseif ($usedPct -gt 80) { "WARN" } else { "OK" }
             Write-Item "  Drive $($ld.DeviceID)" "Total: $totalGB GB | Free: $freeGB GB | Used: $usedPct%" $spStatus
             if ($usedPct -gt 90) { Write-Host "      >> Drive over 90% full — SSD performance degrades above 90%." -ForegroundColor Red }
+            $diskEntry.FreeSpacePct = 100 - $usedPct
         }
     }
 
@@ -1004,6 +1005,165 @@ Write-Host "  Text report saved: $reportPath" -ForegroundColor Green
 Write-Host "`n" -NoNewline
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║   DIAGNOSTIC COMPLETE — CHECK YOUR DESKTOP!     ║" -ForegroundColor Cyan
-Write-Host "  ║   Health Score: $healthScore/100 — $healthGrade$('' * (20 - $healthGrade.Length))║" -ForegroundColor $gradeColor
 Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
+
+# ============================================================
+# SECTION 19: SENTINEL COMPATIBLE JSON OUTPUT
+# ============================================================
+Write-Section "19. SENTINEL COMPATIBLE JSON OUTPUT"
+
+$sentinelThermals = $null
+$sentinelThermalZones = @()
+$maxTempC = $null
+
+$lenovoTherm = Get-WmiObject -Namespace "root\wmi" -Class "LENOVO_THERMAL_TABLE" -ErrorAction SilentlyContinue
+if ($lenovoTherm) {
+    foreach ($lt in $lenovoTherm) {
+        $c = $null
+        if ($null -ne $lt.CurrentTemperature) { $c = [math]::Round(($lt.CurrentTemperature / 10.0) - 273.15, 1) }
+        elseif ($null -ne $lt.Temperature) { $c = $lt.Temperature }
+        
+        if ($null -ne $c) {
+            $name = if ($lt.InstanceName) { $lt.InstanceName } else { "LenovoThermal" }
+            if ($null -eq $maxTempC -or $c -gt $maxTempC) { $maxTempC = $c }
+            $sentinelThermalZones += [ordered]@{ name = $name; tempC = $c }
+        }
+    }
+    if ($sentinelThermalZones.Count -gt 0) {
+        $sentinelThermals = [ordered]@{
+            maxTempC       = $maxTempC
+            zoneCount      = $sentinelThermalZones.Count
+            zones          = $sentinelThermalZones
+            thermalSource  = "lenovo_wmi"
+            thermalSamples = $sentinelThermalZones.Count
+        }
+    }
+}
+
+if (-not $sentinelThermals -and $diagData.Thermals.Count -gt 0) {
+    foreach ($z in $diagData.Thermals) {
+        $c = $z.TempC
+        if ($null -eq $maxTempC -or $c -gt $maxTempC) { $maxTempC = $c }
+        $sentinelThermalZones += [ordered]@{ name = $z.Zone; tempC = $c }
+    }
+    $sentinelThermals = [ordered]@{
+        maxTempC       = $maxTempC
+        zoneCount      = $sentinelThermalZones.Count
+        zones          = $sentinelThermalZones
+        thermalSource  = "acpi_wmi"
+        thermalSamples = $sentinelThermalZones.Count
+    }
+}
+
+if (-not $sentinelThermals) {
+    $samples = Get-Counter "\Thermal Zone Information(*)\Temperature" -SampleInterval 1 -MaxSamples 2 -ErrorAction SilentlyContinue
+    if ($samples -and $samples.Count -ge 2) {
+        $static = $true
+        $zones = @{}
+        foreach ($sample in $samples) {
+            foreach ($reading in $sample.CounterSamples) {
+                $c = [math]::Round(($reading.CookedValue - 273.15), 1)
+                $k = $reading.CookedValue
+                if ($k -lt 295 -or $k -gt 303) { $static = $false }
+                
+                $zoneName = $reading.InstanceName
+                if ($zones.ContainsKey($zoneName)) {
+                    if ($zones[$zoneName].tempC -ne $c) { $static = $false }
+                } else {
+                    $zones[$zoneName] = [ordered]@{ name = $zoneName; tempC = $c }
+                }
+            }
+        }
+        $zList = @($zones.Values)
+        if ($zList.Count -gt 0) {
+            foreach ($z in $zList) {
+                if ($null -eq $maxTempC -or $z.tempC -gt $maxTempC) { $maxTempC = $z.tempC }
+            }
+            $sentinelThermals = [ordered]@{
+                maxTempC       = $maxTempC
+                zoneCount      = $zList.Count
+                zones          = $zList
+                thermalSource  = if ($static) { "acpi_static_suspect" } else { "performance_counter" }
+                thermalSamples = $zList.Count
+            }
+        }
+    }
+}
+
+if (-not $sentinelThermals) {
+    $sentinelThermals = [ordered]@{
+        maxTempC       = $null
+        zoneCount      = 0
+        zones          = @()
+        thermalSource  = "unavailable"
+        thermalSamples = 0
+    }
+}
+
+$sentinelStorageList = @()
+foreach ($disk in $diagData.Storage) {
+    $dataSource = if ($null -ne $disk.SMARTWear) { "reliability_counter" } else { "unavailable" }
+    $sentinelStorageList += [ordered]@{
+        model              = $disk.Model
+        type               = $disk.Interface
+        healthPct          = $disk.SMARTWear
+        reallocatedSectors = $null
+        wearLevelPct       = $disk.SMARTWear
+        freeSpacePct       = $disk.FreeSpacePct
+        totalGB            = $disk.SizeGB
+        powerOnHours       = $disk.PowerOnHours
+        dataSource         = $dataSource
+    }
+}
+
+$sentinelOutput = [ordered]@{
+    sentinelSchema = 1
+    generatedAt    = (Get-Date -Format 'o')
+    system         = [ordered]@{
+        hostname     = $env:COMPUTERNAME
+        model        = $diagData.SystemIdentity.Model
+        manufacturer = $diagData.SystemIdentity.Manufacturer
+        os           = $diagData.SystemIdentity.OS
+        osVersion    = $diagData.SystemIdentity.OSBuild
+        biosVersion  = $diagData.SystemIdentity.BIOSVersion
+    }
+    battery        = [ordered]@{
+        designCapacity     = $diagData.Battery.DesignCapacity
+        fullChargeCapacity = $diagData.Battery.FullChargeCapacity
+        cycleCount         = $diagData.Battery.CycleCounts
+        health             = $diagData.Battery.HealthPct
+        status             = $diagData.Battery.DCIMState
+        dischargeRateMw    = $diagData.Battery.DischargeRate
+    }
+    thermals       = $sentinelThermals
+    storage        = $sentinelStorageList
+    memory         = [ordered]@{
+        totalGB          = $diagData.Memory.TotalGB
+        usedPct          = if ($diagData.Memory.TotalGB -gt 0) { [math]::Round(($diagData.Memory.UsedGB / $diagData.Memory.TotalGB) * 100, 1) } else { 0 }
+        pageFaultsPerSec = $diagData.Memory.PageFaultsPersec
+    }
+    cpu            = [ordered]@{
+        name                = $diagData.CPU.Model
+        cores               = $diagData.CPU.Cores
+        threads             = $diagData.CPU.Threads
+        avgLoadPct          = $diagData.CPU.LoadPct
+        throttleEvents30min = $diagData.CPU.ThrottleEvents
+        maxClockMhz         = $diagData.CPU.MaxMHz
+    }
+    startup        = [ordered]@{
+        lastBootTime = $diagData.SystemIdentity.LastBoot
+    }
+}
+
+$sentinelJson = $sentinelOutput | ConvertTo-Json -Depth 10 -Compress
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Host "  Sentinel Compatible JSON (Paste this into Sentinel):"
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Host $sentinelJson
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+try {
+    $sentinelJson | Set-Clipboard
+    Write-Host "✓ Sentinel JSON copied to clipboard." -ForegroundColor Green
+} catch {}

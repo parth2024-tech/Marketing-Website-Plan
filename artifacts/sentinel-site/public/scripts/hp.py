@@ -987,40 +987,105 @@ class CPUDiagnostics:
         return findings
 
     def _check_cpu_temperature(self) -> List[Finding]:
-        """CPU temperature via WMI thermal zones + HP thermal management"""
+        """CPU temperature via Performance Counters / WMI / OHM"""
         findings = []
-
-        # Method 1: WMI Thermal Zones
-        temps_raw = ps("Get-WmiObject -Namespace root\\WMI -Class MSAcpi_ThermalZoneTemperature -ErrorAction SilentlyContinue | Select-Object InstanceName, CurrentTemperature | ConvertTo-Json")
         cpu_temps = []
-
-        if temps_raw:
+        sentinel_zones = []
+        thermal_source = "unavailable"
+        
+        # Method 1: Performance Counters
+        counter_script = '''
+        $samples = Get-Counter "\\Thermal Zone Information(*)\\Temperature" -SampleInterval 1 -MaxSamples 2 -ErrorAction SilentlyContinue
+        if ($samples -and $samples.Count -ge 2) {
+            $static = $true
+            $zones = @{}
+            foreach ($sample in $samples) {
+                foreach ($reading in $sample.CounterSamples) {
+                    $c = [math]::Round(($reading.CookedValue - 273.15), 1)
+                    $k = $reading.CookedValue
+                    if ($k -lt 295 -or $k -gt 303) { $static = $false }
+                    $zoneName = $reading.InstanceName
+                    if ($zones.ContainsKey($zoneName)) {
+                        if ($zones[$zoneName].tempC -ne $c) { $static = $false }
+                    } else {
+                        $zones[$zoneName] = @{ name = $zoneName; tempC = $c }
+                    }
+                }
+            }
+            @{ static = $static; zones = @($zones.Values) } | ConvertTo-Json -Depth 5
+        }
+        '''
+        counter_out = ps(counter_script)
+        if counter_out:
             try:
-                zones = json.loads(temps_raw)
-                if isinstance(zones, dict):
-                    zones = [zones]
-                for zone in (zones or []):
-                    raw = zone.get("CurrentTemperature", 0)
-                    if raw:
-                        temp_c = (raw / 10) - 273.15
-                        if 10 < temp_c < 110:
-                            cpu_temps.append(temp_c)
+                data = json.loads(counter_out)
+                static = data.get("static", True)
+                zones = data.get("zones", [])
+                if zones:
+                    for z in zones:
+                        c = z.get("tempC")
+                        if c is not None and 10 < c < 110:
+                            cpu_temps.append(c)
+                            sentinel_zones.append({"name": z.get("name"), "tempC": c})
+                    if sentinel_zones:
+                        thermal_source = "acpi_static_suspect" if static else "performance_counter"
             except json.JSONDecodeError:
                 pass
 
-        # Method 2: psutil sensors (Linux/Mac only, but try)
-        try:
-            import psutil
-            sensors = psutil.sensors_temperatures()
-            if sensors:
-                for key in ["coretemp", "cpu_thermal", "k10temp", "acpitz"]:
-                    if key in sensors:
-                        for entry in sensors[key]:
-                            if "Package" in (entry.label or "") or not entry.label:
-                                cpu_temps.append(entry.current)
-                                break
-        except (AttributeError, Exception):
-            pass
+        # Method 2: MSAcpi_ThermalZoneTemp
+        if thermal_source in ("unavailable", "acpi_static_suspect"):
+            temps_raw = ps("Get-CimInstance -Namespace root\\wmi -ClassName MSAcpi_ThermalZoneTemp -ErrorAction SilentlyContinue | Select-Object InstanceName, CurrentTemperature | ConvertTo-Json")
+            if temps_raw:
+                try:
+                    zones = json.loads(temps_raw)
+                    if isinstance(zones, dict):
+                        zones = [zones]
+                    if zones:
+                        new_temps = []
+                        new_zones = []
+                        for zone in zones:
+                            raw = zone.get("CurrentTemperature", 0)
+                            name = zone.get("InstanceName", "Zone")
+                            if raw:
+                                temp_c = round((raw / 10.0) - 273.15, 1)
+                                if 10 < temp_c < 110:
+                                    new_temps.append(temp_c)
+                                    new_zones.append({"name": name, "tempC": temp_c})
+                        if new_zones:
+                            cpu_temps = new_temps
+                            sentinel_zones = new_zones
+                            thermal_source = "acpi_wmi"
+                except json.JSONDecodeError:
+                    pass
+
+        # Method 3: OHM / LHM
+        if thermal_source == "unavailable":
+            ohm_raw = ps("Get-CimInstance -Namespace root\\OpenHardwareMonitor -ClassName Sensor -Filter \"SensorType='Temperature'\" -ErrorAction SilentlyContinue | Select-Object Name, Value | ConvertTo-Json")
+            if not ohm_raw:
+                ohm_raw = ps("Get-CimInstance -Namespace root\\LibreHardwareMonitor -ClassName Sensor -Filter \"SensorType='Temperature'\" -ErrorAction SilentlyContinue | Select-Object Name, Value | ConvertTo-Json")
+            if ohm_raw:
+                try:
+                    zones = json.loads(ohm_raw)
+                    if isinstance(zones, dict):
+                        zones = [zones]
+                    for zone in (zones or []):
+                        name = zone.get("Name", "")
+                        val = zone.get("Value", 0)
+                        if val and 10 < val < 110:
+                            cpu_temps.append(val)
+                            sentinel_zones.append({"name": name, "tempC": val})
+                    if cpu_temps:
+                        thermal_source = "ohm"
+                except json.JSONDecodeError:
+                    pass
+        
+        self.sentinel_thermals = {
+            "maxTempC": max(cpu_temps) if cpu_temps else None,
+            "zoneCount": len(sentinel_zones),
+            "zones": sentinel_zones,
+            "thermalSource": thermal_source,
+            "thermalSamples": len(sentinel_zones)
+        }
 
         if cpu_temps:
             avg_temp = statistics.mean(cpu_temps)
@@ -2545,10 +2610,11 @@ class HPDiagnosticOrchestrator:
         self.printer.print_header(report)
 
         # Run all diagnostic modules
+        cpu_diag = CPUDiagnostics()
         modules = [
             ("🔋 Battery",   BatteryDiagnostics()),
             ("💾 Storage",   StorageDiagnostics()),
-            ("⚙️  CPU",       CPUDiagnostics()),
+            ("⚙️  CPU",       cpu_diag),
             ("🧠 RAM",       RAMDiagnostics()),
             ("🖥️  GPU",       GPUDiagnostics()),
             ("🌡️  Thermals",  ThermalFanDiagnostics()),
@@ -2581,6 +2647,10 @@ class HPDiagnosticOrchestrator:
 
         # Habit coaching
         report.habits = HabitCoach().analyze(report)
+
+        report.raw["sentinel_thermals"] = getattr(cpu_diag, "sentinel_thermals", {
+            "maxTempC": None, "zoneCount": 0, "zones": [], "thermalSource": "unavailable", "thermalSamples": 0
+        })
 
         # Save history
         self.history.save(report)
@@ -2636,6 +2706,49 @@ class HPDiagnosticOrchestrator:
             print(colorize(f"  JSON exported: {export_path}", C.CYAN))
         except (IOError, OSError) as e:
             print(colorize(f"  Export failed: {e}", C.YELLOW))
+
+    def export_sentinel_json(self, report: DiagnosticReport):
+        sentinel = {
+            "sentinelSchema": 1,
+            "generatedAt": report.timestamp,
+            "system": {
+                "hostname": report.hostname,
+                "model": report.hp_model,
+                "manufacturer": "HP",
+                "os": "Windows",
+                "osVersion": report.windows_version,
+                "biosVersion": report.raw["system"].get("bios_version", "")
+            },
+            "battery": {
+                "health": None,
+                "cycleCount": None
+            },
+            "thermals": report.raw.get("sentinel_thermals", {
+                "maxTempC": None, "zoneCount": 0, "zones": [], "thermalSource": "unavailable", "thermalSamples": 0
+            }),
+            "storage": [],
+            "memory": {},
+            "cpu": {},
+            "startup": {}
+        }
+        
+        for f in report.findings:
+            if "Battery Health:" in f.title:
+                sentinel["battery"]["health"] = f.value
+            if "Battery Charge Cycles" in f.title:
+                sentinel["battery"]["cycleCount"] = f.value
+
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("  Sentinel Compatible JSON (Paste this into Sentinel):")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print(json.dumps(sentinel, separators=(',', ':')))
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        try:
+            import subprocess
+            subprocess.run(["clip.exe"], input=json.dumps(sentinel, separators=(',', ':')).encode('utf-16le'), check=True, timeout=2)
+            print(colorize("✓ Sentinel JSON copied to clipboard.", C.GREEN))
+        except Exception:
+            pass
 
 
 # ─────────────────────────────── MONITOR MODE ───────────────────────────────
@@ -2719,6 +2832,9 @@ Examples:
         text = orchestrator.save_report(report)
         print()
         print(text)
+
+    # Sentinel output
+    orchestrator.export_sentinel_json(report)
 
     # JSON export
     if args.export == "json":
