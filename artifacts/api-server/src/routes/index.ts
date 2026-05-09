@@ -4,6 +4,7 @@ import waitlistRouter from "./waitlist";
 import reportsRouter from "./reports";
 import myReportsRouter from "./myReports";
 import devicesRouter from "./devices";
+import pairRouter from "./pair";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use("/waitlist", waitlistRouter);
 router.use("/reports", reportsRouter);
 router.use("/my-reports", myReportsRouter);
 router.use("/devices", devicesRouter);
+router.use("/pair", pairRouter);
 
 export default router;

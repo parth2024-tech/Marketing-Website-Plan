@@ -2749,6 +2749,7 @@ class HPDiagnosticOrchestrator:
             print(colorize("✓ Sentinel JSON copied to clipboard.", C.GREEN))
         except Exception:
             pass
+        return sentinel
 
 
 # ─────────────────────────────── MONITOR MODE ───────────────────────────────
@@ -2792,11 +2793,12 @@ Examples:
   python hp_laptop_diagnostics.py --export json  Export raw data to JSON
         """
     )
-    parser.add_argument("--quick",   action="store_true",  help="Quick scan — show only warnings and criticals")
-    parser.add_argument("--report",  action="store_true",  help="Generate and save weekly health report")
-    parser.add_argument("--monitor", type=int, metavar="SECONDS", help="Continuous monitoring mode")
-    parser.add_argument("--export",  type=str, choices=["json"], help="Export raw data")
-    parser.add_argument("--no-color",action="store_true",  help="Disable colored output")
+    parser.add_argument("--quick",     action="store_true",  help="Quick scan — show only warnings and criticals")
+    parser.add_argument("--report",    action="store_true",  help="Generate and save weekly health report")
+    parser.add_argument("--monitor",   type=int, metavar="SECONDS", help="Continuous monitoring mode")
+    parser.add_argument("--export",    type=str, choices=["json"], help="Export raw data")
+    parser.add_argument("--no-color",  action="store_true",  help="Disable colored output")
+    parser.add_argument("--pair-code", type=str, default="",  help="Auto-send telemetry to Sentinel via pair code (e.g. K7M2-P9R4)")
     args = parser.parse_args()
 
     if args.no_color:
@@ -2833,8 +2835,33 @@ Examples:
         print()
         print(text)
 
-    # Sentinel output
-    orchestrator.export_sentinel_json(report)
+    # Sentinel output (always printed — paste flow always available as fallback)
+    sentinel_payload = orchestrator.export_sentinel_json(report)
+
+    # Auto-send via Pair Code
+    pair_code = getattr(args, 'pair_code', '')
+    if pair_code:
+        print(colorize(f"  Sending data to Sentinel via pair code {pair_code}...", C.CYAN))
+        try:
+            import requests  # type: ignore
+            resp = requests.post(
+                "https://sentinelapp.io/api/pair/push",
+                json={"pairCode": pair_code, "rawJson": sentinel_payload},
+                timeout=15,
+            )
+            resp.raise_for_status()
+            print()
+            print(colorize("━" * 64, C.GREEN))
+            print(colorize("  ✓ Data sent. Return to your browser — your report is ready.", C.GREEN))
+            print(colorize("━" * 64, C.GREEN))
+            print()
+        except Exception as e:
+            print()
+            print(colorize("━" * 64, C.YELLOW))
+            print(colorize("  ⚠ Auto-send failed. Copy the JSON above and paste it manually", C.YELLOW))
+            print(colorize("    at sentinelapp.io/health-test → 'Paste output'", C.YELLOW))
+            print(colorize("━" * 64, C.YELLOW))
+            print()
 
     # JSON export
     if args.export == "json":

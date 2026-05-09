@@ -9,8 +9,15 @@
 #    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 #    .\sentinel-collect.ps1
 #
+#  Auto-send with Pair Code:
+#    .\sentinel-collect.ps1 -PairCode K7M2-P9R4
+#
 #  The JSON is printed to the console AND copied to your clipboard.
 # ============================================================
+
+param([string]$PairCode = "")
+
+$SENTINEL_BASE_URL = "https://sentinelapp.io"
 
 $ErrorActionPreference = 'SilentlyContinue'
 $ProgressPreference    = 'SilentlyContinue'
@@ -331,3 +338,28 @@ try {
 
 Write-Host "  Paste it at: sentinelapp.io/health-test  →  'Parse your output'" -ForegroundColor Cyan
 Write-Host ""
+
+# ── Auto-send via Pair Code ───────────────────────────────────────────────────
+if ($PairCode -ne "") {
+    Write-Host "  Sending data to Sentinel via pair code $PairCode..." -ForegroundColor Cyan
+    try {
+        $body = [ordered]@{ pairCode = $PairCode; rawJson = ($output | ConvertTo-Json -Depth 10 | ConvertFrom-Json) } | ConvertTo-Json -Depth 12 -Compress
+        $response = Invoke-RestMethod -Method POST `
+            -Uri "$SENTINEL_BASE_URL/api/pair/push" `
+            -ContentType "application/json" `
+            -Body $body `
+            -ErrorAction Stop
+        Write-Host "" 
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
+        Write-Host "  ✓ Data sent. Return to your browser — your report is ready." -ForegroundColor Green
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
+        Write-Host ""
+    } catch {
+        Write-Host ""
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+        Write-Host "  ⚠ Auto-send failed. Copy the JSON above and paste it manually" -ForegroundColor Yellow
+        Write-Host "    at sentinelapp.io/health-test → 'Paste output'" -ForegroundColor Yellow
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+        Write-Host ""
+    }
+}

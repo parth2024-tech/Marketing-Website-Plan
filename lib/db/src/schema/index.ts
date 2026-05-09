@@ -7,3 +7,4 @@ export * from "./myReportsSessions";
 export * from "./magicLinkTokens";
 export * from "./devices";
 export * from "./scans";
+export * from "./pairSessions";

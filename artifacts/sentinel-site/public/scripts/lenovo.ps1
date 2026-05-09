@@ -9,6 +9,10 @@
 # Then paste this entire script
 # ============================================================
 
+param([string]$PairCode = "")
+
+$SENTINEL_BASE_URL = "https://sentinelapp.io"
+
 $ErrorActionPreference = "SilentlyContinue"
 $reportPath = "$env:USERPROFILE\Desktop\Lenovo_Diagnostic_Report_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
 $jsonPath   = "$env:USERPROFILE\Desktop\Lenovo_Diagnostic_Data_$(Get-Date -Format 'yyyyMMdd_HHmmss').json"
@@ -1167,3 +1171,28 @@ try {
     $sentinelJson | Set-Clipboard
     Write-Host "✓ Sentinel JSON copied to clipboard." -ForegroundColor Green
 } catch {}
+
+# ── Auto-send via Pair Code ───────────────────────────────────────────────────
+if ($PairCode -ne "") {
+    Write-Host "  Sending data to Sentinel via pair code $PairCode..." -ForegroundColor Cyan
+    try {
+        $body = [ordered]@{ pairCode = $PairCode; rawJson = ($sentinelOutput | ConvertTo-Json -Depth 10 | ConvertFrom-Json) } | ConvertTo-Json -Depth 12 -Compress
+        $response = Invoke-RestMethod -Method POST `
+            -Uri "$SENTINEL_BASE_URL/api/pair/push" `
+            -ContentType "application/json" `
+            -Body $body `
+            -ErrorAction Stop
+        Write-Host ""
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
+        Write-Host "  ✓ Data sent. Return to your browser — your report is ready." -ForegroundColor Green
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Green
+        Write-Host ""
+    } catch {
+        Write-Host ""
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+        Write-Host "  ⚠ Auto-send failed. Copy the JSON above and paste it manually" -ForegroundColor Yellow
+        Write-Host "    at sentinelapp.io/health-test → 'Paste output'" -ForegroundColor Yellow
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+        Write-Host ""
+    }
+}
