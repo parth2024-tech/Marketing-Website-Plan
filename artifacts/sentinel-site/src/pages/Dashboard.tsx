@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import { 
   Cpu, Thermometer, HardDrive, Battery, Wifi, Activity, 
-  AlertTriangle, Shield, CheckCircle, Clock, Zap, Server
+  AlertTriangle, Shield, CheckCircle, Clock, Zap, Server, Search
 } from "lucide-react";
 
 // --- Types & Constants ---
@@ -83,6 +83,8 @@ export default function Dashboard() {
   const [data, setData] = useState<DataPoint[]>([]);
   const [tick, setTick] = useState(0);
   const [logs, setLogs] = useState<LogEvent[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
   
   // Live metric values
   const [liveMetrics, setLiveMetrics] = useState({
@@ -427,13 +429,25 @@ export default function Dashboard() {
 
             {/* Terminal Log */}
             <div className="bg-[#0a0e1a] border border-primary/20 rounded-xl flex flex-col shadow-lg flex-1 min-h-[300px] overflow-hidden">
-              <div className="px-4 py-2 border-b border-primary/20 bg-black/40 flex items-center justify-between">
-                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">System Event Log</span>
+              <div className="px-4 py-2 border-b border-primary/20 bg-black/40 flex items-center justify-between gap-4">
+                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest shrink-0">System Event Log</span>
+                <div className="flex-1 max-w-[200px] relative group">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+                  <input 
+                    type="text" 
+                    placeholder="Filter logs..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-black/20 border border-primary/10 rounded pl-7 pr-2 py-0.5 text-[10px] font-mono focus:outline-none focus:border-primary/40 transition-colors"
+                  />
+                </div>
               </div>
               <div className="p-4 flex flex-col gap-2 overflow-hidden relative">
                 <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-[#0a0e1a] z-10" />
                 <AnimatePresence initial={false}>
-                  {logs.map((log) => (
+                  {logs
+                    .filter(log => log.msg.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((log) => (
                     <motion.div 
                       key={log.id}
                       initial={{ opacity: 0, x: -10 }}
