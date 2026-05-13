@@ -6,7 +6,8 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface ErrorResponse {
-  error: string;
-  details?: string;
+export interface MyReportsRequestResponse {
+  ok: boolean;
+  /** Present only when NODE_ENV is not production */
+  devToken?: string;
 }

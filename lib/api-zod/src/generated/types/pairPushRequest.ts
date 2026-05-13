@@ -5,8 +5,13 @@
  * Sentinel HTTP API (Express) — health, waitlist, reports, my-reports, pairing, devices, version, and downloads.
  * OpenAPI spec version: 0.2.0
  */
+import type { JsonObject } from "./jsonObject";
 
-export interface ErrorResponse {
-  error: string;
-  details?: string;
+export interface PairPushRequest {
+  /**
+   * @minLength 4
+   * @maxLength 12
+   */
+  pairCode: string;
+  rawJson: JsonObject;
 }

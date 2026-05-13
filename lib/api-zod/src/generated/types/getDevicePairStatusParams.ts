@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface ErrorResponse {
-  error: string;
-  details?: string;
-}
+export type GetDevicePairStatusParams = {
+  token: string;
+};

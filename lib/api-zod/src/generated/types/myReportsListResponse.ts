@@ -5,8 +5,9 @@
  * Sentinel HTTP API (Express) — health, waitlist, reports, my-reports, pairing, devices, version, and downloads.
  * OpenAPI spec version: 0.2.0
  */
+import type { MyReportSummary } from "./myReportSummary";
 
-export interface ErrorResponse {
-  error: string;
-  details?: string;
+export interface MyReportsListResponse {
+  email: string;
+  reports: MyReportSummary[];
 }

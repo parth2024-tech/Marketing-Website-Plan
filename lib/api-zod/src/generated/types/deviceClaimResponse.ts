@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface ErrorResponse {
-  error: string;
-  details?: string;
+export interface DeviceClaimResponse {
+  deviceId: string;
+  email?: string;
+  alreadyClaimed?: boolean;
+  claimed?: boolean;
 }
