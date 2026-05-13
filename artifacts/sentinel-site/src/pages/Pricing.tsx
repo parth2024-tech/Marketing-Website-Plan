@@ -87,7 +87,7 @@ export default function Pricing() {
 
           {/* Free */}
           <StaggerItem>
-          <div className="surface-card rounded-2xl p-8 flex flex-col gap-6">
+            <div className="surface-card rounded-2xl p-8 flex flex-col gap-6">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-muted/20 border border-border/60 flex items-center justify-center">
@@ -134,12 +134,12 @@ export default function Pricing() {
                 </div>
               ))}
             </div>
-          </div>
+            </div>
           </StaggerItem>
 
           {/* Pro */}
           <StaggerItem>
-          <div className="relative rounded-2xl p-8 flex flex-col gap-6 border border-primary/40 bg-gradient-to-b from-primary/5 to-transparent shadow-[0_0_40px_-8px] shadow-primary/20">
+            <div className="relative rounded-2xl p-8 flex flex-col gap-6 border border-primary/40 bg-gradient-to-b from-primary/5 to-transparent shadow-[0_0_40px_-8px] shadow-primary/20">
             {/* Popular badge */}
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
               <div className="px-4 py-1 rounded-full bg-primary text-background text-xs font-semibold font-mono tracking-wide">
@@ -188,7 +188,7 @@ export default function Pricing() {
                 30-day money-back guarantee if Sentinel doesn't surface a useful insight. No questions asked.
               </p>
             </div>
-          </div>
+            </div>
           </StaggerItem>
         </StaggerContainer>
 

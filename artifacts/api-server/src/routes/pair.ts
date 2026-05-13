@@ -1,9 +1,10 @@
 import { Router, type Request } from "express";
 import { z } from "zod";
-import { db, pairSessionsTable, reportsTable, rateLimitsTable } from "@workspace/db";
+import { db, pairSessionsTable, reportsTable } from "@workspace/db";
 import { SentinelReportSchema, generateReport } from "@workspace/report-engine";
-import { eq, and, lt, sql } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import { newPairCode, newReportId, newClaimToken, sha256hex } from "../lib/ids";
+import { consumeRateLimit } from "../lib/rateLimit";
 
 const router = Router();
 
@@ -17,43 +18,6 @@ function getClientIp(req: Request): string {
   return req.socket?.remoteAddress ?? "unknown";
 }
 
-async function checkRateLimit(
-  key: string,
-  windowMinutes: number,
-  limit: number
-): Promise<boolean> {
-  const now = new Date();
-  const windowStart = new Date(
-    Math.floor(now.getTime() / (windowMinutes * 60 * 1000)) * (windowMinutes * 60 * 1000)
-  );
-
-  const existing = await db
-    .select()
-    .from(rateLimitsTable)
-    .where(and(eq(rateLimitsTable.ip, key), eq(rateLimitsTable.windowStart, windowStart)))
-    .limit(1);
-
-  if (existing.length === 0) {
-    await db
-      .insert(rateLimitsTable)
-      .values({ ip: key, windowStart, count: 1 })
-      .onConflictDoUpdate({
-        target: [rateLimitsTable.ip, rateLimitsTable.windowStart],
-        set: { count: sql`${rateLimitsTable.count} + 1` },
-      });
-    return true;
-  }
-
-  if (existing[0].count >= limit) return false;
-
-  await db
-    .update(rateLimitsTable)
-    .set({ count: sql`${rateLimitsTable.count} + 1` })
-    .where(and(eq(rateLimitsTable.ip, key), eq(rateLimitsTable.windowStart, windowStart)));
-
-  return true;
-}
-
 // ── POST /api/pair/session ────────────────────────────────────────────────────
 // Creates a new pair session and returns the code to the browser.
 
@@ -62,7 +26,7 @@ router.post("/session", async (req, res) => {
   const ipHash = await sha256hex(ip);
 
   // Rate limit: 5 session creates per minute per IP
-  const allowed = await checkRateLimit(ipHash + ":pair_session", 1, 5);
+  const allowed = await consumeRateLimit(ipHash + ":pair_session", 1, 5);
   if (!allowed) {
     res.status(429).json({ error: "Too many pair session requests. Wait a moment and try again." });
     return;
@@ -162,7 +126,7 @@ router.post("/push", async (req, res) => {
 
   // Rate limit: 3 requests per pair code (code is the key, not IP)
   const codeRlKey = `pair_push:${normalizedCode}`;
-  const allowed = await checkRateLimit(codeRlKey, 15, 3);
+  const allowed = await consumeRateLimit(codeRlKey, 15, 3);
   if (!allowed) {
     res.status(429).json({ error: "Too many push attempts for this code." });
     return;

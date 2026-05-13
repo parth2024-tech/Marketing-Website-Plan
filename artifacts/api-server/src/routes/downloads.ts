@@ -1,9 +1,7 @@
 import { Router, Request, Response } from "express";
+import { getGithubReleaseRepo } from "../githubReleaseRepo.js";
 
 const router = Router();
-
-// GitHub repository for release assets
-const GITHUB_REPO = "sentinel/sentinel"; // Update to your actual org/repo
 
 /**
  * Stable download redirects — the website links to these, never to a
@@ -22,15 +20,21 @@ const ASSET_MAP: Record<string, string> = {
 };
 
 router.get("/latest/:binary", async (req: Request, res: Response) => {
-  const binary = req.params.binary?.toLowerCase();
-  const assetName = ASSET_MAP[binary];
+  const raw = req.params.binary;
+  const slug = Array.isArray(raw) ? raw[0] : raw;
+  const binary = typeof slug === "string" ? slug.toLowerCase() : undefined;
+  const assetName = binary ? ASSET_MAP[binary] : undefined;
 
   if (!assetName) {
+    const label =
+      typeof slug === "string" ? slug : Array.isArray(raw) ? raw.join(",") : String(raw ?? "");
     res.status(404).json({
-      error: `Unknown binary "${binary}". Valid options: ${Object.keys(ASSET_MAP).join(", ")}`,
+      error: `Unknown binary "${label}". Valid options: ${Object.keys(ASSET_MAP).join(", ")}`,
     });
     return;
   }
+
+  const GITHUB_REPO = getGithubReleaseRepo();
 
   try {
     // Use the GitHub API to resolve the latest release and find the asset URL.
@@ -91,6 +95,8 @@ router.get("/latest/:binary", async (req: Request, res: Response) => {
  * version numbers, changelogs, etc. without hardcoding).
  */
 router.get("/latest", async (_req: Request, res: Response) => {
+  const GITHUB_REPO = getGithubReleaseRepo();
+
   try {
     const ghResponse = await fetch(
       `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,

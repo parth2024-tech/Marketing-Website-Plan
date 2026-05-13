@@ -40,7 +40,7 @@ static class Program
         {
             // 1. Get pair token from API
             using var client = new HttpClient();
-            var res = await client.PostAsync("https://sentinelapp.io/api/devices/pair", new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
+            var res = await client.PostAsync(SentinelAppEndpoints.DevicePairUrl, new StringContent("{}", System.Text.Encoding.UTF8, "application/json"));
             
             if (res.IsSuccessStatusCode)
             {
@@ -57,7 +57,7 @@ static class Program
                     RegistryState.DeviceToken = deviceToken;
 
                     // 3. Open browser to pair
-                    Process.Start(new ProcessStartInfo($"https://sentinelapp.io/pair?token={pairToken}") { UseShellExecute = true });
+                    Process.Start(new ProcessStartInfo(SentinelAppEndpoints.PairPageUrl(pairToken!)) { UseShellExecute = true });
                     
                     // 4. Run first collection
                     await RunCollectionAsync(showNotification: false, null);
@@ -191,13 +191,15 @@ static class Program
         try
         {
             using var client = new HttpClient();
-            var res = await client.GetStringAsync("https://sentinelapp.io/api/version");
+            var res = await client.GetStringAsync(SentinelAppEndpoints.VersionUrl);
             using var doc = JsonDocument.Parse(res);
             
             var root = doc.RootElement;
             string minStr = root.TryGetProperty("minVersion", out var min) ? min.GetString() ?? "0.0.0" : "0.0.0";
             string latestStr = root.TryGetProperty("latestVersion", out var lat) ? lat.GetString() ?? "0.0.0" : "0.0.0";
-            string url = root.TryGetProperty("downloadUrl", out var dl) ? dl.GetString() : "https://sentinelapp.io/get-started";
+            string url = root.TryGetProperty("downloadUrl", out var dl)
+                ? (dl.GetString() ?? SentinelAppEndpoints.GetStartedUrl)
+                : SentinelAppEndpoints.GetStartedUrl;
 
             var current = new Version(CurrentVersion);
             var minV = new Version(minStr);

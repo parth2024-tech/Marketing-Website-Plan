@@ -7,7 +7,20 @@ import { cn } from "@/lib/utils"
 
 const TooltipProvider = TooltipPrimitive.Provider
 
-const Tooltip = TooltipPrimitive.Root
+/** Each tooltip subtree carries its own provider so Radix never runs without a provider (avoids useContext null crashes when used outside the app shell). */
+function Tooltip({
+  delayDuration = 300,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root> & {
+  delayDuration?: number
+}) {
+  return (
+    <TooltipPrimitive.Provider delayDuration={delayDuration}>
+      <TooltipPrimitive.Root {...props} />
+    </TooltipPrimitive.Provider>
+  )
+}
+Tooltip.displayName = TooltipPrimitive.Root.displayName
 
 const TooltipTrigger = TooltipPrimitive.Trigger
 
