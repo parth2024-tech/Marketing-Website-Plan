@@ -1,9 +1,13 @@
 import { Router, type Request } from "express";
 import { z } from "zod";
-import { db, reportsTable, idempotencyKeysTable, rateLimitsTable, reportHabitAnswersTable, devicesTable } from "@workspace/db";
+import { db, reportsTable, idempotencyKeysTable, reportHabitAnswersTable, devicesTable } from "@workspace/db";
 import { SentinelReportSchema, generateReport, computeHabitScore, combinedScore } from "@workspace/report-engine";
-import { eq, and, sql, isNull } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { newReportId, newClaimToken, sha256hex } from "../lib/ids";
+import { consumeRateLimit } from "../lib/rateLimit";
+import { isResendConfigured } from "../lib/email/config";
+import { buildReportClaimedEmail } from "../lib/email/templates/reportClaimed";
+import { sendTransactionalEmail } from "../lib/email/resendMailer";
 
 const router = Router();
 
@@ -13,43 +17,6 @@ function getClientIp(req: Request): string {
   const forwarded = req.headers["x-forwarded-for"];
   if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
   return req.socket?.remoteAddress ?? "unknown";
-}
-
-async function checkRateLimit(
-  ip: string,
-  windowMinutes: number,
-  limit: number
-): Promise<boolean> {
-  const now = new Date();
-  const windowStart = new Date(
-    Math.floor(now.getTime() / (windowMinutes * 60 * 1000)) * (windowMinutes * 60 * 1000)
-  );
-
-  const existing = await db
-    .select()
-    .from(rateLimitsTable)
-    .where(and(eq(rateLimitsTable.ip, ip), eq(rateLimitsTable.windowStart, windowStart)))
-    .limit(1);
-
-  if (existing.length === 0) {
-    await db
-      .insert(rateLimitsTable)
-      .values({ ip, windowStart, count: 1 })
-      .onConflictDoUpdate({
-        target: [rateLimitsTable.ip, rateLimitsTable.windowStart],
-        set: { count: sql`${rateLimitsTable.count} + 1` },
-      });
-    return true; // allowed
-  }
-
-  if (existing[0].count >= limit) return false; // blocked
-
-  await db
-    .update(rateLimitsTable)
-    .set({ count: sql`${rateLimitsTable.count} + 1` })
-    .where(and(eq(rateLimitsTable.ip, ip), eq(rateLimitsTable.windowStart, windowStart)));
-
-  return true; // allowed
 }
 
 const PostReportBody = z.object({
@@ -113,8 +80,8 @@ router.post("/", async (req, res) => {
 
   // Rate limiting: 10/min, 100/day per IP
   const [perMinute, perDay] = await Promise.all([
-    checkRateLimit(ipHash, 1, 10),
-    checkRateLimit(ipHash, 1440, 100),
+    consumeRateLimit(ipHash, 1, 10),
+    consumeRateLimit(ipHash, 1440, 100),
   ]);
   if (!perMinute || !perDay) {
     res.status(429).json({ error: "Rate limit exceeded. Try again later." });
@@ -263,7 +230,82 @@ router.post("/:id/claim", async (req, res) => {
 
   req.log.info({ reportId: id, hasEmail: !!email }, "report_claimed");
 
+  if (email && isResendConfigured()) {
+    const { subject, html, text } = buildReportClaimedEmail(email, id);
+    sendTransactionalEmail({ to: email, subject, html, text }).catch((err) =>
+      req.log.error({ err, reportId: id }, "report_claim_confirmation_email_failed")
+    );
+  }
+
   res.json({ id, claimed: true, email: email ? "***" : null });
+});
+
+// ── POST /api/reports/:id/habit-answers ───────────────────────────────────────
+
+const HabitAnswersBody = z.object({
+  claimToken: z.string().min(8).max(64),
+  habitAnswers: z.record(z.number()),
+});
+
+router.post("/:id/habit-answers", async (req, res) => {
+  const { id } = req.params;
+  if (!id || id.length < 4) {
+    res.status(400).json({ error: "Invalid report ID" });
+    return;
+  }
+
+  const parsed = HabitAnswersBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(422).json({ error: "Validation failed", details: parsed.error.message });
+    return;
+  }
+
+  const { claimToken, habitAnswers } = parsed.data;
+
+  const rows = await db
+    .select()
+    .from(reportsTable)
+    .where(and(eq(reportsTable.id, id), isNull(reportsTable.deletedAt)))
+    .limit(1);
+
+  if (rows.length === 0) {
+    res.status(404).json({ error: "Report not found" });
+    return;
+  }
+
+  const row = rows[0];
+
+  if (row.claimToken !== claimToken) {
+    res.status(403).json({ error: "Invalid claim token" });
+    return;
+  }
+
+  const habitScore = computeHabitScore(habitAnswers);
+  const rj = row.resultJson as Record<string, unknown>;
+  const overall = typeof rj.overall === "number" ? rj.overall : 0;
+  const combined = combinedScore(overall, habitScore);
+
+  await db
+    .insert(reportHabitAnswersTable)
+    .values({
+      reportId: id,
+      answers: habitAnswers,
+      habitScore,
+      combinedScore: combined,
+    })
+    .onConflictDoUpdate({
+      target: reportHabitAnswersTable.reportId,
+      set: {
+        answers: habitAnswers,
+        habitScore,
+        combinedScore: combined,
+        updatedAt: new Date(),
+      },
+    });
+
+  req.log.info({ reportId: id }, "report_habit_answers_saved");
+
+  res.json({ id, habitScore, combinedScore: combined });
 });
 
 // ── GET /api/reports/:id ──────────────────────────────────────────────────────

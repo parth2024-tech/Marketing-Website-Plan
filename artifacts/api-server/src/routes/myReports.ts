@@ -1,6 +1,3 @@
-import { Router, type Request } from "express";
-import { z } from "zod";
-import crypto from "node:crypto";
 import {
   db,
   reportsTable,
@@ -9,12 +6,18 @@ import {
   reportHabitAnswersTable,
 } from "@workspace/db";
 import { eq, and, gt, isNull, isNotNull } from "drizzle-orm";
+import crypto from "node:crypto";
+import { z } from "zod";
+import { Router, type Request } from "express";
+import { MAGIC_LINK_TTL_MIN } from "../lib/magicLinkConstants";
+import { isResendConfigured } from "../lib/email/config";
+import { buildMagicLinkLoginEmail } from "../lib/email/templates/magicLinkLogin";
+import { sendTransactionalEmail } from "../lib/email/resendMailer";
 
 const router = Router();
 
 const SESSION_COOKIE = "sentinel_session";
 const SESSION_TTL_DAYS = 30;
-const MAGIC_LINK_TTL_MIN = 15;
 
 function newToken(bytes = 32): string {
   return crypto.randomBytes(bytes).toString("hex");
@@ -40,8 +43,8 @@ async function resolveEmail(sessionToken: string): Promise<string | null> {
 }
 
 // ── POST /api/my-reports/request ──────────────────────────────────────────────
-// Accepts email, creates a magic-link token (15-min TTL), returns the token
-// in dev (production would send email via Resend in M6).
+// Creates a magic-link token. In development returns `devToken`; in production
+// sends email via Resend (requires RESEND_API_KEY).
 
 const RequestBody = z.object({
   email: z.string().email().max(254),
@@ -62,14 +65,42 @@ router.post("/request", async (req, res) => {
 
   req.log.info({ email }, "magic_link_requested");
 
-  // In development, return the token directly so the frontend can auto-fill the
-  // verify link without needing an email provider set up.
   const isDev = process.env.NODE_ENV !== "production";
-  res.json({
-    ok: true,
-    // Only expose token in dev — production will send an email instead
-    ...(isDev ? { devToken: token } : {}),
-  });
+
+  if (isDev) {
+    res.json({
+      ok: true,
+      devToken: token,
+    });
+    return;
+  }
+
+  if (!isResendConfigured()) {
+    await db
+      .delete(magicLinkTokensTable)
+      .where(eq(magicLinkTokensTable.token, token));
+    res.status(503).json({
+      error:
+        "Email delivery is not configured. Set RESEND_API_KEY (and RESEND_FROM_EMAIL for your domain).",
+    });
+    return;
+  }
+
+  try {
+    const { subject, html, text } = buildMagicLinkLoginEmail(token, "login");
+    await sendTransactionalEmail({ to: email, subject, html, text });
+  } catch (err) {
+    await db
+      .delete(magicLinkTokensTable)
+      .where(eq(magicLinkTokensTable.token, token));
+    req.log.error({ err, email }, "magic_link_email_failed");
+    res.status(502).json({
+      error: "Could not send the sign-in email. Try again in a moment.",
+    });
+    return;
+  }
+
+  res.json({ ok: true });
 });
 
 // ── GET /api/my-reports/verify ────────────────────────────────────────────────
