@@ -599,17 +599,24 @@ export default function HealthTest() {
                     </div>
 
                     {/* Script command */}
-                    <div className="rounded-xl bg-[#0d1117] border border-border/40 px-5 py-4 space-y-3">
-                      <div className="text-xs text-muted-foreground/60 mb-2 uppercase tracking-wide font-mono">Run this command</div>
-                      <div className="font-mono text-sm text-slate-300">
-                        {activeBrand === "hp"
-                          ? <><span className="text-cyan-400">python</span> sentinel-hp-diagnostic.py <span className="text-amber-400">--pair-code {pairState.code}</span></>
-                          : <><span className="text-cyan-400">.\{brand.filename}</span> <span className="text-amber-400">-PairCode {pairState.code}</span></>}
+                    <div className="rounded-xl bg-[#0d1117] border border-border/40 px-5 py-4 space-y-4">
+                      <div>
+                        <div className="text-xs text-muted-foreground/60 mb-2 uppercase tracking-wide font-mono">Run without downloading (One-liner)</div>
+                        <div className="font-mono text-[13px] text-slate-300 break-all bg-black/40 p-3 rounded-lg border border-border/30">
+                          {activeBrand === "hp"
+                            ? <span className="text-muted-foreground">Python scripts must be downloaded and run manually.</span>
+                            : <>
+                                <span className="text-cyan-400">Set-ExecutionPolicy Bypass -Scope Process -Force; irm {typeof window !== 'undefined' ? window.location.origin : 'https://sentinelapp.io'}/scripts/{brand.filename} -OutFile $env:TEMP\s.ps1; & $env:TEMP\s.ps1</span> <span className="text-amber-400">-PairCode {pairState.code}</span>
+                              </>}
+                        </div>
                       </div>
+                      
                       <div className="border-t border-border/20 pt-3">
-                        <div className="text-xs text-muted-foreground/40 mb-1.5">Or use the generic collector script:</div>
-                        <div className="font-mono text-sm text-slate-300">
-                          <span className="text-cyan-400">.\sentinel-collect.ps1</span> <span className="text-amber-400">-PairCode {pairState.code}</span>
+                        <div className="text-xs text-muted-foreground/40 mb-2">Or if you downloaded the file manually:</div>
+                        <div className="font-mono text-sm text-slate-400">
+                          {activeBrand === "hp"
+                            ? <><span className="text-cyan-400">python</span> {brand.filename} <span className="text-amber-400">--pair-code {pairState.code}</span></>
+                            : <><span className="text-cyan-400">.\{brand.filename}</span> <span className="text-amber-400">-PairCode {pairState.code}</span></>}
                         </div>
                       </div>
                     </div>

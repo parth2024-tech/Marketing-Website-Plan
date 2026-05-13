@@ -148,18 +148,20 @@ export default function WhySentinel() {
           </AnimateIn>
 
           <StaggerContainer className="space-y-6" staggerDelay={0.1}>
-            {failures.map((f) => (
-              <StaggerItem key={f.tool}>
-                <div className="surface-card rounded-xl overflow-hidden">
-                  <div className="flex items-start gap-5 p-6 border-b border-border/40">
-                    <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
-                      <f.icon className="w-5 h-5 text-red-400" />
+            {failures.map((f) => {
+              const Icon = f.icon;
+              return (
+                <StaggerItem key={f.tool}>
+                  <div className="surface-card rounded-xl overflow-hidden">
+                    <div className="flex items-start gap-5 p-6 border-b border-border/40">
+                      <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                        <Icon className="w-5 h-5 text-red-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">{f.tool}</h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">{f.what}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">{f.tool}</h3>
-                      <p className="text-sm text-muted-foreground mt-0.5">{f.what}</p>
-                    </div>
-                  </div>
                   <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <p className="text-xs font-mono text-muted-foreground mb-3 uppercase tracking-wide">What it misses</p>
@@ -179,7 +181,8 @@ export default function WhySentinel() {
                   </div>
                 </div>
               </StaggerItem>
-            ))}
+            );
+          })}
           </StaggerContainer>
 
           {/* OEM Failures callout */}
@@ -213,22 +216,25 @@ export default function WhySentinel() {
             </div>
           </AnimateIn>
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-6" staggerDelay={0.1}>
-            {sentinelAdvantages.map((a) => (
-              <StaggerItem key={a.title}>
-                <div className="surface-card rounded-xl p-7 flex gap-5">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
-                  <a.icon className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Check className="w-3.5 h-3.5 text-green-400" />
-                    <h3 className="font-semibold text-foreground text-sm">{a.title}</h3>
+            {sentinelAdvantages.map((a) => {
+              const Icon = a.icon;
+              return (
+                <StaggerItem key={a.title}>
+                  <div className="surface-card rounded-xl p-7 flex gap-5">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
+                      <Icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Check className="w-3.5 h-3.5 text-green-400" />
+                        <h3 className="font-semibold text-foreground text-sm">{a.title}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{a.detail}</p>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{a.detail}</p>
-                </div>
-                </div>
-              </StaggerItem>
-            ))}
+                </StaggerItem>
+              );
+            })}
           </StaggerContainer>
         </div>
       </section>

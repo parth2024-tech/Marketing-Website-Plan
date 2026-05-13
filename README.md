@@ -10,50 +10,67 @@ Scoring is fully deterministic and publicly documented — no black-box AI, no m
 - **Deterministic Scoring Engine** — Five-component weighted health score (Battery 30%, Thermals 25%, Storage 25%, Memory 10%, CPU 10%) computed server-side from documented formulas. Algorithm version is stamped on every report.
 - **Public Scoring Methodology** — `/scoring` page documents every formula, threshold, and weight with worked examples so any user can reproduce a score by hand.
 - **Health Forecast Timeline** — Population-curve baseline (cold start) graduating to per-device linear regression with 95% CI intervals as scan history accumulates. Model source is labelled on every projection.
-- **Diagnostic Scripts** — Dell (PowerShell), Lenovo (PowerShell), and HP (Python) collection scripts. Implements multi-source telemetry (WMI, Performance Counters, OHM/LHM) with tiered fallback and hardware-level IOCTL querying for NVMe SMART health.
+- **OEM Failure Case Studies** — `/oem-failures` page documenting research into misleading OEM diagnostic tools (Dell SupportAssist, Lenovo Vantage, HP Support Assistant).
+- **Diagnostic Scripts** — Generic (PowerShell), Dell (PowerShell), Lenovo (PowerShell), and HP (Python) collection scripts. Implements multi-source telemetry (WMI, Performance Counters, OHM/LHM) with tiered fallback and hardware-level IOCTL querying for NVMe SMART health.
 - **Diagnostic Transparency** — Integrated sensor validation (e.g., detecting static ACPI readings) with real-time UI warnings ("Data Collection Notes") when telemetry quality is suspect.
-- **Unified Diagnostic Schema** — Standardized `sentinelSchema:1` format used across all collection scripts (PS1/PY) and the core scoring engine to ensure data integrity and source attribution.
-- **Hardware Health Report Flow** — Paste JSON → complete habit audit → receive scored report with component breakdown, findings, and forecast timeline. Includes high-visibility "Unverified" banners for locally-scored reports.
+- **Unified Diagnostic Schema** — Standardized `sentinelSchema:1` format used across all collection scripts (PS1/PY) and the core scoring engine to ensure data integrity.
+- **Hardware Health Report Flow** — Paste JSON → complete habit audit → receive scored report with component breakdown, findings, and forecast timeline.
 - **Troubleshooting Assistant** — Chat-style knowledge base with step-by-step diagnostic guidance.
 - **Risk Calculator & Dashboard** — Interactive failure-risk estimation and multi-report comparison views.
 - **Account & Claim System** — Passwordless magic-link auth (15-min token → 30-day session cookie). Reports are claimable by email after submission.
-- **Device Pairing** — Agent-friendly pairing flow (`/pair`) with `pairToken`/`deviceToken` handshake so a local agent can push reports and auto-claim them to an email.
-- **Three-tier Onboarding** — `/get-started` routes users to Tier 1 (agent), Tier 2 (one-shot paste), or Tier 3 (legacy hidden flow) based on capability.
+- **Device Pairing** — Agent-friendly pairing flow (`/pair`) with `pairToken`/`deviceToken` handshake so a local agent can push reports and auto-claim them.
+- **Three-tier Onboarding** — `/get-started` routes users to Tier 1 (Agent), Tier 2 (One-Shot Executable), or Tier 3 (Legacy Script Paste-back) based on capability.
 - **Waitlist Gate** — Pro findings blurred behind a waitlist capture form.
 - **Custom 404** — Brand-aligned error page.
 
 ## Tech Stack
 
 - **Monorepo** — `pnpm` workspaces, Node.js 24, TypeScript 5.9
-- **Frontend** — React 19 + Vite, Tailwind CSS v4, `wouter` routing, `framer-motion` animations
+- **Frontend** — React 19 + Vite, Tailwind CSS v4, `wouter` routing, `@tanstack/react-query`, `framer-motion` animations, `Radix UI` primitives
 - **Backend API** — Express 5, `cookie-parser`, `cors`, `pino` logging
 - **Database** — PostgreSQL via Drizzle ORM
 - **Validation** — Zod (`zod/v4`) + `drizzle-zod`
-- **Shared Libraries** — `@workspace/report-engine` (schema, scoring engine, habit scoring, forecast), `@workspace/db` (Drizzle schema + client)
+- **Shared Libraries**:
+  - `@workspace/report-engine` — Schema, scoring engine, habit scoring, forecast
+  - `@workspace/db` — Drizzle schema + client
+  - `@workspace/api-spec` — OpenAPI specification and `orval` codegen config
+  - `@workspace/api-zod` — Generated Zod schemas from API spec
+  - `@workspace/api-client-react` — Generated React hooks for API interaction
 
 ## Project Structure
 
 ```text
 ├── artifacts/
 │   ├── api-server/         # Express API (reports, auth, waitlist, device pairing)
-│   └── sentinel-site/      # React/Vite marketing + app frontend
+│   ├── sentinel-site/      # Main React/Vite marketing + app frontend
+│   │   └── public/scripts/ # Diagnostic scripts (dell.ps1, lenovo.ps1, hp.py)
+│   ├── novasentinel/       # Nova Dashboard redesign (React/Vite)
+│   └── mockup-sandbox/     # UI/UX mockup and prototyping sandbox
+├── native/                 # C#/.NET Windows applications
+│   ├── SentinelAgent/      # Tier 1 background service & WiX installer
+│   ├── SentinelOneShot/    # Tier 2 standalone GUI executable
+│   ├── SentinelTestHarness/# Developer test tool for native logic
+│   ├── Shared/             # Shared collector (WMI/NVMe) & uploader logic
+│   └── sign-binaries.ps1   # Script for code-signing native executables
 ├── lib/
 │   ├── db/                 # Drizzle ORM schema and database client
-│   │   └── src/schema/
-│   │       ├── reports.ts
-│   │       ├── devices.ts          # Device pairing tokens
-│   │       ├── scans.ts            # Per-device scan history (Track 2A)
-│   │       ├── waitlist.ts
-│   │       ├── magicLinkTokens.ts
-│   │       └── ...
-│   └── report-engine/      # Shared scoring logic
-│       └── src/
-│           ├── engine.ts           # Deterministic scoring formulas
-│           ├── forecast.ts         # Population curve + per-device regression (Track 2C)
-│           ├── habit.ts
-│           └── schema.ts
+│   ├── report-engine/      # Shared scoring logic
+│   ├── api-spec/           # API contract (OpenAPI)
+│   ├── api-zod/            # Generated Zod validation
+│   └── api-client-react/   # Generated API hooks
+├── scripts/                # Workspace-level maintenance scripts
+├── start_api.sh            # Shorthand to start API (Port 5000)
+├── start_site.sh           # Shorthand to start Site (Port 3000)
 └── pnpm-workspace.yaml
 ```
+
+## Native Binaries & CI/CD
+
+The `native/` directory contains C# tools for data collection:
+- **SentinelAgent**: A persistent background service with a System Tray icon and WiX installer.
+- **SentinelOneShot**: A standalone, zero-install GUI application for one-time pairing and scanning.
+
+These binaries are built and signed via `native/sign-binaries.ps1` and released via GitHub Actions (`native.yml`). The API server handles stable download redirects (`/api/downloads/latest/agent`, `/api/downloads/latest/setup`, and `/api/downloads/latest/oneshot`) which are integrated into the marketing website's onboarding flow.
 
 ## Getting Started
 
@@ -86,14 +103,16 @@ pnpm --filter @workspace/db run push
 
 ### Running Locally
 
-**API Server** (port 8080):
+You can use the provided shorthand scripts:
+
+**API Server** (port 5000):
 ```bash
-PORT=8080 pnpm --filter @workspace/api-server run dev
+./start_api.sh
 ```
 
 **Frontend** (port 3000):
 ```bash
-PORT=3000 BASE_PATH=/ API_PORT=8080 pnpm --filter @workspace/sentinel-site run dev
+./start_site.sh
 ```
 
 ### Useful Commands
@@ -101,34 +120,32 @@ PORT=3000 BASE_PATH=/ API_PORT=8080 pnpm --filter @workspace/sentinel-site run d
 ```bash
 pnpm run typecheck          # Full type check across all packages
 pnpm run build              # Build all packages
-pnpm --filter @workspace/db run push   # Apply schema changes to DB
+pnpm --filter @workspace/api-spec run codegen # Regenerate API clients
 ```
 
 ## Architecture Decisions
 
 - **Server-side trust** — `generateReport` runs exclusively on the API server. Client input is untreated; only pre-validated for fast UI feedback.
 - **Deterministic scoring** — No ML, no randomness. `ALGORITHM_VERSION` is incremented whenever formulas change; old reports retain their original version stamp.
-- **Diagnostic Transparency** — The engine tracks `dataSource` and `thermalSource` metadata. Suspect telemetry (like static ACPI zones) is flagged in `dataQuality.warnings` and excluded from scoring to prevent false penalties.
-- **Layered Telemetry Fallback** — Collection scripts attempt high-fidelity WMI/IOCTL sources first, falling back to performance counters or third-party drivers (OHM/LHM) only when necessary.
+- **API Specification & Codegen** — The API contract is defined in `@workspace/api-spec` using OpenAPI. Zod schemas and React hooks are automatically generated to ensure type safety across the network boundary.
+- **Diagnostic Transparency** — The engine tracks `dataSource` metadata. Suspect telemetry (like static ACPI zones) is flagged and excluded from scoring to prevent false penalties.
+- **Layered Telemetry Fallback** — Collection scripts attempt high-fidelity WMI/IOCTL sources first, falling back to performance counters only when necessary.
 - **Wear level semantics** — Higher percentages mean healthier (percentage of life remaining, not consumed).
-- **Forecast honesty** — Cold-start projections use a population curve and are labelled as such. Warm projections use the device's own scan history with a 95% CI range, never a false-precision single number.
-- **Habit scoring** — Accounts for 30% of the combined health score (`0.7 × hw_score + 0.3 × habit_score`), stored in the database.
 - **Magic-link auth** — No passwords. Email initiates a 15-minute token; successful claim sets a 30-day session cookie.
-- **Device pairing** — `POST /api/devices/pair` → short-lived `pairToken` → `POST /api/devices/claim` with email → persistent `deviceToken`. Reports submitted with `Authorization: Bearer <deviceToken>` are auto-claimed.
-- **Library bundling** — `@workspace/report-engine` is bundled into the backend via `esbuild` and resolved in the frontend via Vite workspace symlinking.
+- **Device pairing** — `POST /api/devices/pair` → short-lived `pairToken` → `POST /api/devices/claim` with email → persistent `deviceToken`.
 
 ## Remote Testing & Pairing
 
-To test the Pairing System with a friend's machine (or a machine on a different network):
+To test the Pairing System with a machine on a different network:
 
 1. **Expose your local server**: Use a tool like **ngrok** to create a public tunnel.
    ```bash
-   ngrok http 3001 # Expose the frontend
+   ngrok http 3000 # Expose the frontend
    ngrok http 5000 # Expose the backend
    ```
 2. **Update script URLs**: Open the diagnostic script (e.g., `dell.ps1`) and change `$SENTINEL_BASE_URL` to your **Backend ngrok URL**.
-3. **Friend's Laptop**:
-   - Have them open your **Frontend ngrok URL** in their browser.
-   - Go to Step 3, generate a **Pair Code**.
-   - Run the script on their machine: `.\dell.ps1 -PairCode YOUR_CODE`.
-4. **Instant Sync**: Your browser will automatically detect the upload via the tunnel and show the report.
+3. **External Laptop**:
+   - Open your **Frontend ngrok URL**.
+   - Generate a **Pair Code**.
+   - Run the script: `.\dell.ps1 -PairCode YOUR_CODE`.
+4. **Instant Sync**: Your browser will automatically detect the upload and show the report.
