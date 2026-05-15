@@ -17,6 +17,8 @@ export interface Finding {
   pro: boolean;
   /** When set, explains what OEM tools miss for this specific finding */
   oemContext?: string;
+  /** Links this finding to a specific OEM failure case study on /oem-failures */
+  caseStudyId?: string;
 }
 
 export interface Prediction {
@@ -286,6 +288,100 @@ function generateFindings(r: SentinelReport): Finding[] {
       body: `Your SSD has consumed ${consumed}% of its rated write endurance. Based on the observed wear rate, Sentinel projects the endurance limit will be reached sooner than average. Begin scheduling periodic backups and consider your next upgrade window.`,
       oemContext: "OEM tools don't track SSD write endurance over time. They show current health as pass/fail. Sentinel tracks the wear rate so you can plan replacements before failure, not after.",
       urgency: s.wearLevelPct < 50 ? "critical" : "warning", pro: true });
+  }
+
+  // ── OEM Case Study Findings ───────────────────────────────────────────
+  // These fire on the exact failure patterns documented in the attached Dell,
+  // Lenovo, and HP diagnostic scripts. Each caseStudyId links to the
+  // /oem-failures page for the real-world evidence.
+
+  // CS-01: Dell SupportAssist "Battery: Good" bucket hiding real capacity
+  // Dell thresholds: >50% = "Good". A battery at 52% shows identically to 95%.
+  if (b?.health != null && b.health >= 50 && b.health < 80) {
+    findings.push({
+      component: "Battery",
+      title: "Battery in Dell SupportAssist 'Good' range — but degraded",
+      body: `Your battery is at ${b.health.toFixed(1)}% of original capacity. Dell SupportAssist would report this as "Battery: Good" because its threshold is 50%. A battery at ${b.health.toFixed(0)}% and one at 95% show identically in SupportAssist.`,
+      oemContext: `Dell SupportAssist reports battery health in three buckets: Good (>50%), Fair (25-50%), and Poor (<25%). At ${b.health.toFixed(0)}%, your battery is classified as "Good" by Dell — even though you've lost ${(100 - b.health).toFixed(0)}% of your original capacity and are experiencing measurable runtime reduction.`,
+      urgency: b.health < 65 ? "warning" : "info",
+      pro: false,
+      caseStudyId: "dell-battery-good",
+    });
+  }
+
+  // CS-02: Lenovo Vantage hiding cycle count behind "Battery Condition: Normal"
+  // Lenovo Vantage shows simplified status without exposing cycle count or capacity %
+  if (b?.cycleCount != null && b.cycleCount > 300 && b?.health != null && b.health < 80) {
+    findings.push({
+      component: "Battery",
+      title: "Battery would show 'Normal' in Lenovo Vantage — despite wear",
+      body: `At ${b.cycleCount} cycles and ${b.health.toFixed(1)}% capacity, Lenovo Vantage would still show "Battery Condition: Normal." Vantage doesn't expose actual cycle count or capacity percentage in its UI — the two metrics that matter most for predicting battery end-of-life.`,
+      oemContext: `Lenovo Vantage's battery health section shows a simplified "Battery Condition" status without exposing the actual cycle count (${b.cycleCount}) or capacity percentage (${b.health.toFixed(1)}%). Its conservation mode (charging to 80%) is useful, but the UI conflates "protected battery" with "healthy battery" — they are not the same thing.`,
+      urgency: "warning",
+      pro: false,
+      caseStudyId: "lenovo-vantage-normal",
+    });
+  }
+
+  // CS-03: HP Support Assistant service-first flow — reallocated sectors
+  // HP flags drive issues but routes to "Contact HP Support" instead of actionable guidance
+  if (s?.reallocatedSectors != null && s.reallocatedSectors > 0 && s.reallocatedSectors <= 20) {
+    findings.push({
+      component: "Storage",
+      title: "Reallocated sectors at level HP flags as 'needs service'",
+      body: `Your drive has ${s.reallocatedSectors} reallocated sector${s.reallocatedSectors > 1 ? "s" : ""}. HP Support Assistant would flag this but recommend "Contact HP Support" rather than the actionable response: back up your data, monitor the count weekly, and replace the drive if the count increases.`,
+      oemContext: `HP Support Assistant's remediation path for drive warnings leads to "Contact HP Support" — a service call. A reallocated sector count of ${s.reallocatedSectors} is a warning sign, not an emergency. The appropriate response is to back up and monitor. HP's recommended response is a paid service call.`,
+      urgency: "warning",
+      pro: false,
+      caseStudyId: "hp-service-upsell",
+    });
+  }
+
+  // CS-04: Task Manager hiding thermal throttling
+  // CPU shows "normal" usage while actually thermally throttled
+  if (t?.throttleEvents30min != null && t.throttleEvents30min > 0 && t?.maxTempC != null && t.maxTempC > 75) {
+    const c = r.cpu;
+    const load = c?.avgLoadPct ?? 0;
+    if (load < 70) {
+      findings.push({
+        component: "Thermals",
+        title: "CPU throttling invisible in Task Manager",
+        body: `Your CPU is at ${load.toFixed(0)}% usage with ${t.throttleEvents30min} thermal throttle events. Windows Task Manager shows usage as a percentage of the reduced clock speed — not the original. A CPU running at 50% of a throttled 1.2 GHz looks the same as 50% of a healthy 4.7 GHz.`,
+        oemContext: `CPU throttling is not visible anywhere in Task Manager. There is no throttling indicator, no event log visible in the UI, and no notification. Your system has been throttling ${t.throttleEvents30min} times in 30 minutes at ${t.maxTempC.toFixed(1)}°C — Task Manager shows none of this.`,
+        urgency: "warning",
+        pro: false,
+        caseStudyId: "taskmanager-throttle",
+      });
+    }
+  }
+
+  // CS-05: NVMe wear level below OEM reporting threshold
+  // OEM tools show NVMe health as binary pass/fail; actual wear level detail is hidden
+  if (s?.wearLevelPct != null && s.wearLevelPct >= 50 && s.wearLevelPct < 90) {
+    const consumed = 100 - s.wearLevelPct;
+    findings.push({
+      component: "Storage",
+      title: "NVMe wear level below OEM reporting threshold",
+      body: `Your NVMe drive has consumed ${consumed}% of its rated write endurance (${s.wearLevelPct}% remaining). OEM tools like Dell SupportAssist, Lenovo Vantage, and HP Support Assistant would still report this drive as "Healthy" or "Good" because they use binary pass/fail — they don't report the actual percentage.`,
+      oemContext: `OEM diagnostics report NVMe health as pass/fail. They will show "Drive: Healthy" until the drive is at or near failure. At ${s.wearLevelPct}% remaining endurance, your drive is still functional but wearing — this is the planning window that OEM tools never give you.`,
+      urgency: consumed > 30 ? "warning" : "info",
+      pro: false,
+      caseStudyId: "nvme-wear-hidden",
+    });
+  }
+
+  // CS-06: ACPI static thermal reading — OEM firmware lying about temperature
+  // Dell/HP/Lenovo BIOS reports a fixed ACPI value regardless of actual CPU temp
+  if (t?.thermalSource === "acpi_static_suspect") {
+    findings.push({
+      component: "Thermals",
+      title: "OEM firmware reporting fixed temperature (ACPI static)",
+      body: "Your OEM firmware is reporting a static ACPI thermal reading — a known firmware behaviour where the reported temperature never changes regardless of actual system load. OEM diagnostic tools read this same value and report \"Thermals: Normal\" without validating whether the reading is real.",
+      oemContext: "Dell SupportAssist, HP Support Assistant, and Lenovo Vantage all rely on the same ACPI thermal zones for temperature data. When the firmware lies, all three tools report the lie as fact. None of them validate whether the sensor reading changes under load — which is the only way to detect a static reading.",
+      urgency: "warning",
+      pro: false,
+      caseStudyId: "acpi-static-lie",
+    });
   }
 
   // Info

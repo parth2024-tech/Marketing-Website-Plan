@@ -595,6 +595,14 @@ export default function Report() {
                             Why OEM tools miss this
                           </p>
                           <p className="text-xs text-muted-foreground/80 leading-relaxed">{f.oemContext}</p>
+                          {f.caseStudyId && (
+                            <Link
+                              href={`/oem-failures#${f.caseStudyId}`}
+                              className="mt-2 inline-flex items-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors"
+                            >
+                              See the real-world case study →
+                            </Link>
+                          )}
                         </div>
                       )}
                     </div>
