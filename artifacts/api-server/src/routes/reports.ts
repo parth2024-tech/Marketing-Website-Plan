@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db, reportsTable, idempotencyKeysTable, reportHabitAnswersTable, devicesTable } from "@workspace/db";
 import { SentinelReportSchema, generateReport, computeHabitScore, combinedScore } from "@workspace/report-engine";
 import { eq, and, isNull } from "drizzle-orm";
-import { newReportId, newClaimToken, sha256hex } from "../lib/ids";
+import { newReportId, newClaimToken, newShareToken, sha256hex } from "../lib/ids";
 import { consumeRateLimit } from "../lib/rateLimit";
 import { isResendConfigured } from "../lib/email/config";
 import { buildReportClaimedEmail } from "../lib/email/templates/reportClaimed";
@@ -347,6 +347,121 @@ router.get("/:id", async (req, res) => {
     combinedScore: habit?.combinedScore ?? null,
     claimed: row.claimed,
     email: row.email ? "***" : null,
+    shareToken: row.shareToken ?? null,
+    createdAt: row.createdAt,
+  });
+});
+
+// ── POST /api/reports/:id/share ───────────────────────────────────────────────
+// Generates a public read-only share token. Requires the claimToken (only the
+// report owner can create a share link).
+
+const ShareBody = z.object({
+  claimToken: z.string().min(8).max(64),
+});
+
+router.post("/:id/share", async (req, res) => {
+  const { id } = req.params;
+  if (!id || id.length < 4) {
+    res.status(400).json({ error: "Invalid report ID" });
+    return;
+  }
+
+  const parsed = ShareBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(422).json({ error: "Invalid request", details: parsed.error.message });
+    return;
+  }
+
+  const rows = await db
+    .select()
+    .from(reportsTable)
+    .where(and(eq(reportsTable.id, id), isNull(reportsTable.deletedAt)))
+    .limit(1);
+
+  if (rows.length === 0) {
+    res.status(404).json({ error: "Report not found" });
+    return;
+  }
+
+  const row = rows[0];
+
+  if (row.claimToken !== parsed.data.claimToken) {
+    res.status(403).json({ error: "Invalid claim token" });
+    return;
+  }
+
+  // If already has a share token, return it
+  if (row.shareToken) {
+    req.log.info({ reportId: id }, "share_token_reused");
+    res.json({ shareToken: row.shareToken });
+    return;
+  }
+
+  // Generate new share token
+  const shareToken = newShareToken();
+  await db
+    .update(reportsTable)
+    .set({ shareToken, updatedAt: new Date() })
+    .where(eq(reportsTable.id, id));
+
+  req.log.info({ reportId: id }, "share_token_created");
+  res.json({ shareToken });
+});
+
+// ── GET /api/reports/shared/:shareToken ───────────────────────────────────────
+// Public read-only view. Strips all PII: no email, no claimToken, no rawJson.
+// Returns only: overall score, grade, components, findings, predictions,
+// system model, data quality notes, algorithm version, and generation date.
+
+router.get("/shared/:shareToken", async (req, res) => {
+  const { shareToken } = req.params;
+  if (!shareToken || shareToken.length < 10) {
+    res.status(400).json({ error: "Invalid share token" });
+    return;
+  }
+
+  const rows = await db
+    .select()
+    .from(reportsTable)
+    .where(and(eq(reportsTable.shareToken, shareToken), isNull(reportsTable.deletedAt)))
+    .limit(1);
+
+  if (rows.length === 0) {
+    res.status(404).json({ error: "Report not found" });
+    return;
+  }
+
+  const row = rows[0];
+  const result = row.resultJson as Record<string, unknown>;
+
+  // Also fetch habit data if available
+  const habitRows = await db
+    .select()
+    .from(reportHabitAnswersTable)
+    .where(eq(reportHabitAnswersTable.reportId, row.id))
+    .limit(1);
+
+  const habit = habitRows[0];
+
+  // Return only the public-safe subset — no email, no claimToken, no rawJson, no IP
+  res.json({
+    id: row.id,
+    result: {
+      overall: result.overall,
+      grade: result.grade,
+      gradeLabel: result.gradeLabel,
+      components: result.components,
+      findings: result.findings,
+      predictions: result.predictions,
+      system: result.system,
+      dataQuality: result.dataQuality,
+      algoVersion: result.algoVersion,
+      generatedAt: result.generatedAt,
+    },
+    habitScore: habit?.habitScore ?? null,
+    combinedScore: habit?.combinedScore ?? null,
+    shared: true,
     createdAt: row.createdAt,
   });
 });

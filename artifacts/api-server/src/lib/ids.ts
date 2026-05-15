@@ -20,6 +20,11 @@ export function newClaimToken(): string {
   return randomBase32(16);
 }
 
+/** 20-character base32 public share token (~100 bits of entropy) */
+export function newShareToken(): string {
+  return randomBase32(20);
+}
+
 /**
  * 8-character unambiguous pair code formatted as XXXX-XXXX.
  * Uses a restricted alphabet: A-Z and 2-9 minus look-alikes (0,O,1,I,L).

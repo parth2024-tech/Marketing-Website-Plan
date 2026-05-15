@@ -320,3 +320,136 @@
     inset: -1px;
   }
 }
+
+/* ── Print stylesheet ─────────────────────────────────────────────────────────
+   Converts the dark-mode report to a clean, printer-friendly light layout.
+   Triggered by window.print() / Ctrl+P / "Save as PDF" in any browser.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@media print {
+  /* Force light background and dark text */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --border: 0 0% 85%;
+    --muted-foreground: 0 0% 35%;
+    --primary: 195 85% 35%;
+    --primary-foreground: 0 0% 100%;
+  }
+
+  html, body {
+    background: white !important;
+    color: #1a1a1a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide non-printable elements */
+  header, footer, nav,
+  .print\\:hidden,
+  [class*="print:hidden"] {
+    display: none !important;
+  }
+
+  /* Remove dark surface cards and replace with bordered boxes */
+  .surface-card {
+    background: white !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+
+  /* Remove animations */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Remove glows and shadows */
+  .glow-cyan, .glow-violet {
+    box-shadow: none !important;
+  }
+
+  /* Text readability */
+  .text-foreground { color: #1a1a1a !important; }
+  .text-muted-foreground { color: #555 !important; }
+  .text-muted-foreground\/60,
+  .text-muted-foreground\/50,
+  .text-muted-foreground\/40 { color: #777 !important; }
+  .text-muted-foreground\/80 { color: #444 !important; }
+  .text-primary { color: #0891b2 !important; }
+  .text-primary\/60 { color: #0891b2 !important; }
+
+  /* Finding urgency borders */
+  .border-l-red-400    { border-left-color: #f87171 !important; }
+  .border-l-amber-400  { border-left-color: #fbbf24 !important; }
+  .border-l-cyan-400\/40 { border-left-color: #22d3ee !important; }
+
+  /* Component score bars */
+  .bg-green-500 { background-color: #22c55e !important; }
+  .bg-cyan-400  { background-color: #22d3ee !important; }
+  .bg-amber-400 { background-color: #fbbf24 !important; }
+  .bg-red-400   { background-color: #f87171 !important; }
+
+  /* Page breaks */
+  .report-printable {
+    padding: 0 !important;
+  }
+
+  .report-printable > div {
+    padding: 16px !important;
+  }
+
+  /* Avoid breaking inside cards */
+  .surface-card,
+  .rounded-xl {
+    break-inside: avoid;
+  }
+
+  /* Page header for multi-page prints */
+  @page {
+    margin: 1.5cm;
+    @top-right {
+      content: "Sentinel Hardware Health Report";
+      font-size: 8pt;
+      color: #999;
+    }
+  }
+
+  /* Gradient text → solid for print */
+  .gradient-text {
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: #0891b2 !important;
+    background-clip: unset !important;
+    color: #0891b2 !important;
+  }
+
+  /* Score ring SVG: ensure colors print */
+  svg circle {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Font sizes for print readability */
+  .text-xs { font-size: 10px !important; }
+  .text-sm { font-size: 12px !important; }
+  .text-lg { font-size: 16px !important; }
+  .text-xl { font-size: 18px !important; }
+  .text-2xl { font-size: 22px !important; }
+  .text-4xl, .text-5xl { font-size: 28px !important; }
+
+  /* Links: show URL in print */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 8pt;
+    color: #777;
+    font-style: italic;
+  }
+
+  /* Internal links: don't show URL */
+  a[href^="/"]::after {
+    content: none;
+  }
+}

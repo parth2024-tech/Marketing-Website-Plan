@@ -16,6 +16,7 @@ export const reportsTable = pgTable(
     resultJson: jsonb("result_json").notNull(),
     algoVersion: integer("algo_version").notNull().default(1),
     claimToken: text("claim_token"),
+    shareToken: text("share_token"),
     claimed: boolean("claimed").notNull().default(false),
     email: text("email"),
     consentAt: timestamp("consent_at", { withTimezone: true }),
@@ -28,6 +29,7 @@ export const reportsTable = pgTable(
   (t) => [
     index("reports_email_idx").on(t.email),
     index("reports_created_at_idx").on(t.createdAt),
+    index("reports_share_token_idx").on(t.shareToken),
   ],
 );
 

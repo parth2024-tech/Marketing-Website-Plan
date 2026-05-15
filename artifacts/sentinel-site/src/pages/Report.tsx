@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import {
   ArrowRight, Shield, AlertTriangle, Info, Lock,
-  Share2, Check, Copy, Mail, ChevronDown, TrendingDown, Clock, CheckCircle2,
+  Share2, Check, Copy, Mail, ChevronDown, TrendingDown, Clock, CheckCircle2, Printer,
 } from "lucide-react";
 import { generateReport, type ReportResult, type Prediction } from "@/lib/report/engine";
 import { SentinelReportSchema } from "@/lib/report/schema";
@@ -70,32 +70,133 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-// ── Share row ─────────────────────────────────────────────────────────────────
+// ── Share + PDF panel ─────────────────────────────────────────────────────────
 
-function ShareRow({ id, isLocal }: { id: string, isLocal?: boolean }) {
+function SharePanel({ id, isLocal }: { id: string; isLocal?: boolean }) {
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const url = `${window.location.origin}/r/${id}`;
-  const copy = () => {
+  const [copiedDirect, setCopiedDirect] = useState(false);
+
+  const directUrl = `${window.location.origin}/r/${id}`;
+
+  const generateShareLink = async () => {
+    const claimToken = localStorage.getItem(`sentinel_claim_${id}`) ?? "";
+    if (!claimToken) return;
+
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/reports/${id}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ claimToken }),
+      });
+      if (res.ok) {
+        const { shareToken } = await res.json() as { shareToken: string };
+        setShareUrl(`${window.location.origin}/s/${shareToken}`);
+      }
+    } catch {
+      // silently fail — the direct link is still available
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const copyShareUrl = () => {
+    const url = shareUrl ?? directUrl;
     navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (shareUrl) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        setCopiedDirect(true);
+        setTimeout(() => setCopiedDirect(false), 2000);
+      }
     });
   };
+
+  const hasClaimToken = typeof window !== "undefined" && !!localStorage.getItem(`sentinel_claim_${id}`);
+
   return (
-    <div className="surface-card rounded-xl p-5 flex items-center justify-between flex-wrap gap-4">
-      <div className={`flex items-center gap-2 text-sm text-muted-foreground ${isLocal ? 'opacity-40 blur-[2px] select-none pointer-events-none' : ''}`}>
+    <div className="surface-card rounded-xl p-5 space-y-4 print:hidden">
+      <div className="flex items-center gap-2 mb-1">
         <Share2 className="w-4 h-4 text-primary/60" />
-        <span className="font-mono text-xs text-muted-foreground/60 truncate max-w-[220px]">{url}</span>
+        <span className="text-sm font-medium text-foreground">Share this report</span>
       </div>
-      <button
-        onClick={copy}
-        disabled={isLocal}
-        title={isLocal ? "Save to server to get a shareable link." : undefined}
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border/60 text-foreground transition-all ${isLocal ? 'opacity-40 blur-[1px] cursor-not-allowed' : 'hover:border-primary/60 hover:text-primary'}`}
-      >
-        {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-        {copied ? "Copied!" : "Copy link"}
-      </button>
+
+      {/* Public share link (stripped of PII) */}
+      {hasClaimToken && !isLocal && (
+        <div className="space-y-2">
+          {!shareUrl ? (
+            <button
+              onClick={generateShareLink}
+              disabled={generating}
+              className="w-full text-left px-4 py-3 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/8 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-foreground">
+                    {generating ? "Generating…" : "Generate read-only link"}
+                  </div>
+                  <div className="text-xs text-muted-foreground/60 mt-0.5">
+                    Creates a public link with just the score, components, and findings — no email or personal info.
+                    Send it to a repair shop, a friend, or post it in a forum.
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-primary/40 group-hover:text-primary transition-colors shrink-0 ml-3" />
+              </div>
+            </button>
+          ) : (
+            <div className="rounded-lg border border-green-400/20 bg-green-400/5 px-4 py-3">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Check className="w-3.5 h-3.5 text-green-400" />
+                <span className="text-xs font-medium text-green-400">Public link ready</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs text-muted-foreground/60 truncate flex-1">{shareUrl}</span>
+                <button
+                  onClick={copyShareUrl}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border/60 text-foreground hover:border-primary/60 hover:text-primary transition-all shrink-0"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground/40 mt-2">This link shows only: score, components, findings, algorithm version. No email, no raw data.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Direct link (fallback) */}
+      <div className={`flex items-center justify-between flex-wrap gap-3 ${isLocal ? "opacity-40 blur-[2px] select-none pointer-events-none" : ""}`}>
+        <span className="font-mono text-xs text-muted-foreground/60 truncate max-w-[220px]">{directUrl}</span>
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(directUrl).then(() => {
+              setCopiedDirect(true);
+              setTimeout(() => setCopiedDirect(false), 2000);
+            });
+          }}
+          disabled={isLocal}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border/60 text-foreground hover:border-primary/60 hover:text-primary transition-all"
+        >
+          {copiedDirect ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+          {copiedDirect ? "Copied!" : "Copy direct link"}
+        </button>
+      </div>
+
+      {/* Print / PDF */}
+      <div className="border-t border-border/30 pt-3">
+        <button
+          onClick={() => window.print()}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium border border-border/60 text-foreground hover:border-primary/60 hover:text-primary transition-all w-full justify-center sm:w-auto"
+        >
+          <Printer className="w-3.5 h-3.5" />
+          Print / Export as PDF
+        </button>
+        <p className="text-[10px] text-muted-foreground/40 mt-1.5">Uses your browser's built-in Print dialog. Choose "Save as PDF" to download.</p>
+      </div>
     </div>
   );
 }
@@ -306,7 +407,7 @@ export default function Report() {
   const genDate = new Date(result.generatedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground report-printable">
       {loadedFrom === "local" && (
         <div className="w-full bg-amber-500 text-amber-950 px-6 py-4 flex items-center justify-center gap-3 shadow-md z-50 relative">
           <AlertTriangle className="w-5 h-5 shrink-0" />
@@ -650,7 +751,7 @@ export default function Report() {
 
           {/* Share row */}
           <AnimateIn delay={0.07}>
-            <ShareRow id={id} isLocal={loadedFrom === "local"} />
+            <SharePanel id={id} isLocal={loadedFrom === "local"} />
           </AnimateIn>
 
           {/* Footer */}

@@ -27,6 +27,7 @@ import GetStarted from "@/pages/GetStarted";
 import Pair from "@/pages/Pair";
 import Scoring from "@/pages/Scoring";
 import Changelog from "@/pages/Changelog";
+import SharedReport from "@/pages/SharedReport";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -83,6 +84,7 @@ function AnimatedRoutes() {
           <Route path="/risk-calculator" component={RiskCalculator} />
           <Route path="/troubleshoot"    component={Troubleshoot} />
           <Route path="/r/:id"           component={Report} />
+          <Route path="/s/:shareToken"   component={SharedReport} />
           <Route path="/my-reports"      component={MyReports} />
           <Route path="/get-started"     component={GetStarted} />
           <Route path="/pair"            component={Pair} />
