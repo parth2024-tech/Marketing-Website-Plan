@@ -95,10 +95,14 @@ export default function Scoring() {
             <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
               Every number Sentinel produces is derived from a documented formula. No machine learning. No black box. You can reproduce any score by hand from your raw hardware data.
             </p>
-            <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
               <span className="font-mono text-primary">ALGO_VERSION = 1</span>
               <span>·</span>
               <span>Last updated May 2026</span>
+              <span>·</span>
+              <Link href="/changelog" className="text-primary hover:underline flex items-center gap-1">
+                Changelog <ArrowRight className="w-3 h-3" />
+              </Link>
               <span>·</span>
               <Link href="/how-it-works" className="text-primary hover:underline flex items-center gap-1">
                 How the agent works <ArrowRight className="w-3 h-3" />

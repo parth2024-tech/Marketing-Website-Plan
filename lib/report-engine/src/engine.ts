@@ -15,6 +15,8 @@ export interface Finding {
   body: string;
   urgency: "critical" | "warning" | "info";
   pro: boolean;
+  /** When set, explains what OEM tools miss for this specific finding */
+  oemContext?: string;
 }
 
 export interface Prediction {
@@ -38,8 +40,22 @@ export interface ReportResult {
   dataQuality: {
     thermalSource?: string;
     storageSource?: string;
+    /** Legacy plain-text warnings (kept for backwards compat) */
     warnings: string[];
+    /** Structured warnings with type, severity, and OEM comparison context */
+    structuredWarnings: DataQualityWarning[];
   };
+}
+
+export interface DataQualityWarning {
+  type: "acpi_static" | "nvme_unavailable" | "thermal_unavailable" | "storage_fallback" | "info";
+  severity: "high" | "medium" | "low";
+  title: string;
+  detail: string;
+  /** What the OEM tool does (or doesn't do) in this situation */
+  oemComparison?: string;
+  /** Whether this warning caused a score component to be excluded */
+  excludedFromScoring: boolean;
 }
 
 function clamp(n: number, min = 0, max = 100) {
@@ -184,18 +200,31 @@ function generateFindings(r: SentinelReport): Finding[] {
   // Battery
   if (b?.health != null) {
     if (b.health < 60) {
+      const cycles = b.cycleCount ?? 0;
+      const expected = cycles > 0 ? expectedBatteryHealth(cycles) : null;
+      const oemCtx = expected
+        ? `Your OEM tool (e.g. Dell SupportAssist, Lenovo Vantage) reports raw capacity only — it does not adjust for cycle count. At ${cycles} cycles, a healthy battery should retain ~${expected.toFixed(0)}% capacity. Yours is at ${b.health.toFixed(1)}%. That ${(expected - b.health).toFixed(0)}-point gap is invisible to OEM diagnostics.`
+        : `OEM tools like Dell SupportAssist or Lenovo Vantage only report raw capacity percentage. They don't compare against expected degradation curves for your cycle count, so they can't tell you if your battery is wearing faster than normal.`;
       findings.push({ component: "Battery", title: "Battery capacity critically low",
         body: `Your battery retains only ${b.health.toFixed(1)}% of its original capacity. At this level, runtime is severely reduced and unexpected shutdowns may occur.`,
+        oemContext: oemCtx,
         urgency: "critical", pro: false });
     } else if (b.health < 75) {
-      findings.push({ component: "Battery", title: "Battery capacity degraded",
+      const cycles = b.cycleCount ?? 0;
+      const expected = cycles > 0 ? expectedBatteryHealth(cycles) : null;
+      const oemCtx = expected
+        ? `Your OEM tool doesn't check cycle-adjusted degradation — it only reports raw capacity. At your cycle count (${cycles}), your battery should be at ~${expected.toFixed(0)}%. It's at ${b.health.toFixed(1)}%. That ${(expected - b.health).toFixed(0)}-point gap is what SupportAssist misses.`
+        : `OEM battery diagnostics only show raw capacity percentage. They don't track whether degradation is faster than expected for your usage pattern.`;
+      findings.push({ component: "Battery", title: "Battery degrading faster than expected",
         body: `Current capacity: ${b.health.toFixed(1)}% of original. You're losing measurable runtime per charge cycle. Battery replacement is worth planning.`,
+        oemContext: oemCtx,
         urgency: "warning", pro: false });
     }
   }
   if (b?.cycleCount != null && b.cycleCount > 500) {
     findings.push({ component: "Battery", title: "High cycle count detected",
       body: `${b.cycleCount} charge cycles recorded. Most laptop batteries are rated for 300–500 full cycles before significant degradation. You're past this threshold.`,
+      oemContext: "OEM tools like HP Support Assistant show cycle count but don't flag when you've exceeded the manufacturer's rated cycle life. They treat 1,000 cycles the same as 100.",
       urgency: b.cycleCount > 800 ? "critical" : "warning", pro: false });
   }
   // Pro: degradation trajectory — requires both health and cycles
@@ -204,6 +233,7 @@ function generateFindings(r: SentinelReport): Finding[] {
     if (expected - b.health > 8) {
       findings.push({ component: "Battery", title: "Degradation trajectory: faster-than-normal wear detected",
         body: `At ${b.cycleCount} cycles, a typical battery retains ~${expected.toFixed(0)}% capacity. Yours is at ${b.health.toFixed(1)}% — ${(expected - b.health).toFixed(1)} points below baseline. Sentinel projects replacement-grade degradation approximately 3–4 months earlier than average.`,
+        oemContext: `No OEM diagnostic tool performs cycle-adjusted degradation analysis. Dell SupportAssist, Lenovo Vantage, and HP Support Assistant all report raw capacity without comparing against expected wear curves. The ${(expected - b.health).toFixed(0)}-point gap between expected (${expected.toFixed(0)}%) and actual (${b.health.toFixed(1)}%) health is entirely invisible to these tools.`,
         urgency: "warning", pro: true });
     }
   }
@@ -213,22 +243,26 @@ function generateFindings(r: SentinelReport): Finding[] {
     if (t.maxTempC > 90) {
       findings.push({ component: "Thermals", title: "Critical peak temperature recorded",
         body: `Your system reached ${t.maxTempC.toFixed(1)}°C. Sustained temperatures above 90°C accelerate thermal paste degradation, reduce fan bearing lifespan, and can trigger permanent CPU performance reduction.`,
+        oemContext: "OEM tools like Dell SupportAssist only run a brief thermal stress test and report pass/fail. They don't measure real-world peak temperatures under your actual workload, so a system that passes the OEM test can still be thermally throttling daily.",
         urgency: "critical", pro: false });
     } else if (t.maxTempC > 80) {
       findings.push({ component: "Thermals", title: "Elevated peak temperature",
         body: `Peak temperature of ${t.maxTempC.toFixed(1)}°C detected. This is above the recommended sustained operating range for most consumer processors. Check vent clearance.`,
+        oemContext: "OEM thermal tests use artificial stress loads for 30–60 seconds. Your actual workload produces sustained temperatures that OEM tests never simulate.",
         urgency: "warning", pro: false });
     }
   }
   if (t?.throttleEvents30min != null && t.throttleEvents30min > 5) {
     findings.push({ component: "Thermals", title: `${t.throttleEvents30min} thermal throttle events detected`,
       body: "CPU throttling reduces performance and indicates the cooling system is struggling to dissipate heat. Common causes: blocked vents, degraded thermal paste, or dust accumulation.",
+      oemContext: "OEM tools don't count throttle events. They report CPU temperature at a single point in time, not the pattern of thermal throttling that reveals cooling system degradation.",
       urgency: t.throttleEvents30min > 15 ? "critical" : "warning", pro: false });
   }
   // Pro: thermal-battery correlation — requires both
   if (t?.maxTempC != null && b?.health != null && t.maxTempC > 78) {
     findings.push({ component: "Thermals + Battery", title: "Correlated finding: sustained heat is accelerating battery degradation",
       body: "Sentinel detects a statistically significant pattern between your sustained high operating temperatures and your battery's above-average degradation rate. Every 10°C of sustained heat above 30°C ambient doubles lithium-ion degradation speed.",
+      oemContext: "No OEM diagnostic tool cross-correlates thermal and battery data. They treat each component as independent, missing the most common cause of premature battery failure: sustained heat.",
       urgency: "warning", pro: true });
   }
 
@@ -236,11 +270,13 @@ function generateFindings(r: SentinelReport): Finding[] {
   if (s?.reallocatedSectors != null && s.reallocatedSectors > 0) {
     findings.push({ component: "Storage", title: `SSD has ${s.reallocatedSectors} reallocated sector${s.reallocatedSectors > 1 ? "s" : ""}`,
       body: "Reallocated sectors indicate the drive has found and remapped bad blocks. Non-zero reallocated sectors are a serious early failure indicator. Back up immediately and monitor closely.",
+      oemContext: "Windows' built-in drive health check (Optimize Drives) doesn't report reallocated sectors. Most OEM diagnostics show a pass/fail drive test but won't tell you the reallocated sector count — the single most important early failure indicator.",
       urgency: "critical", pro: false });
   }
   if (s?.freeSpacePct != null && s.freeSpacePct < 10) {
     findings.push({ component: "Storage", title: `Storage critically low — ${s.freeSpacePct.toFixed(1)}% free`,
       body: "SSDs require approximately 10–15% free space to maintain write performance and endurance. Below this threshold, write amplification increases, accelerating wear.",
+      oemContext: "OEM tools warn about low disk space, but they don't explain the connection between free space and SSD wear amplification. Running below 10% free accelerates physical wear, not just performance.",
       urgency: s.freeSpacePct < 5 ? "critical" : "warning", pro: false });
   }
   // Pro: SSD wear timeline — triggers when remaining life drops below 80%
@@ -248,6 +284,7 @@ function generateFindings(r: SentinelReport): Finding[] {
     const consumed = 100 - s.wearLevelPct;
     findings.push({ component: "Storage", title: "SSD wear trajectory: elevated consumption rate detected",
       body: `Your SSD has consumed ${consumed}% of its rated write endurance. Based on the observed wear rate, Sentinel projects the endurance limit will be reached sooner than average. Begin scheduling periodic backups and consider your next upgrade window.`,
+      oemContext: "OEM tools don't track SSD write endurance over time. They show current health as pass/fail. Sentinel tracks the wear rate so you can plan replacements before failure, not after.",
       urgency: s.wearLevelPct < 50 ? "critical" : "warning", pro: true });
   }
 
@@ -447,13 +484,42 @@ export function generateReport(r: SentinelReport): ReportResult {
     overall < 40 ? "Critical" : overall < 55 ? "Poor" : overall < 65 ? "Fair" : overall < 80 ? "Good" : "Excellent";
 
   const warnings: string[] = [];
+  const structuredWarnings: DataQualityWarning[] = [];
   const t = r.thermals;
-  if (!t || t.thermalSource === "unavailable" || t.thermalSource === "acpi_static_suspect") {
+
+  if (t?.thermalSource === "acpi_static_suspect") {
     warnings.push("Thermal data unavailable on this hardware — thermal score excluded from overall calculation.");
+    structuredWarnings.push({
+      type: "acpi_static",
+      severity: "high",
+      title: "OEM firmware is reporting a fixed temperature",
+      detail: "We detected that your OEM firmware is reporting a static ACPI thermal reading — a known firmware behaviour where the reported temperature never changes regardless of actual system load. This is a common issue with certain Dell, HP, and Lenovo BIOS versions. We excluded this data from scoring because it would produce a misleadingly healthy thermal score.",
+      oemComparison: "OEM diagnostic tools (Dell SupportAssist, HP Support Assistant, Lenovo Vantage) read the same static ACPI value and present it as your actual temperature — reporting \"Thermals: Normal\" even when the CPU may be throttling. They don't validate whether the sensor reading is real.",
+      excludedFromScoring: true,
+    });
+  } else if (!t || t.thermalSource === "unavailable") {
+    warnings.push("Thermal data unavailable on this hardware — thermal score excluded from overall calculation.");
+    structuredWarnings.push({
+      type: "thermal_unavailable",
+      severity: "medium",
+      title: "Thermal sensor data unavailable",
+      detail: "Your hardware did not expose thermal sensor data through any available interface (WMI, ACPI, or LibreHardwareMonitor). The thermal component has been excluded from your overall score to avoid guessing.",
+      oemComparison: "OEM tools may still show a temperature reading by accessing proprietary sensor interfaces that are not available to third-party software. However, they don't disclose when sensor data is estimated or unavailable.",
+      excludedFromScoring: true,
+    });
   }
+
   const s = r.storage?.[0];
   if (s && s.dataSource === "unavailable" && (s.type?.includes("NVMe") || s.model?.includes("NVMe"))) {
     warnings.push("NVMe wear data could not be retrieved — storage score excluded from overall calculation.");
+    structuredWarnings.push({
+      type: "nvme_unavailable",
+      severity: "medium",
+      title: "NVMe health data could not be retrieved",
+      detail: "Your NVMe drive's S.M.A.R.T. health attributes could not be read, likely because the drive requires elevated permissions or uses a non-standard NVMe command set. Storage wear scoring has been excluded to avoid inaccurate results.",
+      oemComparison: "OEM tools often have privileged access to NVMe health data through vendor-specific drivers. However, they typically only report a binary pass/fail rather than detailed wear metrics.",
+      excludedFromScoring: true,
+    });
   }
 
   return {
@@ -467,6 +533,7 @@ export function generateReport(r: SentinelReport): ReportResult {
       thermalSource: t?.thermalSource,
       storageSource: s?.dataSource,
       warnings,
+      structuredWarnings,
     },
   };
 }

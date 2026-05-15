@@ -26,6 +26,7 @@ import Troubleshoot from "@/pages/Troubleshoot";
 import GetStarted from "@/pages/GetStarted";
 import Pair from "@/pages/Pair";
 import Scoring from "@/pages/Scoring";
+import Changelog from "@/pages/Changelog";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,7 @@ function AnimatedRoutes() {
           <Route path="/get-started"     component={GetStarted} />
           <Route path="/pair"            component={Pair} />
           <Route path="/scoring"         component={Scoring} />
+          <Route path="/changelog"       component={Changelog} />
           <Route                         component={NotFound} />
         </Switch>
       </motion.div>
