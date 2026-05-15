@@ -84,6 +84,7 @@ router.post("/", async (req, res) => {
     consumeRateLimit(ipHash, 1440, 100),
   ]);
   if (!perMinute || !perDay) {
+    res.set("Retry-After", !perMinute ? "60" : "1440");
     res.status(429).json({ error: "Rate limit exceeded. Try again later." });
     return;
   }

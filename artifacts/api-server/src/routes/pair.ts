@@ -28,6 +28,7 @@ router.post("/session", async (req, res) => {
   // Rate limit: 5 session creates per minute per IP
   const allowed = await consumeRateLimit(ipHash + ":pair_session", 1, 5);
   if (!allowed) {
+    res.set("Retry-After", "60");
     res.status(429).json({ error: "Too many pair session requests. Wait a moment and try again." });
     return;
   }
@@ -128,6 +129,7 @@ router.post("/push", async (req, res) => {
   const codeRlKey = `pair_push:${normalizedCode}`;
   const allowed = await consumeRateLimit(codeRlKey, 15, 3);
   if (!allowed) {
+    res.set("Retry-After", "900");
     res.status(429).json({ error: "Too many push attempts for this code." });
     return;
   }

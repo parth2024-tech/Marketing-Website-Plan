@@ -13,14 +13,15 @@
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/report-engine": "workspace:*",
-    "zod": "catalog:",
     "cookie-parser": "^1.4.7",
     "cors": "^2",
     "drizzle-orm": "catalog:",
     "express": "^5",
+    "helmet": "^8.1.0",
     "pino": "^9",
     "pino-http": "^10",
-    "resend": "^4.1.2"
+    "resend": "^4.1.2",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

@@ -9,6 +9,8 @@ export const devicesTable = pgTable(
     email: text("email"),
     claimed: boolean("claimed").notNull().default(false),
     claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    /** Pair token expiry — reject claims on tokens past this time (#6) */
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [

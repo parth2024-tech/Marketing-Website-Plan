@@ -1,8 +1,10 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { z } from "zod";
 import { db, devicesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and, gt } from "drizzle-orm";
 import { randomBytes } from "crypto";
+import { consumeRateLimit } from "../lib/rateLimit";
+import { sha256hex } from "../lib/ids";
 
 const router = Router();
 
@@ -14,19 +16,39 @@ function newDeviceId(): string {
   return randomBytes(8).toString("hex");
 }
 
+function getClientIp(req: Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
+  return req.socket?.remoteAddress ?? "unknown";
+}
+
+// Pair tokens expire after 15 minutes
+const PAIR_TOKEN_TTL_MS = 15 * 60 * 1000;
+
 // ── POST /api/devices/pair ────────────────────────────────────────────────────
 // Called by the agent immediately after install. Returns a one-time pairToken
 // (opened in the browser as /pair?token=<pairToken>) and a persistent
 // deviceToken (used as Bearer token for all future report uploads).
 
 router.post("/pair", async (req, res) => {
+  // Rate limit: 5 pair requests per minute per IP (#6)
+  const ip = getClientIp(req);
+  const ipHash = await sha256hex(ip);
+  const allowed = await consumeRateLimit(ipHash + ":device_pair", 1, 5);
+  if (!allowed) {
+    res.set("Retry-After", "60");
+    res.status(429).json({ error: "Too many pair requests. Try again later." });
+    return;
+  }
+
   const pairToken = newToken(24);
   const deviceToken = newToken(32);
   const id = newDeviceId();
+  const expiresAt = new Date(Date.now() + PAIR_TOKEN_TTL_MS);
 
-  await db.insert(devicesTable).values({ id, pairToken, deviceToken });
+  await db.insert(devicesTable).values({ id, pairToken, deviceToken, expiresAt });
 
-  req.log.info({ deviceId: id }, "device_pair_initiated");
+  req.log.info({ deviceId: id, ipHash }, "device_pair_initiated");
 
   res.status(201).json({ pairToken, deviceToken });
 });
@@ -40,6 +62,16 @@ const ClaimBody = z.object({
 });
 
 router.post("/claim", async (req, res) => {
+  // Rate limit: 20 claim requests per minute per IP (#6)
+  const ip = getClientIp(req);
+  const ipHash = await sha256hex(ip);
+  const allowed = await consumeRateLimit(ipHash + ":device_claim", 1, 20);
+  if (!allowed) {
+    res.set("Retry-After", "60");
+    res.status(429).json({ error: "Too many claim attempts. Try again later." });
+    return;
+  }
+
   const parsed = ClaimBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(422).json({ error: "Invalid request", details: parsed.error.message });
@@ -47,11 +79,17 @@ router.post("/claim", async (req, res) => {
   }
 
   const { pairToken, email } = parsed.data;
+  const now = new Date();
 
   const rows = await db
     .select()
     .from(devicesTable)
-    .where(eq(devicesTable.pairToken, pairToken))
+    .where(
+      and(
+        eq(devicesTable.pairToken, pairToken),
+        gt(devicesTable.expiresAt, now)
+      )
+    )
     .limit(1);
 
   if (rows.length === 0) {
@@ -71,7 +109,7 @@ router.post("/claim", async (req, res) => {
     .set({ claimed: true, email, claimedAt: new Date() })
     .where(eq(devicesTable.id, device.id));
 
-  req.log.info({ deviceId: device.id }, "device_claimed");
+  req.log.info({ deviceId: device.id, ipHash }, "device_claimed");
 
   res.json({ deviceId: device.id, claimed: true });
 });
@@ -87,10 +125,17 @@ router.get("/pair-status", async (req, res) => {
     return;
   }
 
+  const now = new Date();
+
   const rows = await db
     .select({ id: devicesTable.id, claimed: devicesTable.claimed })
     .from(devicesTable)
-    .where(eq(devicesTable.pairToken, token))
+    .where(
+      and(
+        eq(devicesTable.pairToken, token),
+        gt(devicesTable.expiresAt, now)
+      )
+    )
     .limit(1);
 
   if (rows.length === 0) {
