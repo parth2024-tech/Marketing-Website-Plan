@@ -1,147 +1,110 @@
 import { Router, Request, Response } from "express";
 import { getGithubReleaseRepo } from "../githubReleaseRepo.js";
+import {
+  ASSET_FILENAMES,
+  DOWNLOAD_SLUGS,
+  getDownloadsDirectory,
+  isDownloadSlug,
+  resolveDownload,
+  unavailableMessage,
+  type DownloadSlug,
+} from "../lib/resolveDownload.js";
 
 const router = Router();
 
 /**
- * Stable download redirects — the website links to these, never to a
- * specific version. When a new release ships, these automatically
- * resolve to the latest tag's assets without redeploying the site.
+ * Stable download endpoints — the website links here, never to a pinned version.
  *
- *   /api/downloads/latest/oneshot  → SentinelOneShot.exe
- *   /api/downloads/latest/setup    → SentinelSetup.msi
- *   /api/downloads/latest/agent    → SentinelAgent.exe
+ *   GET /api/downloads/latest/oneshot  → SentinelOneShot.exe
+ *   GET /api/downloads/latest/setup    → SentinelSetup.msi
+ *   GET /api/downloads/latest/agent    → SentinelAgent.exe
+ *
+ * Resolution order: env URL override → artifacts/downloads → GitHub Releases.
  */
-
-const ASSET_MAP: Record<string, string> = {
-  oneshot: "SentinelOneShot.exe",
-  setup: "SentinelSetup.msi",
-  agent: "SentinelAgent.exe",
-};
 
 router.get("/latest/:binary", async (req: Request, res: Response) => {
   const raw = req.params.binary;
-  const slug = Array.isArray(raw) ? raw[0] : raw;
-  const binary = typeof slug === "string" ? slug.toLowerCase() : undefined;
-  const assetName = binary ? ASSET_MAP[binary] : undefined;
+  const slugParam = Array.isArray(raw) ? raw[0] : raw;
+  const slug = typeof slugParam === "string" ? slugParam.toLowerCase() : "";
 
-  if (!assetName) {
+  if (!isDownloadSlug(slug)) {
     const label =
-      typeof slug === "string" ? slug : Array.isArray(raw) ? raw.join(",") : String(raw ?? "");
+      typeof slugParam === "string"
+        ? slugParam
+        : Array.isArray(raw)
+          ? raw.join(",")
+          : String(raw ?? "");
     res.status(404).json({
-      error: `Unknown binary "${label}". Valid options: ${Object.keys(ASSET_MAP).join(", ")}`,
+      error: `Unknown binary "${label}". Valid options: ${DOWNLOAD_SLUGS.join(", ")}`,
     });
     return;
   }
 
-  const GITHUB_REPO = getGithubReleaseRepo();
-
   try {
-    // Use the GitHub API to resolve the latest release and find the asset URL.
-    // This redirect approach means the site never needs to know the current version.
-    const ghResponse = await fetch(
-      `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
-      {
-        headers: {
-          Accept: "application/vnd.github+json",
-          "User-Agent": "SentinelAPI/1.0",
-          // Optionally add a GitHub token for higher rate limits:
-          // Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-        },
-      }
-    );
+    const resolved = await resolveDownload(slug);
 
-    if (!ghResponse.ok) {
-      console.error(
-        `GitHub API error: ${ghResponse.status} ${ghResponse.statusText}`
-      );
-      // Fallback: redirect to the releases page
-      res.redirect(302, `https://github.com/${GITHUB_REPO}/releases/latest`);
+    if (!resolved) {
+      res.status(503).json({
+        error: unavailableMessage(slug),
+        slug,
+        filename: ASSET_FILENAMES[slug],
+        releasesUrl: `https://github.com/${getGithubReleaseRepo()}/releases`,
+      });
       return;
     }
 
-    const release = (await ghResponse.json()) as {
-      tag_name: string;
-      assets: Array<{
-        name: string;
-        browser_download_url: string;
-      }>;
-    };
-
-    const asset = release.assets.find(
-      (a) => a.name.toLowerCase() === assetName.toLowerCase()
-    );
-
-    if (asset) {
-      // 302 redirect — browser downloads the file directly from GitHub Releases
-      res.redirect(302, asset.browser_download_url);
-    } else {
-      console.error(
-        `Asset "${assetName}" not found in release ${release.tag_name}. ` +
-          `Available: ${release.assets.map((a) => a.name).join(", ")}`
-      );
-      res.redirect(302, `https://github.com/${GITHUB_REPO}/releases/latest`);
+    if (resolved.kind === "file") {
+      res.setHeader("X-Sentinel-Download-Source", resolved.source);
+      res.download(resolved.filePath, resolved.filename);
+      return;
     }
+
+    res.setHeader("X-Sentinel-Download-Source", resolved.source);
+    res.redirect(302, resolved.url);
   } catch (err) {
-    console.error("Failed to resolve download URL:", err);
-    // Graceful fallback — always give the user *something*
-    res.redirect(302, `https://github.com/${GITHUB_REPO}/releases/latest`);
+    console.error(`Failed to resolve download for "${slug}":`, err);
+    res.status(503).json({
+      error: unavailableMessage(slug as DownloadSlug),
+      slug,
+    });
   }
 });
 
 /**
  * GET /api/downloads/latest
- * Returns metadata about the latest release (for the website to display
- * version numbers, changelogs, etc. without hardcoding).
+ * Returns metadata about available downloads (local + GitHub).
  */
 router.get("/latest", async (_req: Request, res: Response) => {
   const GITHUB_REPO = getGithubReleaseRepo();
+  const downloadsDir = getDownloadsDirectory();
 
-  try {
-    const ghResponse = await fetch(
-      `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
-      {
-        headers: {
-          Accept: "application/vnd.github+json",
-          "User-Agent": "SentinelAPI/1.0",
-        },
-      }
-    );
+  const assets: Array<{
+    slug: DownloadSlug;
+    name: string;
+    available: boolean;
+    source: string | null;
+    downloadUrl: string;
+  }> = [];
 
-    if (!ghResponse.ok) {
-      res.status(502).json({ error: "Could not fetch latest release info" });
-      return;
-    }
-
-    const release = (await ghResponse.json()) as {
-      tag_name: string;
-      name: string;
-      published_at: string;
-      html_url: string;
-      assets: Array<{
-        name: string;
-        size: number;
-        browser_download_url: string;
-        download_count: number;
-      }>;
-    };
-
-    res.json({
-      version: release.tag_name,
-      name: release.name,
-      publishedAt: release.published_at,
-      releaseUrl: release.html_url,
-      assets: release.assets.map((a) => ({
-        name: a.name,
-        size: a.size,
-        downloadUrl: a.browser_download_url,
-        downloads: a.download_count,
-      })),
+  for (const slug of DOWNLOAD_SLUGS) {
+    const resolved = await resolveDownload(slug);
+    assets.push({
+      slug,
+      name: ASSET_FILENAMES[slug],
+      available: resolved !== null,
+      source: resolved?.source ?? null,
+      downloadUrl: `/api/downloads/latest/${slug}`,
     });
-  } catch (err) {
-    console.error("Failed to fetch release info:", err);
-    res.status(502).json({ error: "Could not fetch latest release info" });
   }
+
+  res.json({
+    version: null,
+    name: "Sentinel native downloads",
+    publishedAt: null,
+    releaseUrl: `https://github.com/${GITHUB_REPO}/releases`,
+    downloadsDirectory: downloadsDir,
+    assets,
+  });
 });
 
 export default router;

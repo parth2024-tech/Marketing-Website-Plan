@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Download, Zap, Terminal, ChevronDown, ArrowRight, Shield, Clock, RefreshCw, CheckCircle } from "lucide-react";
 import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
+import DownloadButton from "@/components/DownloadButton";
 
 function Badge({ children }: { children: React.ReactNode }) {
   return (
@@ -21,6 +22,7 @@ function TierCard({
   ctaLabel,
   ctaHref,
   ctaOnClick,
+  ctaSlot,
   recommended,
   accentClass,
   borderClass,
@@ -34,6 +36,7 @@ function TierCard({
   ctaLabel: string;
   ctaHref?: string;
   ctaOnClick?: () => void;
+  ctaSlot?: React.ReactNode;
   recommended?: boolean;
   accentClass: string;
   borderClass: string;
@@ -75,7 +78,9 @@ function TierCard({
       </ul>
 
       <div className="mt-auto pt-2">
-        {ctaHref ? (
+        {ctaSlot ? (
+          ctaSlot
+        ) : ctaHref ? (
           <a
             href={ctaHref}
             className={`inline-flex w-full items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-semibold transition-all duration-200 ${
@@ -156,7 +161,13 @@ export default function GetStarted() {
                 "Visible in system tray with Pause / Uninstall options",
               ]}
               ctaLabel="Download Sentinel Agent"
-              ctaHref="/api/downloads/latest/setup"
+              ctaSlot={
+                <DownloadButton
+                  slug="setup"
+                  label="Download Sentinel Agent"
+                  recommended
+                />
+              }
               recommended
               accentClass="bg-primary/10 border-primary/30 text-primary"
               borderClass="border-border/60"
@@ -178,7 +189,9 @@ export default function GetStarted() {
                 "Re-download whenever you want a new scan",
               ]}
               ctaLabel="Download One-Shot Scan"
-              ctaHref="/api/downloads/latest/oneshot"
+              ctaSlot={
+                <DownloadButton slug="oneshot" label="Download One-Shot Scan" />
+              }
               accentClass="bg-accent/10 border-accent/30 text-accent"
               borderClass="border-border/40"
             />
@@ -190,7 +203,7 @@ export default function GetStarted() {
           <div className="surface-card rounded-2xl p-8 mb-8 border border-border/40">
             <p className="text-xs font-mono text-muted-foreground mb-6 text-center tracking-widest">TIER 1 · HOW THE AGENT FLOW WORKS</p>
             <div className="flex flex-wrap items-start justify-center gap-4">
-              <FlowStep step="1" label="Download" sub="SentinelSetup.exe from this page" />
+              <FlowStep step="1" label="Download" sub="SentinelSetup.msi from this page" />
               <div className="hidden sm:flex items-center self-center mt-[-20px]">
                 <ArrowRight className="w-4 h-4 text-muted-foreground/40" />
               </div>

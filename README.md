@@ -64,13 +64,45 @@ Scoring is fully deterministic and publicly documented — no black-box AI, no m
 └── pnpm-workspace.yaml
 ```
 
-## Native Binaries & CI/CD
+## Native Binaries & Downloads
 
 The `native/` directory contains C# tools for data collection:
-- **SentinelAgent**: A persistent background service with a System Tray icon and WiX installer.
-- **SentinelOneShot**: A standalone, zero-install GUI application for one-time pairing and scanning.
+- **SentinelAgent** — background service with system tray and WiX installer (`SentinelSetup.msi`)
+- **SentinelOneShot** — one-time scan executable (Tier 2 on `/get-started`)
 
-These binaries are built and signed via `native/sign-binaries.ps1` and released via GitHub Actions (`native.yml`). The API server handles stable download redirects (`/api/downloads/latest/agent`, `/api/downloads/latest/setup`, and `/api/downloads/latest/oneshot`) which are integrated into the marketing website's onboarding flow.
+### How `/get-started` downloads work
+
+The marketing site does **not** hard-link to GitHub. Buttons call the API, which resolves files in this order:
+
+1. **Env override** — `SENTINEL_DOWNLOAD_URL_SETUP`, `SENTINEL_DOWNLOAD_URL_ONESHOT`, or `SENTINEL_DOWNLOAD_URL_AGENT`
+2. **Local bundle** — `artifacts/downloads/` (see `artifacts/downloads/README.md`)
+3. **GitHub Releases** — any release (including prereleases) on `SENTINEL_GITHUB_REPO` / `parth2024-tech/Marketing-Website-Plan`
+
+| Endpoint | File |
+|----------|------|
+| `GET /api/downloads/latest/setup` | `SentinelSetup.msi` |
+| `GET /api/downloads/latest/oneshot` | `SentinelOneShot.exe` |
+| `GET /api/downloads/latest/agent` | `SentinelAgent.exe` |
+
+If nothing is available, the API returns **503 JSON** and the UI shows a clear error (instead of sending users to an empty GitHub page).
+
+### CI/CD (`native.yml`)
+
+- **Tagged releases (`v*`)** — signed assets attached to a semver GitHub Release.
+- **`main` branch** — after each successful native build, a rolling prerelease **`ci-downloads`** is updated so `/get-started` works before the first semver tag.
+- **Local dev** — copy built files into `artifacts/downloads/` or run both `./start_api.sh` and `./start_site.sh` (Vite proxies `/api` to port 5000).
+
+Build and sign locally on Windows:
+
+```powershell
+.\build-native.ps1
+.\native\sign-binaries.ps1 -CertPath .\your-cert.pfx -CertPassword '...'
+Copy-Item artifacts\bin\SentinelOneShot\SentinelOneShot.exe artifacts\downloads\
+Copy-Item artifacts\bin\SentinelAgent\SentinelAgent.exe artifacts\downloads\
+Copy-Item artifacts\bin\SentinelSetup.msi artifacts\downloads\
+```
+
+Optional API env for higher GitHub rate limits: `GITHUB_TOKEN` or `SENTINEL_GITHUB_TOKEN`.
 
 ## Getting Started
 

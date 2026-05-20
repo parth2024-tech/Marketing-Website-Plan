@@ -337,7 +337,57 @@ jobs:
           retention-days: 30
 
   # ════════════════════════════════════════════════════════════
-  # Job 4: Create GitHub Release (only on tagged pushes)
+  # Job 4: Rolling CI downloads (main branch — keeps /get-started working)
+  # ════════════════════════════════════════════════════════════
+  publish-ci-downloads:
+    name: Publish CI Downloads
+    needs: [build, sign]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download signed SentinelOneShot
+        uses: actions/download-artifact@v4
+        with:
+          name: SentinelOneShot-signed-${{ github.sha }}
+          path: release-assets/
+
+      - name: Download signed SentinelAgent
+        uses: actions/download-artifact@v4
+        with:
+          name: SentinelAgent-signed-${{ github.sha }}
+          path: release-assets/
+
+      - name: Download signed Installer
+        uses: actions/download-artifact@v4
+        with:
+          name: SentinelSetup-signed-${{ github.sha }}
+          path: release-assets/
+
+      - name: Publish prerelease for website download API
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ci-downloads
+          name: CI Downloads (latest main)
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          make_latest: false
+          body: |
+            Rolling prerelease updated on every successful `main` native build.
+            The marketing site resolves `/api/downloads/latest/*` from this release
+            when no semver tag exists yet.
+          files: |
+            release-assets/SentinelOneShot.exe
+            release-assets/SentinelAgent.exe
+            release-assets/SentinelSetup.msi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ════════════════════════════════════════════════════════════
+  # Job 5: Create GitHub Release (only on tagged pushes)
   # ════════════════════════════════════════════════════════════
   release:
     name: Create Release

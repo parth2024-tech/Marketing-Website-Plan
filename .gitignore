@@ -50,6 +50,10 @@ Thumbs.db
 
 # Native build outputs
 artifacts/bin/
+artifacts/downloads/*.exe
+artifacts/downloads/*.msi
+!artifacts/downloads/.gitkeep
+!artifacts/downloads/README.md
 native/**/bin/
 native/**/obj/
 
