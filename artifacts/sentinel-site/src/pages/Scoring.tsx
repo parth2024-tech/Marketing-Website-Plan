@@ -1,4 +1,5 @@
 import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
+import React, { useState } from "react";
 import { Link } from "wouter";
 import { ArrowRight, Battery, Thermometer, HardDrive, Cpu, Database, Calculator, GitCommit, AlertTriangle } from "lucide-react";
 
@@ -76,6 +77,137 @@ const formulas = [
     example: "75% avg load, 12 throttle events → 100 − 10 − 15 = 75 → Watch.",
   },
 ];
+
+
+
+function InteractiveCalculator() {
+  const [cycles, setCycles] = useState(380);
+  const [health, setHealth] = useState(72);
+  const [maxTemp, setMaxTemp] = useState(83);
+  const [throttles, setThrottles] = useState(7);
+  const [wearLevel, setWearLevel] = useState(74);
+  const [realloc, setRealloc] = useState(0);
+
+  // Battery logic
+  const expected = 100 * Math.exp(-0.00042 * cycles);
+  const gap = Math.max(0, expected - health);
+  const batPenalty = gap > 10 ? Math.min(20, gap - 10) : 0;
+  const batScore = Math.max(30, Math.min(100, Math.round(health - batPenalty)));
+
+  // Thermal logic
+  let tempStep = 100;
+  if (maxTemp > 95) tempStep = 10;
+  else if (maxTemp > 90) tempStep = 30;
+  else if (maxTemp > 85) tempStep = 50;
+  else if (maxTemp > 80) tempStep = 65;
+  else if (maxTemp > 75) tempStep = 80;
+  
+  let thermPenalty = 0;
+  if (throttles > 20) thermPenalty = 20;
+  else if (throttles > 10) thermPenalty = 10;
+  else if (throttles > 3) thermPenalty = 5;
+  
+  const thermScore = Math.max(0, Math.min(100, tempStep - thermPenalty));
+
+  // Storage logic
+  const reallocPenalty = Math.min(40, realloc * 5);
+  const storeScore = Math.max(0, Math.min(100, wearLevel - reallocPenalty));
+
+  return (
+    <div className="surface-card rounded-2xl p-6 md:p-8 border border-primary/30 relative overflow-hidden mt-8">
+      <div className="absolute top-0 right-0 p-3 opacity-20 pointer-events-none">
+        <Calculator className="w-24 h-24" />
+      </div>
+      
+      <h3 className="text-xl font-bold mb-2 flex items-center gap-2 relative z-10">
+        <Calculator className="w-5 h-5 text-primary" />
+        Interactive Score Calculator
+      </h3>
+      <p className="text-sm text-muted-foreground mb-8 max-w-2xl relative z-10">
+        Adjust the raw telemetry values below to see exactly how Sentinel computes scores in real time. 
+        This is the exact same logic running on our servers.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+        {/* Battery Column */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Battery className="w-4 h-4 text-primary" />
+            <span className="font-semibold text-foreground">Battery</span>
+          </div>
+          
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Cycle Count</label>
+            <input type="range" min="0" max="1500" value={cycles} onChange={e => setCycles(Number(e.target.value))} className="w-full accent-primary" />
+            <div className="text-right text-xs font-mono">{cycles} cycles</div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Reported Health %</label>
+            <input type="range" min="10" max="100" value={health} onChange={e => setHealth(Number(e.target.value))} className="w-full accent-primary" />
+            <div className="text-right text-xs font-mono">{health}%</div>
+          </div>
+          
+          <div className="bg-primary/5 rounded-lg p-3 border border-primary/20 text-xs font-mono">
+            <div>Expected: {expected.toFixed(1)}%</div>
+            <div>Gap: {gap.toFixed(1)}</div>
+            <div>Penalty: -{batPenalty.toFixed(0)}</div>
+            <div className="text-primary font-bold mt-2 text-lg">Score: {batScore}</div>
+          </div>
+        </div>
+
+        {/* Thermals Column */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Thermometer className="w-4 h-4 text-amber-400" />
+            <span className="font-semibold text-foreground">Thermals</span>
+          </div>
+          
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Max Temp (°C)</label>
+            <input type="range" min="40" max="105" value={maxTemp} onChange={e => setMaxTemp(Number(e.target.value))} className="w-full accent-amber-400" />
+            <div className="text-right text-xs font-mono">{maxTemp}°C</div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Throttle Events (30m)</label>
+            <input type="range" min="0" max="30" value={throttles} onChange={e => setThrottles(Number(e.target.value))} className="w-full accent-amber-400" />
+            <div className="text-right text-xs font-mono">{throttles} events</div>
+          </div>
+          
+          <div className="bg-amber-400/5 rounded-lg p-3 border border-amber-400/20 text-xs font-mono">
+            <div>Temp Step: {tempStep}</div>
+            <div>Penalty: -{thermPenalty}</div>
+            <div className="text-amber-400 font-bold mt-2 text-lg">Score: {thermScore}</div>
+          </div>
+        </div>
+
+        {/* Storage Column */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <HardDrive className="w-4 h-4 text-accent" />
+            <span className="font-semibold text-foreground">Storage</span>
+          </div>
+          
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Wear Level / Health %</label>
+            <input type="range" min="10" max="100" value={wearLevel} onChange={e => setWearLevel(Number(e.target.value))} className="w-full accent-accent" />
+            <div className="text-right text-xs font-mono">{wearLevel}%</div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">Reallocated Sectors</label>
+            <input type="range" min="0" max="20" value={realloc} onChange={e => setRealloc(Number(e.target.value))} className="w-full accent-accent" />
+            <div className="text-right text-xs font-mono">{realloc}</div>
+          </div>
+          
+          <div className="bg-accent/5 rounded-lg p-3 border border-accent/20 text-xs font-mono">
+            <div>Base: {wearLevel}</div>
+            <div>Penalty: -{reallocPenalty}</div>
+            <div className="text-accent font-bold mt-2 text-lg">Score: {storeScore}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Scoring() {
   return (
@@ -246,6 +378,13 @@ export default function Scoring() {
                 </div>
               ))}
             </div>
+          </section>
+        </AnimateIn>
+
+                {/* Interactive Calculator */}
+        <AnimateIn delay={0.16}>
+          <section className="mb-16">
+            <InteractiveCalculator />
           </section>
         </AnimateIn>
 

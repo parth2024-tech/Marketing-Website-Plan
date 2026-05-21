@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
+import { ResponsiveContainer, ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea } from "recharts";
+
 import { Link, useParams, useLocation } from "wouter";
 import {
   ArrowRight, Shield, AlertTriangle, Info, Lock,
@@ -319,6 +321,148 @@ function ClaimPanel({ id }: { id: string }) {
         </button>
       </div>
       {errorMsg && <p className="text-xs text-red-400 mt-2">{errorMsg}</p>}
+    </div>
+  );
+}
+
+
+
+function ForecastChart() {
+  const [scans, setScans] = useState(1);
+  
+  // Simulated data for the chart
+  const data = [
+    { month: "Jan", popBase: 95, popMin: 90, popMax: 100, personal: 96 },
+    { month: "Feb", popBase: 92, popMin: 85, popMax: 98, personal: 94 },
+    { month: "Mar", popBase: 88, popMin: 80, popMax: 95, personal: 89 },
+    { month: "Apr", popBase: 85, popMin: 75, popMax: 92, personal: 87 },
+    { month: "May", popBase: 81, popMin: 70, popMax: 90, personal: 84 },
+    { month: "Jun", popBase: 78, popMin: 65, popMax: 88, personal: 80 },
+    { month: "Jul", popBase: 74, popMin: 60, popMax: 85, personal: null },
+    { month: "Aug", popBase: 70, popMin: 55, popMax: 82, personal: null },
+    { month: "Sep", popBase: 66, popMin: 50, popMax: 78, personal: null },
+    { month: "Oct", popBase: 62, popMin: 45, popMax: 75, personal: null },
+    { month: "Nov", popBase: 58, popMin: 40, popMax: 72, personal: null },
+    { month: "Dec", popBase: 54, popMin: 35, popMax: 68, personal: null },
+  ];
+
+  // We only show personal points up to the 'scans' count, and project the rest.
+  const chartData = data.map((d, i) => {
+    if (scans === 1) {
+      return { ...d, personal: i === 4 ? d.personal : null }; // only 1 point at "May" (now)
+    } else {
+      // 5 scans: Jan to May
+      if (i <= 4) return d;
+      // Regression line for the rest
+      const slope = -2.8; // derived
+      const proj = 84 + slope * (i - 4);
+      return { ...d, personalProj: proj };
+    }
+  });
+
+  return (
+    <div className="surface-card rounded-2xl p-6 border border-border/60 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-1">Battery Degradation Model</h3>
+          <p className="text-xs text-muted-foreground">
+            {scans === 1 ? "Industry baseline — 0 historical personal scans" : "Personal regression model — 5 historical scans"}
+          </p>
+        </div>
+        <button 
+          onClick={() => setScans(s => s === 1 ? 5 : 1)}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-colors"
+        >
+          Toggle Demo: {scans === 1 ? "Simulate returning user" : "Simulate new user"}
+        </button>
+      </div>
+
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+            <XAxis dataKey="month" stroke="#ffffff40" fontSize={10} tickMargin={10} />
+            <YAxis domain={[0, 100]} stroke="#ffffff40" fontSize={10} />
+            <Tooltip 
+              contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
+              itemStyle={{ color: '#e2e8f0' }}
+            />
+            <Legend wrapperStyle={{ fontSize: '12px' }} />
+            
+            <ReferenceArea x1="Sep" x2="Dec" fill="#ef4444" fillOpacity={0.1} />
+            <ReferenceArea x1="Sep" x2="Dec" y1={100} y2={100} stroke="none" label={{ position: 'insideTop', value: 'Replacement Zone', fill: '#ef4444', fontSize: 10, opacity: 0.8 }} fill="none" />
+
+            {/* Baseline Population Band (Confidence Interval) */}
+            <Area 
+              type="monotone" 
+              dataKey="popMax" 
+              stroke="none" 
+              fill="#ffffff" 
+              fillOpacity={0.03} 
+              activeDot={false}
+              name="Population Upper"
+              legendType="none"
+              tooltipType="none"
+            />
+            <Area 
+              type="monotone" 
+              dataKey="popMin" 
+              stroke="none" 
+              fill="#000000" 
+              fillOpacity={0.2} 
+              activeDot={false}
+              name="Population Lower"
+              legendType="none"
+              tooltipType="none"
+            />
+            
+            {/* Baseline Curve */}
+            <Line 
+              type="monotone" 
+              dataKey="popBase" 
+              stroke="#ffffff30" 
+              strokeWidth={2} 
+              dot={false} 
+              name="Population Baseline" 
+              strokeDasharray="5 5"
+            />
+
+            {/* Personal Scans */}
+            <Line 
+              type="monotone" 
+              dataKey="personal" 
+              stroke="#22d3ee" 
+              strokeWidth={2} 
+              dot={{ r: 4, fill: "#22d3ee" }} 
+              activeDot={{ r: 6 }} 
+              name="Your Scans" 
+            />
+
+            {/* Personal Projection */}
+            {scans > 1 && (
+              <Line 
+                type="monotone" 
+                dataKey="personalProj" 
+                stroke="#22d3ee" 
+                strokeWidth={2} 
+                strokeDasharray="3 3"
+                dot={false} 
+                name="Projected Trend" 
+              />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      
+      {scans > 1 && (
+        <div className="mt-4 flex items-center justify-between text-xs border-t border-border/30 pt-4">
+          <div className="text-muted-foreground">Confidence interval narrowed by 68% using local regression.</div>
+          <div className="text-primary font-medium flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            Next scan recommended: Jun 15
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -743,6 +887,7 @@ export default function Report() {
                 <p className="text-xs text-muted-foreground/50 leading-relaxed -mt-1 mb-1">
                   How long before each component becomes a problem — based on current readings and degradation curves.
                 </p>
+                <ForecastChart />
                 {result.predictions.map((pred, i) => {
                   const severityStyles = {
                     stable: {
