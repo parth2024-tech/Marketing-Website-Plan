@@ -20,11 +20,11 @@ Scoring is fully deterministic and publicly documented — no black-box AI, no m
 - **Diagnostic Transparency** — Integrated sensor validation (e.g., detecting static ACPI readings) with real-time UI warnings ("Data Collection Notes") when telemetry quality is suspect.
 - **Unified Diagnostic Schema** — Standardized `sentinelSchema:1` format used across all collection scripts (PS1/PY) and the core scoring engine to ensure data integrity.
 - **Hardware Health Report Flow** — Paste JSON → complete habit audit → receive scored report with component breakdown, findings, and forecast timeline.
-- **Troubleshooting Assistant** — Chat-style knowledge base with step-by-step diagnostic guidance.
+- **Troubleshooting Assistant** — Intelligent context-aware knowledge base mapped to exact score patterns (Battery Drain, Thermal Throttling). Includes URL-based context pre-loading directly from reports, copyable CLI blocks, explicit pass/fail decision nodes, and helpfulness feedback signals.
 - **Risk Calculator & Dashboard** — Interactive failure-risk estimation and multi-report comparison views.
 - **Account & Claim System** — Passwordless magic-link auth (15-min token → 30-day session cookie). Reports are claimable by email after submission.
 - **Device Pairing** — Agent-friendly pairing flow (`/pair`) with `pairToken`/`deviceToken` handshake so a local agent can push reports and auto-claim them.
-- **Three-tier Onboarding** — `/get-started` routes users to Tier 1 (Agent), Tier 2 (One-Shot Executable), or Tier 3 (Legacy Script Paste-back) based on capability.
+- **Three-tier Onboarding** — `/get-started` features smart conditional routing for Personal vs Fleet users, explicitly displaying time estimates, prerequisites, and step-by-step previews for Tier 1 (Agent), Tier 2 (One-Shot), and Tier 3 (Script). Incorporates real-time GitHub release polling for download status.
 - **Waitlist Gate** — Pro findings blurred behind a waitlist capture form.
 - **Custom 404** — Brand-aligned error page.
 
