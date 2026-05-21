@@ -8,3 +8,6 @@ export * from "./magicLinkTokens";
 export * from "./devices";
 export * from "./scans";
 export * from "./pairSessions";
+export * from "./users";
+export * from "./organizations";
+export * from "./organizationMembers";

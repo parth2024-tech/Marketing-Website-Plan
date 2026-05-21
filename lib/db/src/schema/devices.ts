@@ -1,4 +1,5 @@
 import { pgTable, text, boolean, timestamp, index } from "drizzle-orm/pg-core";
+import { organizationsTable } from "./organizations";
 
 export const devicesTable = pgTable(
   "devices",
@@ -6,7 +7,7 @@ export const devicesTable = pgTable(
     id: text("id").primaryKey(),
     pairToken: text("pair_token").notNull().unique(),
     deviceToken: text("device_token").notNull().unique(),
-    email: text("email"),
+    orgId: text("org_id").references(() => organizationsTable.id),
     claimed: boolean("claimed").notNull().default(false),
     claimedAt: timestamp("claimed_at", { withTimezone: true }),
     /** Pair token expiry — reject claims on tokens past this time (#6) */
@@ -16,7 +17,7 @@ export const devicesTable = pgTable(
   (t) => [
     index("devices_pair_token_idx").on(t.pairToken),
     index("devices_device_token_idx").on(t.deviceToken),
-    index("devices_email_idx").on(t.email),
+    index("devices_org_id_idx").on(t.orgId),
   ],
 );
 
