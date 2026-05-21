@@ -6,7 +6,12 @@ Scoring is fully deterministic and publicly documented — no black-box AI, no m
 
 ## Features
 
-- **Multi-page Marketing Site** — Fully responsive dark/futuristic design with scroll-triggered animations and premium micro-interactions.
+- **Multi-page Marketing Site** — Sleek responsive dark/futuristic layout featuring live OEM vs Sentinel side-by-side comparison, public TS formula previews, and scroll-triggered linear regression timelines.
+- **Advanced JSON Ingestion Surface** — CodeMirror-powered code editor surface validating against `sentinelSchema` in real time with precise error paths. Instantly pulls device model and timestamp, and offers single-click demo payload loading to eliminate friction.
+- **Calibrated Habit Audits** — Interactive audit with micro-explanation tooltips mapping habits (dust vent buildup, charging threshold limits, SSD wear-level margins) directly to component scores, complete with a real-time habit score indicator.
+- **Premium Diagnostic Reports** — Features an 800ms circular score gauge (custom easing), sequential staggered component cards, three-layer component details (raw telemetry + english status + scoring math), and prominent top-pinned Data Quality banners.
+- **Action-Oriented Findings & Troubleshooting** — Expandable details for all flagged items with specific urgency levels (Critical, Warning, Info) and direct links to the Troubleshooting Assistant for step-by-step guides.
+- **Score Reproducibility Console** — Open-source math verification panel displaying the exact inputs, formulas, and weights used to calculate the score, ensuring total credibility.
 - **Deterministic Scoring Engine** — Five-component weighted health score (Battery 30%, Thermals 25%, Storage 25%, Memory 10%, CPU 10%) computed server-side from documented formulas. Algorithm version is stamped on every report.
 - **Public Scoring Methodology** — `/scoring` page documents every formula, threshold, and weight with worked examples so any user can reproduce a score by hand.
 - **Health Forecast Timeline** — Population-curve baseline (cold start) graduating to per-device linear regression with 95% CI intervals as scan history accumulates. Model source is labelled on every projection.
