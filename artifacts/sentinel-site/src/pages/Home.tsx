@@ -1,16 +1,90 @@
 import { Link } from "wouter";
-import { Download, ArrowRight, Cpu, Battery, HardDrive, Thermometer, Wifi, AlertTriangle, CheckCircle, TrendingUp, Activity } from "lucide-react";
+import { motion } from "framer-motion";
+import { Download, ArrowRight, Cpu, Battery, HardDrive, Thermometer, Wifi, AlertTriangle, CheckCircle, TrendingUp, Activity, FileCode } from "lucide-react";
 import WaitlistForm, { WaitlistCount } from "@/components/WaitlistForm";
 import HealthFeed from "@/components/HealthFeed";
-import { useState, useEffect } from "react";
 import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
 
-const metrics = [
-  { label: "CPU Usage",    value: "< 1%",       color: "text-primary" },
-  { label: "Data Sent",   value: "Zero Cloud",  color: "text-primary" },
-  { label: "Warning Time",value: "Weeks Early", color: "text-accent" },
-  { label: "Windows",     value: "10 & 11",     color: "text-muted-foreground" },
-];
+function HeroSideBySide() {
+  return (
+    <div className="flex flex-col lg:flex-row gap-8 w-full max-w-5xl mx-auto mt-16 items-stretch relative">
+      {/* OEM Tool (Dell SupportAssist) */}
+      <motion.div 
+        initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
+        className="flex-1 rounded-2xl border border-border/60 bg-card/40 p-8 flex flex-col items-center justify-center relative overflow-hidden backdrop-blur-sm"
+      >
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-blue-600" />
+        <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest mb-8 w-full text-left opacity-60">OEM Diagnostic</div>
+        <div className="w-24 h-24 rounded-full bg-green-500/10 border-4 border-green-500/20 flex items-center justify-center mb-6 shadow-[0_0_40px_-10px_rgba(34,197,94,0.3)]">
+          <CheckCircle className="w-12 h-12 text-green-500" />
+        </div>
+        <h3 className="text-2xl font-semibold text-foreground mb-2">Your PC is healthy</h3>
+        <p className="text-sm text-muted-foreground text-center">No hardware issues detected.</p>
+        <div className="w-full mt-8 space-y-3 opacity-70">
+          <div className="flex justify-between text-sm py-3 border-b border-border/30">
+            <span className="text-muted-foreground">Battery</span>
+            <span className="text-green-400 font-medium">Passed</span>
+          </div>
+          <div className="flex justify-between text-sm py-3 border-b border-border/30">
+            <span className="text-muted-foreground">Storage</span>
+            <span className="text-green-400 font-medium">Passed</span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* VS Badge */}
+      <div className="hidden lg:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+        <div className="w-12 h-12 rounded-full bg-background border border-border/80 flex items-center justify-center text-sm font-bold text-muted-foreground shadow-2xl">
+          VS
+        </div>
+      </div>
+
+      {/* Sentinel Tool */}
+      <motion.div 
+        initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.5 }}
+        className="flex-1 rounded-2xl border border-primary/40 bg-primary/5 p-8 flex flex-col relative overflow-hidden shadow-[0_0_50px_-15px_rgba(34,211,238,0.25)] backdrop-blur-sm"
+      >
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
+        <div className="text-xs text-primary font-mono uppercase tracking-widest mb-8 w-full text-left">Sentinel Telemetry</div>
+        
+        <div className="space-y-8 w-full flex-1 flex flex-col justify-center">
+          {/* Animated Component Bar */}
+          <div>
+            <div className="flex justify-between text-base mb-2.5">
+              <span className="font-semibold text-foreground flex items-center gap-2"><Battery className="w-4 h-4 text-red-400"/> Battery Wear</span>
+              <span className="text-red-400 font-mono font-bold">23% Capacity</span>
+            </div>
+            <div className="w-full h-3 rounded-full bg-background/50 border border-border/60 overflow-hidden shadow-inner">
+              <motion.div 
+                initial={{ width: "100%" }} animate={{ width: "23%" }} transition={{ duration: 1.5, delay: 1, ease: "easeOut" }}
+                className="h-full bg-red-400 glow-red"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground/80 mt-3 leading-relaxed">
+              412 cycles. Expected 78%, actual 23%. OEM tools hide cycle counts and fail to adjust degradation baselines.
+            </p>
+          </div>
+
+          <div>
+            <div className="flex justify-between text-base mb-2.5">
+              <span className="font-semibold text-foreground flex items-center gap-2"><HardDrive className="w-4 h-4 text-amber-400"/> NVMe Endurance</span>
+              <span className="text-amber-400 font-mono font-bold">61% Health</span>
+            </div>
+            <div className="w-full h-3 rounded-full bg-background/50 border border-border/60 overflow-hidden shadow-inner">
+              <motion.div 
+                initial={{ width: "100%" }} animate={{ width: "61%" }} transition={{ duration: 1.5, delay: 1.2, ease: "easeOut" }}
+                className="h-full bg-amber-400"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground/80 mt-3 leading-relaxed">
+              OEM tools report "Passed" until the drive hits 0%. Sentinel tracks exact linear endurance consumption.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
 const differentiators = [
   {
@@ -41,226 +115,271 @@ const featureHighlights = [
   { icon: Wifi,        label: "Network stability tracking",  color: "text-primary" },
 ];
 
-// Animated diagnostic visual
-function DiagnosticVisual({ liveMetrics }: { liveMetrics: any }) {
-  return (
-    <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 mx-auto">
-      {/* Rings */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="absolute w-[90%] h-[90%] rounded-full border border-primary/10 animate-pulse-ring" style={{ animationDelay: "0s" }} />
-        <div className="absolute w-[90%] h-[90%] rounded-full border border-primary/10 animate-pulse-ring" style={{ animationDelay: "0.8s" }} />
-        <div className="absolute w-[90%] h-[90%] rounded-full border border-primary/10 animate-pulse-ring" style={{ animationDelay: "1.6s" }} />
-      </div>
-
-      {/* Static rings */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-[80%] h-[80%] rounded-full border border-border/30" />
-        <div className="absolute w-[55%] h-[55%] rounded-full border border-border/20" />
-        <div className="absolute w-[30%] h-[30%] rounded-full border border-primary/30 animate-spin-slow" />
-      </div>
-
-      {/* Scan line overlay */}
-      <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
-        <div
-          className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent animate-scan-line"
-          style={{ top: "20%" }}
-        />
-      </div>
-
-      {/* Center core */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative w-16 h-16 rounded-full bg-primary/10 border border-primary/40 flex items-center justify-center glow-cyan">
-          <div className="w-6 h-6 rounded-full bg-primary animate-glow-pulse" />
-        </div>
-      </div>
-
-      {/* Floating metric chips */}
-      <div
-        className="absolute top-4 right-8 px-2.5 py-1.5 rounded-md bg-card border border-primary/30 font-mono text-xs text-primary animate-float-chip"
-        style={{ animationDelay: "0s" }}
-        data-testid="chip-cpu"
-      >
-        CPU <span className="text-foreground ml-1">{Math.round(liveMetrics.cpu)}%</span>
-      </div>
-      <div
-        className="absolute bottom-12 left-2 px-2.5 py-1.5 rounded-md bg-card border border-accent/30 font-mono text-xs text-accent animate-float-chip"
-        style={{ animationDelay: "1s" }}
-        data-testid="chip-temp"
-      >
-        TEMP <span className="text-foreground ml-1">{Math.round(liveMetrics.temp)}°C</span>
-      </div>
-      <div
-        className="absolute top-16 left-0 px-2.5 py-1.5 rounded-md bg-card border border-primary/30 font-mono text-xs text-primary animate-float-chip"
-        style={{ animationDelay: "0.5s" }}
-        data-testid="chip-battery"
-      >
-        BATT <span className="text-foreground ml-1">94%</span>
-      </div>
-      <div
-        className="absolute bottom-8 right-4 px-2.5 py-1.5 rounded-md bg-card border border-primary/30 font-mono text-xs text-primary animate-float-chip"
-        style={{ animationDelay: "1.5s" }}
-        data-testid="chip-ssd"
-      >
-        SSD <span className="text-foreground ml-1">98%</span>
-      </div>
-
-      {/* Status dot */}
-      <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card/80 border border-border/60 font-mono text-xs">
-        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-glow-pulse" />
-        <span className="text-muted-foreground">NOMINAL</span>
-      </div>
-    </div>
-  );
-}
-
 export default function Home() {
-  const [liveMetrics, setLiveMetrics] = useState({
-    cpu: 23,
-    temp: 67,
-    batt: 94,
-    ssd: 98
-  });
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLiveMetrics(prev => ({
-        cpu: Math.max(5, Math.min(100, prev.cpu + (Math.random() - 0.5) * 15)),
-        temp: Math.max(45, Math.min(95, prev.temp + (Math.random() - 0.5) * 5)),
-        batt: 94,
-        ssd: 98
-      }));
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative min-h-[92vh] flex items-center overflow-hidden px-6">
+      <section className="relative pt-24 pb-20 overflow-hidden px-6 text-center flex flex-col items-center min-h-[92vh] justify-center">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 pointer-events-none" />
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/3 blur-3xl pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center py-20">
-          {/* Copy — stagger hero text elements */}
-          <div className="flex flex-col gap-8">
-            <AnimateIn delay={0} duration={0.4}>
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full text-xs font-mono font-medium border border-primary/30 text-primary bg-primary/10">
-                  EARLY ACCESS
-                </span>
-                <span className="text-xs text-muted-foreground font-mono animate-blink">|</span>
-                <span className="text-xs text-muted-foreground font-mono">Windows 10 &amp; 11</span>
-              </div>
-            </AnimateIn>
-
-            <AnimateIn delay={0.1} duration={0.5}>
-              <h1 className="text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08]" data-testid="heading-hero">
-                See exactly why{" "}
-                <span className="gradient-text">your laptop is slowing down.</span>
-              </h1>
-            </AnimateIn>
-
-            <AnimateIn delay={0.2} duration={0.5}>
-              <p className="text-lg text-muted-foreground leading-relaxed max-w-lg">
-                Sentinel runs deterministic, explainable diagnostics across battery, thermals, storage, memory and CPU — and tells you what's wearing out, with the reasoning shown.
-              </p>
-            </AnimateIn>
-
-            <AnimateIn delay={0.3} duration={0.5}>
-              <div className="flex flex-col sm:flex-row items-start gap-4">
-                <a
-                  href="#"
-                  className="flex items-center gap-2.5 px-6 py-3.5 rounded-lg font-semibold text-sm text-background bg-primary hover:bg-primary/90 glow-cyan transition-all duration-200"
-                  data-testid="button-download"
-                >
-                  <Download className="w-4 h-4" />
-                  Download for Windows
-                </a>
-                <Link
-                  href="/waitlist"
-                  className="flex items-center gap-2 px-6 py-3.5 rounded-lg font-semibold text-sm border border-border/60 text-foreground hover:border-primary/60 hover:text-primary transition-all duration-200"
-                  data-testid="button-waitlist-hero"
-                >
-                  Join the Waitlist
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </AnimateIn>
+        <AnimateIn delay={0}>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono font-medium border border-red-500/30 text-red-400 bg-red-500/10 mb-8 shadow-sm">
+            <AlertTriangle className="w-3.5 h-3.5" /> THE PASS/FAIL MYTH
           </div>
+        </AnimateIn>
+        
+        <AnimateIn delay={0.1}>
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] max-w-5xl mx-auto">
+            OEM diagnostics lie to you.<br/>
+            <span className="gradient-text">Sentinel shows the truth.</span>
+          </h1>
+        </AnimateIn>
+        
+        <AnimateIn delay={0.2}>
+          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto mt-6">
+            Stop relying on binary Pass/Fail checks from Dell, Lenovo, and HP that hide hardware degradation. Sentinel runs deterministic telemetry to expose exactly what is failing before your system dies.
+          </p>
+        </AnimateIn>
+        
+        <AnimateIn delay={0.3} className="w-full relative z-10">
+          <HeroSideBySide />
+        </AnimateIn>
+        
+        <AnimateIn delay={0.5} className="mt-16 relative z-10">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/get-started" className="flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl font-bold text-base text-background bg-primary hover:bg-primary/90 glow-cyan transition-all duration-200 shadow-xl min-w-[240px]">
+              <Download className="w-5 h-5" /> Run Sentinel Free
+            </Link>
+            <Link href="/oem-failures" className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-base border border-border/60 text-foreground hover:border-primary/60 hover:text-primary transition-all duration-200 min-w-[240px]">
+              See the OEM Evidence <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </AnimateIn>
+      </section>
 
-          {/* Visual */}
-          <AnimateIn delay={0.25} duration={0.7} direction="left">
-            <div className="flex items-center justify-center">
-              <DiagnosticVisual liveMetrics={liveMetrics} />
+      {/* Radical Transparency & Scroll Animations Section */}
+      <section className="px-6 py-28 overflow-hidden bg-card/20 border-y border-border/60">
+        <div className="max-w-6xl mx-auto">
+          <AnimateIn>
+            <div className="text-center mb-20">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Radical transparency in every report</h2>
+              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+                No guessing games. Watch exactly how your system is graded, component by component, with forecasted failure timelines based on real mathematical regressions.
+              </p>
             </div>
           </AnimateIn>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Score Breakdown Scroll Animation */}
+            <div className="space-y-8">
+              <AnimateIn><h3 className="text-2xl font-bold">Component Breakdown</h3></AnimateIn>
+              <StaggerContainer className="space-y-6" staggerDelay={0.15}>
+                {[
+                  { name: "Battery", score: 82, color: "bg-green-400 glow-green", text: "text-green-400" },
+                  { name: "Thermals", score: 55, color: "bg-amber-400 glow-amber", text: "text-amber-400" },
+                  { name: "Storage", score: 91, color: "bg-green-400 glow-green", text: "text-green-400" },
+                  { name: "Memory", score: 74, color: "bg-green-400 glow-green", text: "text-green-400" }
+                ].map((comp) => (
+                  <StaggerItem key={comp.name} direction="left">
+                    <div className="flex items-center gap-5">
+                      <span className="w-24 text-base font-semibold text-muted-foreground">{comp.name}</span>
+                      <div className="flex-1 h-3 bg-background border border-border/60 rounded-full overflow-hidden shadow-inner">
+                        <motion.div 
+                          className={`h-full ${comp.color}`}
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${comp.score}%` }}
+                          viewport={{ once: true, margin: "-100px" }}
+                          transition={{ duration: 1.2, ease: "easeOut" }}
+                        />
+                      </div>
+                      <span className={`w-12 text-right text-lg font-bold font-mono ${comp.text}`}>{comp.score}</span>
+                    </div>
+                  </StaggerItem>
+                ))}
+              </StaggerContainer>
+            </div>
+
+            {/* Forecast Timeline Scroll Animation */}
+            <div className="space-y-8">
+              <AnimateIn><h3 className="text-2xl font-bold">Forecast Timeline</h3></AnimateIn>
+              <div className="p-8 rounded-2xl border border-border/50 bg-background/50 shadow-xl relative backdrop-blur-sm">
+                {/* Graph lines */}
+                <div className="absolute left-8 bottom-8 top-8 w-px bg-border/80" />
+                <div className="absolute left-8 bottom-8 right-8 h-px bg-border/80" />
+                
+                <div className="relative h-48 w-full ml-4 overflow-hidden">
+                  {/* Battery degradation line drawn left to right */}
+                  <motion.svg 
+                    className="absolute inset-0 w-full h-full overflow-visible" 
+                    preserveAspectRatio="none"
+                    viewBox="0 0 100 100"
+                  >
+                    <motion.path 
+                      d="M 0,10 C 30,15 60,40 100,75" 
+                      fill="none" 
+                      stroke="var(--color-primary, #22d3ee)" 
+                      strokeWidth="2.5"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      whileInView={{ pathLength: 1, opacity: 1 }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
+                    <motion.path 
+                      d="M 0,10 C 30,15 60,40 100,75 L 100,100 L 0,100 Z" 
+                      fill="url(#fadeGradient)"
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 0.15 }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
+                    <defs>
+                      <linearGradient id="fadeGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--color-primary, #22d3ee)" />
+                        <stop offset="100%" stopColor="transparent" />
+                      </linearGradient>
+                    </defs>
+                  </motion.svg>
+                  
+                  {/* Projected fail point */}
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ delay: 1.2, duration: 0.4 }}
+                    className="absolute right-0 bottom-[25%] flex items-center gap-2 translate-x-4 -translate-y-2"
+                  >
+                    <div className="w-3.5 h-3.5 rounded-full bg-red-400 glow-red" />
+                    <div className="text-xs font-mono font-bold text-red-400 bg-card px-2.5 py-1.5 border border-red-500/30 rounded-md">Fail Point</div>
+                  </motion.div>
+                </div>
+                <p className="text-xs text-muted-foreground text-center mt-6">Degradation trajectory modelled from 412 charge cycles.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Live Telemetry strip */}
-      <section className="border-y border-border/60 bg-[#0a0e1a] px-6 py-6">
-        <StaggerContainer className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8" staggerDelay={0.07}>
-          <StaggerItem>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 border border-primary/20">
-                <Activity className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <div className="text-[10px] font-mono text-primary flex items-center gap-1.5 uppercase tracking-widest">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> Live Telemetry
+      {/* Social Proof: Highlight public algorithm with inline formulas */}
+      <section className="px-6 py-28">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <AnimateIn>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono border border-primary/30 text-primary bg-primary/10 mb-6 font-semibold shadow-sm">
+                  <FileCode className="w-3.5 h-3.5" /> FULLY OPEN ALGORITHM
                 </div>
-                <div className="text-xs text-muted-foreground font-mono">System monitoring active</div>
-              </div>
+                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-5">No black-box AI.<br/>Reproducible by hand.</h2>
+                <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+                  Trust isn't given, it's verified. Every Sentinel score is derived from a strict, versioned, and publicly documented mathematical formula. If you know your battery cycles and raw capacity, you can calculate the exact score yourself.
+                </p>
+                <Link href="/scoring" className="text-primary hover:text-primary/80 font-bold inline-flex items-center gap-1.5 transition-colors">
+                  Read the full scoring methodology <ArrowRight className="w-4 h-4" />
+                </Link>
+              </AnimateIn>
             </div>
-          </StaggerItem>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 md:gap-12 text-center md:text-left flex-1 justify-end max-w-2xl w-full">
-            <StaggerItem>
-              <div className="flex flex-col gap-1" data-testid="metric-cpu">
-                <span className="text-xs text-muted-foreground uppercase tracking-widest font-mono">CPU Load</span>
-                <span className="text-xl font-bold font-mono text-cyan-400">{Math.round(liveMetrics.cpu)}%</span>
+            
+            {/* Code Snippet Window */}
+            <AnimateIn delay={0.2} direction="left">
+              <div className="rounded-xl border border-border/60 bg-[#0d1117] overflow-hidden shadow-2xl">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-[#161b22]">
+                  <div className="w-3 h-3 rounded-full bg-red-500/70" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
+                  <div className="w-3 h-3 rounded-full bg-green-500/70" />
+                  <span className="text-xs text-muted-foreground font-mono ml-2">engine.ts • v1.4.0</span>
+                </div>
+                <div className="p-6 font-mono text-[13px] leading-relaxed text-slate-300 overflow-x-auto">
+                  <pre>
+<code><span className="text-violet-400">export function</span> <span className="text-blue-400">batteryScore</span>(health: <span className="text-cyan-400">number</span>, cycles: <span className="text-cyan-400">number</span>) {'{'}
+  <span className="text-slate-500">{"// 1. Get baseline expected health for this cycle count"}</span>
+  <span className="text-violet-400">const</span> expected = <span className="text-blue-400">getExpectedHealth</span>(cycles);
+  
+  <span className="text-slate-500">{"// 2. Penalise if degradation is faster than the curve"}</span>
+  <span className="text-violet-400">let</span> score = health;
+  <span className="text-violet-400">const</span> gap = expected - health;
+  
+  <span className="text-violet-400">if</span> (gap {'>'} <span className="text-amber-400">10</span>) {'{'}
+    score -= <span className="text-blue-400">Math</span>.<span className="text-blue-400">min</span>(<span className="text-amber-400">20</span>, gap - <span className="text-amber-400">10</span>);
+  {'}'}
+  
+  <span className="text-violet-400">return</span> <span className="text-blue-400">clamp</span>(score, <span className="text-amber-400">30</span>, <span className="text-amber-400">100</span>);
+{'}'}</code>
+                  </pre>
+                </div>
               </div>
-            </StaggerItem>
-            <StaggerItem>
-              <div className="flex flex-col gap-1" data-testid="metric-temp">
-                <span className="text-xs text-muted-foreground uppercase tracking-widest font-mono">Core Temp</span>
-                <span className="text-xl font-bold font-mono text-amber-400">{Math.round(liveMetrics.temp)}°C</span>
-              </div>
-            </StaggerItem>
-            <StaggerItem>
-              <div className="flex flex-col gap-1" data-testid="metric-batt">
-                <span className="text-xs text-muted-foreground uppercase tracking-widest font-mono">Batt Health</span>
-                <span className="text-xl font-bold font-mono text-green-400">{liveMetrics.batt}%</span>
-              </div>
-            </StaggerItem>
-            <StaggerItem>
-              <div className="flex flex-col gap-1" data-testid="metric-ssd">
-                <span className="text-xs text-muted-foreground uppercase tracking-widest font-mono">SSD Wear</span>
-                <span className="text-xl font-bold font-mono text-green-400">{liveMetrics.ssd}%</span>
-              </div>
-            </StaggerItem>
+            </AnimateIn>
           </div>
-        </StaggerContainer>
+        </div>
+      </section>
+
+      {/* OEM Failures Section Teaser */}
+      <section className="px-6 py-28 bg-card/20 border-t border-border/60">
+        <div className="max-w-7xl mx-auto">
+          <AnimateIn>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">The OEM Hall of Shame</h2>
+              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+                We've documented exact cases where built-in diagnostic tools completely missed critical hardware degradation. Here's why you can't rely on pre-installed bloatware.
+              </p>
+            </div>
+          </AnimateIn>
+
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <StaggerItem>
+              <Link href="/oem-failures#dell" className="block h-full group">
+                <div className="surface-card rounded-2xl p-8 h-full flex flex-col border border-border/50 group-hover:border-blue-500/50 hover:shadow-[0_0_30px_-10px_rgba(59,130,246,0.2)] transition-all bg-background/40">
+                  <div className="text-xs font-mono text-blue-400 mb-4 uppercase tracking-widest font-semibold">Case Study 01</div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">Dell SupportAssist's 50% Lie</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+                    SupportAssist classifies battery health as "Good" anywhere from 50% to 100%. A battery operating at half its original runtime still receives a perfect pass.
+                  </p>
+                  <div className="mt-8 flex items-center gap-2 text-sm font-bold text-blue-400 group-hover:translate-x-1 transition-transform">
+                    Read Case Study <ArrowRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </Link>
+            </StaggerItem>
+            <StaggerItem>
+              <Link href="/oem-failures#lenovo" className="block h-full group">
+                <div className="surface-card rounded-2xl p-8 h-full flex flex-col border border-border/50 group-hover:border-red-500/50 hover:shadow-[0_0_30px_-10px_rgba(239,68,68,0.2)] transition-all bg-background/40">
+                  <div className="text-xs font-mono text-red-400 mb-4 uppercase tracking-widest font-semibold">Case Study 02</div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">Lenovo Vantage Hiding Cycles</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+                    Vantage displays a simple "Condition: Normal" status while actively concealing the actual cycle count and capacity percentage from the end user.
+                  </p>
+                  <div className="mt-8 flex items-center gap-2 text-sm font-bold text-red-400 group-hover:translate-x-1 transition-transform">
+                    Read Case Study <ArrowRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </Link>
+            </StaggerItem>
+            <StaggerItem>
+              <Link href="/oem-failures#hp" className="block h-full group">
+                <div className="surface-card rounded-2xl p-8 h-full flex flex-col border border-border/50 group-hover:border-cyan-400/50 hover:shadow-[0_0_30px_-10px_rgba(34,211,238,0.2)] transition-all bg-background/40">
+                  <div className="text-xs font-mono text-cyan-400 mb-4 uppercase tracking-widest font-semibold">Case Study 03</div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">HP's NVMe Wear Blindspot</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed flex-1">
+                    HP Support Assistant only flags a failing NVMe drive when SMART errors trigger. It provides zero visibility into the drive's linear wear level consumption.
+                  </p>
+                  <div className="mt-8 flex items-center gap-2 text-sm font-bold text-cyan-400 group-hover:translate-x-1 transition-transform">
+                    Read Case Study <ArrowRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </Link>
+            </StaggerItem>
+          </StaggerContainer>
+        </div>
       </section>
 
       {/* Differentiators */}
       <section className="px-6 py-24">
         <div className="max-w-7xl mx-auto">
-          <AnimateIn>
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold tracking-tight">A different kind of system monitor</h2>
-              <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
-                Most tools show you what's happening right now. Sentinel shows you what's coming.
-              </p>
-            </div>
-          </AnimateIn>
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6" staggerDelay={0.1}>
             {differentiators.map((d) => (
               <StaggerItem key={d.title}>
                 <div
                   className="surface-card rounded-xl p-8 flex flex-col gap-5 hover:border-primary/40 transition-colors group h-full"
-                  data-testid={`card-differentiator-${d.title.replace(/\s/g, "-").toLowerCase()}`}
                 >
                   <div className={`w-10 h-10 rounded-lg bg-current/10 flex items-center justify-center ${d.color}`}>
                     <d.icon className="w-5 h-5" />
@@ -279,19 +398,12 @@ export default function Home() {
       {/* Feature highlights */}
       <section className="px-6 py-16 bg-card/20 border-y border-border/60">
         <div className="max-w-7xl mx-auto">
-          <AnimateIn>
-            <div className="text-center mb-12">
-              <h2 className="text-2xl font-bold tracking-tight">Monitors everything that matters</h2>
-              <p className="mt-3 text-muted-foreground text-sm">12 hardware subsystems. One silent guardian.</p>
-            </div>
-          </AnimateIn>
           <AnimateIn delay={0.1}>
             <div className="flex flex-wrap justify-center gap-3">
               {featureHighlights.map((f) => (
                 <div
                   key={f.label}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg bg-card border border-border/60 text-sm font-medium transition-all hover:border-primary/40 ${f.color}`}
-                  data-testid={`chip-feature-${f.label.replace(/\s/g, "-").toLowerCase()}`}
                 >
                   <f.icon className="w-4 h-4" />
                   <span className="text-foreground">{f.label}</span>
@@ -310,38 +422,6 @@ export default function Home() {
 
       {/* Live health feed */}
       <HealthFeed />
-
-      {/* Live Demo CTA */}
-      <section className="px-6 py-20 bg-gradient-to-b from-transparent to-primary/5">
-        <div className="max-w-4xl mx-auto surface-card rounded-2xl p-10 md:p-12 flex flex-col md:flex-row items-center gap-8 justify-between relative overflow-hidden border border-primary/20 shadow-2xl">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay pointer-events-none" />
-          <div className="absolute -right-20 -top-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="flex flex-col gap-4 relative z-10 max-w-lg">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-xs font-mono text-primary w-fit">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" /> INTERACTIVE PREVIEW
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight text-white">See Sentinel in action.</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Don't just take our word for it. View a simulated live dashboard mirroring the exact interface, metrics, and rules-based anomaly checks Sentinel runs on real systems.
-            </p>
-          </div>
-          
-          <div className="relative z-10 shrink-0">
-            <Link
-              href="/dashboard"
-              className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-black bg-cyan-400 rounded-xl overflow-hidden transition-all hover:scale-105 glow-cyan"
-              data-testid="button-live-demo"
-            >
-              <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[scan-line_1.5s_ease-in-out_infinite]" />
-              <span className="flex items-center gap-2 relative z-10">
-                Open Live Dashboard
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </span>
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* Waitlist section */}
       <section className="px-6 py-28" id="waitlist">
