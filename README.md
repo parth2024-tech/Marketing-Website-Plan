@@ -28,8 +28,9 @@ Scoring is fully deterministic and publicly documented — no black-box AI, no m
 - **Monorepo** — `pnpm` workspaces, Node.js 24, TypeScript 5.9
 - **Frontend** — React 19 + Vite, Tailwind CSS v4, `wouter` routing, `@tanstack/react-query`, `framer-motion` animations, `Radix UI` primitives
 - **Backend API** — Express 5, `cookie-parser`, `cors`, `pino` logging
-- **Database** — PostgreSQL via Drizzle ORM
+- **Database & Architecture** — PostgreSQL via Drizzle ORM (Refactored for enterprise-grade Multi-Tenant B2B SaaS architecture, leveraging robust relational integrity)
 - **Validation** — Zod (`zod/v4`) + `drizzle-zod`
+- **Testing** — Vitest for highly accurate scoring engine validation
 - **Shared Libraries**:
   - `@workspace/report-engine` — Schema, scoring engine, habit scoring, forecast
   - `@workspace/db` — Drizzle schema + client
@@ -129,9 +130,13 @@ DATABASE_URL="postgres://user:password@localhost:5432/sentinel"
 
 ### Push Database Schema
 
+Ensure your database is provisioned and local PostgreSQL is running, then run the migration command:
+
 ```bash
-pnpm --filter @workspace/db run push
+DATABASE_URL="postgres://postgres:postgres@localhost:5432/sentinel" pnpm --filter @workspace/db run push
 ```
+
+*Note: Since the database schema has been evolved from a flat email-based structure to an advanced relational model (`users`, `organizations`, `organizationMembers`), `drizzle-kit` will prompt to confirm whether the column `email` in the `devices` table is renamed or a new column. When prompted, select **`+ org_id create column`** to preserve relational design alignment.*
 
 ### Running Locally
 
@@ -152,13 +157,19 @@ You can use the provided shorthand scripts:
 ```bash
 pnpm run typecheck          # Full type check across all packages
 pnpm run build              # Build all packages
+pnpm run test               # Run the comprehensive Vitest unit test suite
 pnpm --filter @workspace/api-spec run codegen # Regenerate API clients
 ```
 
 ## Architecture Decisions
 
-- **Server-side trust** — `generateReport` runs exclusively on the API server. Client input is untreated; only pre-validated for fast UI feedback.
+- **Multi-Tenant SaaS Relational Alignment** — Transitioned from a flat email-based system to an enterprise-grade SaaS hierarchy. Relational models explicitly separate:
+  - `users` (Centralized user identity, profile configurations, Stripe customer data)
+  - `organizations` (B2B Tenant groupings, fleet settings, subscription plans)
+  - `organizationMembers` (Many-to-many RBAC association linking users to organizations)
+  - `devices` & `reports` tables explicitly bind to `orgId` and `userId` foreign key targets for clean isolation boundaries.
 - **Deterministic scoring** — No ML, no randomness. `ALGORITHM_VERSION` is incremented whenever formulas change; old reports retain their original version stamp.
+- **Server-side trust** — `generateReport` runs exclusively on the API server. Client input is untreated; only pre-validated for fast UI feedback.
 - **API Specification & Codegen** — The API contract is defined in `@workspace/api-spec` using OpenAPI. Zod schemas and React hooks are automatically generated to ensure type safety across the network boundary.
 - **Diagnostic Transparency** — The engine tracks `dataSource` metadata. Suspect telemetry (like static ACPI zones) is flagged and excluded from scoring to prevent false penalties.
 - **Layered Telemetry Fallback** — Collection scripts attempt high-fidelity WMI/IOCTL sources first, falling back to performance counters only when necessary.
