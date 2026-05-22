@@ -100,13 +100,13 @@ router.post("/claim", async (req, res) => {
   const device = rows[0];
 
   if (device.claimed) {
-    res.json({ deviceId: device.id, email: "***", alreadyClaimed: true });
+    res.json({ deviceId: device.id, claimed: true, alreadyClaimed: true });
     return;
   }
 
   await db
     .update(devicesTable)
-    .set({ claimed: true, email, claimedAt: new Date() })
+    .set({ claimed: true, claimedAt: new Date() })
     .where(eq(devicesTable.id, device.id));
 
   req.log.info({ deviceId: device.id, ipHash }, "device_claimed");

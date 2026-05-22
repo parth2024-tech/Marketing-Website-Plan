@@ -92,7 +92,7 @@ export default function DownloadButton({ slug, label, recommended, preload = tru
           releasesUrl: err?.releasesUrl,
         });
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [slug]);
 
   async function handleClick() {

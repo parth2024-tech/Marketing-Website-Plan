@@ -1,6 +1,6 @@
 import { Router, type Request } from "express";
 import { z } from "zod";
-import { db, reportsTable, idempotencyKeysTable, reportHabitAnswersTable, devicesTable } from "@workspace/db";
+import { db, reportsTable, idempotencyKeysTable, reportHabitAnswersTable, devicesTable, usersTable } from "@workspace/db";
 import { SentinelReportSchema, generateReport, computeHabitScore, combinedScore } from "@workspace/report-engine";
 import { eq, and, isNull } from "drizzle-orm";
 import { newReportId, newClaimToken, newShareToken, sha256hex } from "../lib/ids";
@@ -37,7 +37,7 @@ router.post("/", async (req, res) => {
   }
 
   // Check for agent device-token auth (Bearer token from Tier 1/2 agent)
-  let agentDeviceEmail: string | null = null;
+  let agentDeviceOrgId: string | null = null;
   const authHeader = req.headers["authorization"];
   if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
     const deviceToken = authHeader.slice(7).trim();
@@ -51,7 +51,7 @@ router.post("/", async (req, res) => {
         res.status(401).json({ error: "Invalid device token" });
         return;
       }
-      agentDeviceEmail = deviceRows[0].email ?? null;
+      agentDeviceOrgId = deviceRows[0].orgId ?? null;
     }
   }
 
@@ -135,7 +135,7 @@ router.post("/", async (req, res) => {
         ipHash,
         legacy: legacy ?? false,
         // Auto-claim when uploaded by a paired agent
-        ...(agentDeviceEmail ? { claimed: true, email: agentDeviceEmail } : {}),
+        ...(agentDeviceOrgId ? { claimed: true, orgId: agentDeviceOrgId } : {}),
       });
 
       // Store habit answers alongside the report
@@ -217,15 +217,28 @@ router.post("/:id/claim", async (req, res) => {
 
   if (row.claimed && !email) {
     // Already claimed — return current state
-    res.json({ id, claimed: true, email: row.email ? "***" : null });
+    res.json({ id, claimed: true, email: row.userId ? "***" : null });
     return;
+  }
+
+  let finalUserId = row.userId;
+
+  if (email && !finalUserId) {
+    const userRows = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+    if (userRows.length > 0) {
+      finalUserId = userRows[0].id;
+    } else {
+      const { randomBytes } = await import("crypto");
+      finalUserId = randomBytes(16).toString("hex");
+      await db.insert(usersTable).values({ id: finalUserId, email });
+    }
   }
 
   await db
     .update(reportsTable)
     .set({
       claimed: true,
-      ...(email ? { email } : {}),
+      ...(finalUserId ? { userId: finalUserId } : {}),
     })
     .where(eq(reportsTable.id, id));
 
@@ -346,7 +359,7 @@ router.get("/:id", async (req, res) => {
     habitScore: habit?.habitScore ?? null,
     combinedScore: habit?.combinedScore ?? null,
     claimed: row.claimed,
-    email: row.email ? "***" : null,
+    email: row.userId ? "***" : null,
     shareToken: row.shareToken ?? null,
     createdAt: row.createdAt,
   });

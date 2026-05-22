@@ -4,6 +4,7 @@ import {
   magicLinkTokensTable,
   myReportsSessionsTable,
   reportHabitAnswersTable,
+  usersTable,
 } from "@workspace/db";
 import { eq, and, gt, isNull, isNotNull } from "drizzle-orm";
 import crypto from "node:crypto";
@@ -175,22 +176,27 @@ router.get("/", async (req, res) => {
     return;
   }
 
-  // Fetch all reports for this email
-  const reports = await db
-    .select({
-      id: reportsTable.id,
-      resultJson: reportsTable.resultJson,
-      createdAt: reportsTable.createdAt,
-    })
-    .from(reportsTable)
-    .where(
-      and(
-        eq(reportsTable.email, email),
-        isNull(reportsTable.deletedAt),
-        isNotNull(reportsTable.claimed)
+  const userRows = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+  const user = userRows[0];
+
+  let reports: { id: string; resultJson: unknown; createdAt: Date }[] = [];
+  if (user) {
+    reports = await db
+      .select({
+        id: reportsTable.id,
+        resultJson: reportsTable.resultJson,
+        createdAt: reportsTable.createdAt,
+      })
+      .from(reportsTable)
+      .where(
+        and(
+          eq(reportsTable.userId, user.id),
+          isNull(reportsTable.deletedAt),
+          isNotNull(reportsTable.claimed)
+        )
       )
-    )
-    .orderBy(reportsTable.createdAt);
+      .orderBy(reportsTable.createdAt);
+  }
 
   // Attach habit scores where available
   const ids = reports.map((r) => r.id);

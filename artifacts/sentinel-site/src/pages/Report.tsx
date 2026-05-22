@@ -612,7 +612,7 @@ export default function Report() {
         loadFromLocalStorage(id);
       })
       .catch(() => loadFromLocalStorage(id));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [params?.id]);
 
   function loadFromLocalStorage(id: string) {
