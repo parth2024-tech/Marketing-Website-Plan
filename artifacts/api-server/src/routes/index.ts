@@ -9,6 +9,7 @@ import versionRouter from "./version";
 import downloadsRouter from "./downloads";
 import organizationsRouter from "./organizations";
 import stripeWebhookRouter from "./webhooks/stripe";
+import fleetRouter from "./fleet";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use("/version", versionRouter);
 router.use("/downloads", downloadsRouter);
 router.use("/organizations", organizationsRouter);
 router.use("/webhooks/stripe", stripeWebhookRouter);
+router.use("/fleet", fleetRouter);
 
 export default router;
