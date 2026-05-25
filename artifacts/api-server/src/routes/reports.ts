@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db, reportsTable, idempotencyKeysTable, reportHabitAnswersTable, devicesTable, usersTable } from "@workspace/db";
 import { SentinelReportSchema, generateReport, computeHabitScore, combinedScore } from "@workspace/report-engine";
 import { eq, and, isNull } from "drizzle-orm";
+import crypto from "node:crypto";
 import { newReportId, newClaimToken, newShareToken, sha256hex } from "../lib/ids";
 import { consumeRateLimit } from "../lib/rateLimit";
 import { isResendConfigured } from "../lib/email/config";
@@ -14,9 +15,11 @@ const router = Router();
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function getClientIp(req: Request): string {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
-  return req.socket?.remoteAddress ?? "unknown";
+  // Use Express's built-in req.ip which respects the "trust proxy" setting.
+  // When trust proxy is configured, req.ip correctly resolves the client IP
+  // from X-Forwarded-For; when it is not, req.ip returns the direct socket
+  // address — preventing clients from spoofing arbitrary IPs to bypass rate limits.
+  return req.ip ?? req.socket?.remoteAddress ?? "unknown";
 }
 
 const PostReportBody = z.object({
@@ -228,9 +231,22 @@ router.post("/:id/claim", async (req, res) => {
     if (userRows.length > 0) {
       finalUserId = userRows[0].id;
     } else {
-      const { randomBytes } = await import("crypto");
-      finalUserId = randomBytes(16).toString("hex");
-      await db.insert(usersTable).values({ id: finalUserId, email });
+      finalUserId = crypto.randomBytes(16).toString("hex");
+      try {
+        await db.insert(usersTable).values({ id: finalUserId, email });
+      } catch (err: unknown) {
+        // Handle concurrent user creation gracefully by looking up the ID
+        const concurrentUserRows = await db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.email, email))
+          .limit(1);
+        if (concurrentUserRows.length > 0) {
+          finalUserId = concurrentUserRows[0].id;
+        } else {
+          throw err;
+        }
+      }
     }
   }
 

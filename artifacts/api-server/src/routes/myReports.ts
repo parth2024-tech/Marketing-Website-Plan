@@ -179,15 +179,31 @@ router.get("/", async (req, res) => {
   const userRows = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
   const user = userRows[0];
 
-  let reports: { id: string; resultJson: unknown; createdAt: Date }[] = [];
+  let reports: {
+    id: string;
+    resultJson: unknown;
+    createdAt: Date;
+    habitScore: number | null;
+    combinedScore: number | null;
+  }[] = [];
+
   if (user) {
+    // Single LEFT JOIN query fetches reports and habit scores in one round-trip,
+    // fixing the previous N+1 query pattern and the bug where only the first
+    // report's habit score was fetched.
     reports = await db
       .select({
         id: reportsTable.id,
         resultJson: reportsTable.resultJson,
         createdAt: reportsTable.createdAt,
+        habitScore: reportHabitAnswersTable.habitScore,
+        combinedScore: reportHabitAnswersTable.combinedScore,
       })
       .from(reportsTable)
+      .leftJoin(
+        reportHabitAnswersTable,
+        eq(reportsTable.id, reportHabitAnswersTable.reportId)
+      )
       .where(
         and(
           eq(reportsTable.userId, user.id),
@@ -198,31 +214,14 @@ router.get("/", async (req, res) => {
       .orderBy(reportsTable.createdAt);
   }
 
-  // Attach habit scores where available
-  const ids = reports.map((r) => r.id);
-  let habitMap: Record<string, { habitScore: number; combinedScore: number }> = {};
-  if (ids.length > 0) {
-    const habitRows = await db
-      .select()
-      .from(reportHabitAnswersTable)
-      .where(
-        ids.length === 1
-          ? eq(reportHabitAnswersTable.reportId, ids[0])
-          : eq(reportHabitAnswersTable.reportId, ids[0]) // simplified — extend for multi
-      );
-    for (const h of habitRows) {
-      habitMap[h.reportId] = { habitScore: h.habitScore, combinedScore: h.combinedScore };
-    }
-  }
-
   res.json({
     email,
     reports: reports.map((r) => ({
       id: r.id,
       createdAt: r.createdAt,
       result: r.resultJson,
-      habitScore: habitMap[r.id]?.habitScore ?? null,
-      combinedScore: habitMap[r.id]?.combinedScore ?? null,
+      habitScore: r.habitScore ?? null,
+      combinedScore: r.combinedScore ?? null,
     })),
   });
 });

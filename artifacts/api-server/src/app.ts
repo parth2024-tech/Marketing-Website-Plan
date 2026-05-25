@@ -8,6 +8,13 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// ── Proxy trust ───────────────────────────────────────────────────────────────
+// When behind a reverse proxy (nginx, cloud LB, etc.), trust the first proxy
+// hop so that req.ip resolves to the real client IP from X-Forwarded-For.
+// In production, replace `true` with the specific proxy subnet for stricter
+// security (e.g., "loopback" or "10.0.0.0/8").
+app.set("trust proxy", true);
+
 // ── Security headers (Helmet) ─────────────────────────────────────────────────
 // Adds X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security,
 // Content-Security-Policy, and other critical security headers.
