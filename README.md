@@ -22,6 +22,7 @@ Scoring is fully deterministic and publicly documented — no black-box AI, no m
 - **Hardware Health Report Flow** — Paste JSON → complete habit audit → receive scored report with component breakdown, findings, and forecast timeline.
 - **Troubleshooting Assistant** — Intelligent context-aware knowledge base mapped to exact score patterns (Battery Drain, Thermal Throttling). Includes URL-based context pre-loading directly from reports, copyable CLI blocks, explicit pass/fail decision nodes, and helpfulness feedback signals.
 - **Risk Calculator & Dashboard** — Interactive failure-risk estimation and multi-report comparison views.
+- **Real-Time Fleet Telemetry & Analytics Dashboard** — A live SaaS-grade fleet monitoring command center (`/dashboard`) powered by real-time hardware telemetry pushed from the C# Sentinel Agents and scripts. Integrates sliding time-series metrics visualization (CPU load, RAM consumption, CPU and chassis temperatures) with auto-refresh polling, multi-tenant scoped report aggregation, live system alert logs, and centralized AI telemetry findings.
 - **Account & Claim System** — Passwordless magic-link auth (15-min token → 30-day session cookie). Reports are claimable by email after submission.
 - **Device Pairing** — Agent-friendly pairing flow (`/pair`) with `pairToken`/`deviceToken` handshake so a local agent can push reports and auto-claim them.
 - **Three-tier Onboarding** — `/get-started` features smart conditional routing for Personal vs Fleet users, explicitly displaying time estimates, prerequisites, and step-by-step previews for Tier 1 (Agent), Tier 2 (One-Shot), and Tier 3 (Script). Incorporates real-time GitHub release polling for download status.
@@ -183,6 +184,9 @@ pnpm --filter @workspace/api-spec run codegen # Regenerate API clients
 - **Wear level semantics** — Higher percentages mean healthier (percentage of life remaining, not consumed).
 - **Magic-link auth** — No passwords. Email initiates a 15-minute token; successful claim sets a 30-day session cookie.
 - **Device pairing** — `POST /api/devices/pair` → short-lived `pairToken` → `POST /api/devices/claim` with email → persistent `deviceToken`.
+- **Real-Time Fleet Telemetry & Polling Engine** — Replaced all random mock data in the enterprise Fleet Dashboard with actual hardware telemetry queried dynamically from the PostgreSQL `reports` table.
+  - *Backend Query Processing*: Mounted `/api/fleet/dashboard` which extracts, parses, and aggregates raw telemetry records submitted by active systems. It dynamically tracks metrics (`cpu.avgLoadPct`, `memory.usedPct`, `thermals.maxTempC`), identifies AI-driven health findings, and filters out flagged anomalies in real-time.
+  - *Frontend Auto-Refresh & Synchronization*: The dashboard performs non-blocking, background polling every 4 seconds to ensure operational metrics are perfectly in-sync with live system states. Incorporates smooth Recharts animations and transition states for a highly responsive, enterprise-grade user experience.
 
 ## Remote Testing & Pairing
 
