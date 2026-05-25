@@ -127,8 +127,8 @@ const AI_FINDINGS = [
   {
     severity: "warning" as AlertLevel,
     component: "Battery",
-    title: "Battery degrading faster than expected",
-    desc: "78.2% capacity at 412 cycles — 3× normal decay rate. High temps accelerating wear.",
+    title: "Fleet Battery Degradation Alert",
+    desc: "14 devices showing 3× normal decay rate. Predictive model suggests replacement within 90 days.",
     trend: "down",
     icon: Battery,
   },
@@ -293,7 +293,7 @@ export default function Dashboard() {
           </div>
           <div>
             <span className="text-sm font-semibold text-foreground tracking-wide">NovaSentinel</span>
-            <span className="ml-2 text-xs text-muted-foreground">AI Diagnostics</span>
+            <span className="ml-2 text-xs text-primary">Fleet Dashboard</span>
           </div>
           <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-green-400/30 bg-green-400/5 text-green-400 text-xs ml-2">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -303,8 +303,8 @@ export default function Dashboard() {
 
         <div className="flex items-center gap-6 text-xs text-muted-foreground">
           <div className="hidden sm:flex items-center gap-1.5">
-            <Server className="w-3.5 h-3.5" />
-            <span className="text-foreground font-medium">DELL-XPS15-9520</span>
+            <Server className="w-3.5 h-3.5 text-primary" />
+            <span className="text-foreground font-medium">FLEET: 1,402 DEVICES</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5" />

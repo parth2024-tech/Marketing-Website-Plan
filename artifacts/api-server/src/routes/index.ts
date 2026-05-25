@@ -7,6 +7,8 @@ import devicesRouter from "./devices";
 import pairRouter from "./pair";
 import versionRouter from "./version";
 import downloadsRouter from "./downloads";
+import organizationsRouter from "./organizations";
+import stripeWebhookRouter from "./webhooks/stripe";
 
 const router: IRouter = Router();
 
@@ -18,5 +20,7 @@ router.use("/devices", devicesRouter);
 router.use("/pair", pairRouter);
 router.use("/version", versionRouter);
 router.use("/downloads", downloadsRouter);
+router.use("/organizations", organizationsRouter);
+router.use("/webhooks/stripe", stripeWebhookRouter);
 
 export default router;

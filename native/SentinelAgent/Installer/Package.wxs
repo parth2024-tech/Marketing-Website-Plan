@@ -3,6 +3,8 @@
     <MajorUpgrade DowngradeErrorMessage="A newer version of Sentinel is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
+    <Property Id="ORG_TOKEN" Secure="yes" />
+
     <Feature Id="Main">
       <ComponentGroupRef Id="AppComponents" />
       <ComponentRef Id="StartMenuShortcutComponent" />
@@ -20,6 +22,10 @@
       <Component Id="SentinelAgentExe" Guid="E6B1D2A4-3F8C-4B9D-A1E2-5C4D7F8A9B0C">
         <!-- Assume binary is built to the artifacts folder -->
         <File Id="SentinelAgentExeFile" Source="..\..\..\artifacts\bin\SentinelAgent\SentinelAgent.exe" KeyPath="yes" />
+      </Component>
+      <Component Id="OrgTokenRegistry" Guid="A1B2C3D4-E5F6-1234-5678-90ABCDEF1234">
+        <RegistryValue Root="HKLM" Key="Software\Sentinel" Name="OrgToken" Type="string" Value="[ORG_TOKEN]" KeyPath="yes" />
+        <Condition>ORG_TOKEN</Condition>
       </Component>
     </ComponentGroup>
 

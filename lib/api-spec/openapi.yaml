@@ -24,6 +24,8 @@ tags:
     description: Native agent version and update metadata
   - name: downloads
     description: Stable redirects to latest GitHub release assets
+  - name: organizations
+    description: B2B Multi-tenant billing and fleet management
 paths:
   /healthz:
     get:
@@ -575,6 +577,102 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /organizations:
+    post:
+      operationId: createOrganization
+      tags: [organizations]
+      summary: Create a new organization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrganizationRequest"
+      responses:
+        "201":
+          description: Organization created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /organizations/{orgId}/checkout-session:
+    post:
+      operationId: createStripeCheckoutSession
+      tags: [organizations]
+      summary: Create Stripe checkout session
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutSessionRequest"
+      responses:
+        "200":
+          description: Checkout session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSessionResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /organizations/{orgId}/billing:
+    get:
+      operationId: getBillingStatus
+      tags: [organizations]
+      summary: Get organization billing status
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Billing status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingStatusResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Organization not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   parameters:
     ReportId:
@@ -962,3 +1060,65 @@ components:
         - size
         - downloadUrl
         - downloads
+    CreateOrganizationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+        - name
+    OrganizationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        ownerId:
+          type: string
+        status:
+          type: [string, "null"]
+      required:
+        - id
+        - name
+        - ownerId
+        - status
+    CheckoutSessionRequest:
+      type: object
+      properties:
+        priceId:
+          type: string
+        successUrl:
+          type: string
+        cancelUrl:
+          type: string
+      required:
+        - priceId
+        - successUrl
+        - cancelUrl
+    CheckoutSessionResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        url:
+          type: string
+      required:
+        - sessionId
+        - url
+    BillingStatusResponse:
+      type: object
+      properties:
+        status:
+          type: [string, "null"]
+        currentPeriodEnd:
+          type: [string, "null"]
+          format: date-time
+        portalUrl:
+          type: [string, "null"]
+      required:
+        - status
+        - currentPeriodEnd
+        - portalUrl

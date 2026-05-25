@@ -5,12 +5,11 @@
  * Sentinel HTTP API (Express) — health, waitlist, reports, my-reports, pairing, devices, version, and downloads.
  * OpenAPI spec version: 0.2.0
  */
-import type { ReleaseAsset } from './releaseAsset';
 
-export interface LatestReleaseMetadata {
-  version: string;
+export interface CreateOrganizationRequest {
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
   name: string;
-  publishedAt: Date;
-  releaseUrl: string;
-  assets: ReleaseAsset[];
 }

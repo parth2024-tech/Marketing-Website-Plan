@@ -28,6 +28,7 @@ import Pair from "@/pages/Pair";
 import Scoring from "@/pages/Scoring";
 import Changelog from "@/pages/Changelog";
 import SharedReport from "@/pages/SharedReport";
+import BillingSettings from "@/pages/BillingSettings";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -90,6 +91,7 @@ function AnimatedRoutes() {
           <Route path="/pair"            component={Pair} />
           <Route path="/scoring"         component={Scoring} />
           <Route path="/changelog"       component={Changelog} />
+          <Route path="/billing"         component={BillingSettings} />
           <Route                         component={NotFound} />
         </Switch>
       </motion.div>
