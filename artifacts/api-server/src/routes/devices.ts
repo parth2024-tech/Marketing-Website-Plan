@@ -17,9 +17,8 @@ function newDeviceId(): string {
 }
 
 function getClientIp(req: Request): string {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
-  return req.socket?.remoteAddress ?? "unknown";
+  // Use Express's built-in req.ip which respects the "trust proxy" setting.
+  return req.ip ?? req.socket?.remoteAddress ?? "unknown";
 }
 
 // Pair tokens expire after 15 minutes

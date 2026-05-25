@@ -97,46 +97,49 @@ static class Program
     private static async Task<string> WaitForPairCodeAsync(HttpListener listener)
     {
         var timeoutTask = Task.Delay(TimeSpan.FromMinutes(5));
-        var contextTask = listener.GetContextAsync();
 
-        var completedTask = await Task.WhenAny(contextTask, timeoutTask);
-        if (completedTask == timeoutTask)
+        while (true)
         {
-            throw new Exception("Timeout waiting for pair code from browser.");
-        }
+            var contextTask = listener.GetContextAsync();
 
-        var context = await contextTask;
-        var request = context.Request;
-        var response = context.Response;
+            var completedTask = await Task.WhenAny(contextTask, timeoutTask);
+            if (completedTask == timeoutTask)
+            {
+                throw new Exception("Timeout waiting for pair code from browser.");
+            }
 
-        string pairCode = "";
+            var context = await contextTask;
+            var request = context.Request;
+            var response = context.Response;
 
-        if (request.HttpMethod == "POST" && request.Url?.AbsolutePath == "/code")
-        {
-            using var reader = new StreamReader(request.InputStream, request.ContentEncoding);
-            pairCode = await reader.ReadToEndAsync();
-            
-            // Send CORS headers and success
-            response.StatusCode = 200;
-            response.Headers.Add("Access-Control-Allow-Origin", "*");
-            byte[] buffer = Encoding.UTF8.GetBytes("OK");
-            response.ContentLength64 = buffer.Length;
-            await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+            if (request.HttpMethod == "POST" && request.Url?.AbsolutePath == "/code")
+            {
+                using var reader = new StreamReader(request.InputStream, request.ContentEncoding);
+                string pairCode = await reader.ReadToEndAsync();
+                
+                // Send CORS headers and success
+                response.StatusCode = 200;
+                response.Headers.Add("Access-Control-Allow-Origin", "*");
+                byte[] buffer = Encoding.UTF8.GetBytes("OK");
+                response.ContentLength64 = buffer.Length;
+                await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                response.OutputStream.Close();
+                return pairCode;
+            }
+            else if (request.HttpMethod == "OPTIONS")
+            {
+                response.StatusCode = 204;
+                response.Headers.Add("Access-Control-Allow-Origin", "*");
+                response.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
+                response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
+                response.OutputStream.Close();
+            }
+            else
+            {
+                response.StatusCode = 404;
+                response.OutputStream.Close();
+            }
         }
-        else if (request.HttpMethod == "OPTIONS")
-        {
-            response.StatusCode = 204;
-            response.Headers.Add("Access-Control-Allow-Origin", "*");
-            response.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
-            response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-        }
-        else
-        {
-            response.StatusCode = 404;
-        }
-
-        response.OutputStream.Close();
-        return pairCode;
     }
 
     private static void SelfDelete()

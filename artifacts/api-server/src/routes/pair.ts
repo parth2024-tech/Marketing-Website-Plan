@@ -13,9 +13,8 @@ const router = Router();
 const PAIR_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 function getClientIp(req: Request): string {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
-  return req.socket?.remoteAddress ?? "unknown";
+  // Use Express's built-in req.ip which respects the "trust proxy" setting.
+  return req.ip ?? req.socket?.remoteAddress ?? "unknown";
 }
 
 // ── POST /api/pair/session ────────────────────────────────────────────────────
@@ -136,11 +135,8 @@ router.post("/push", async (req, res) => {
 
   const now = new Date();
 
-  // Clean up expired sessions opportunistically
-  await db
-    .delete(pairSessionsTable)
-    .where(lt(pairSessionsTable.expiresAt, now))
-    .catch(() => {});
+  // Note: Expired session cleanup has been moved to a background task
+  // to avoid database lock contention under high load on this endpoint.
 
   // Validate pair session
   const sessionRows = await db

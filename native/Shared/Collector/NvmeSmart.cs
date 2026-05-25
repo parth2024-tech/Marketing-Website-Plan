@@ -27,32 +27,34 @@ public class NvmeSmart {
         try {
             int bufferSize = 1024;
             IntPtr buffer = Marshal.AllocHGlobal(bufferSize);
-            for(int i=0; i<bufferSize; i++) Marshal.WriteByte(buffer, i, 0);
-            
-            Marshal.WriteInt32(buffer, 0, 49);
-            Marshal.WriteInt32(buffer, 4, 0); 
-            Marshal.WriteInt32(buffer, 12, 3);
-            Marshal.WriteInt32(buffer, 16, 2);
-            Marshal.WriteInt32(buffer, 20, 2);
-            Marshal.WriteInt32(buffer, 24, 0);
-            Marshal.WriteInt32(buffer, 28, 40);
-            Marshal.WriteInt32(buffer, 32, 512);
-            
-            uint bytesReturned;
-            bool success = DeviceIoControl(hDevice, 0x2D1400, buffer, 52, buffer, (uint)bufferSize, out bytesReturned, IntPtr.Zero);
-            
-            if (success) {
-                IntPtr logPagePtr = new IntPtr(buffer.ToInt64() + 40);
-                SmartData data = new SmartData();
-                data.CriticalWarning = Marshal.ReadByte(logPagePtr, 0);
-                data.AvailableSpare = Marshal.ReadByte(logPagePtr, 3);
-                data.AvailableSpareThreshold = Marshal.ReadByte(logPagePtr, 4);
-                data.PercentageUsed = Marshal.ReadByte(logPagePtr, 5);
+            try {
+                for(int i=0; i<bufferSize; i++) Marshal.WriteByte(buffer, i, 0);
+                
+                Marshal.WriteInt32(buffer, 0, 49);
+                Marshal.WriteInt32(buffer, 4, 0); 
+                Marshal.WriteInt32(buffer, 12, 3);
+                Marshal.WriteInt32(buffer, 16, 2);
+                Marshal.WriteInt32(buffer, 20, 2);
+                Marshal.WriteInt32(buffer, 24, 0);
+                Marshal.WriteInt32(buffer, 28, 40);
+                Marshal.WriteInt32(buffer, 32, 512);
+                
+                uint bytesReturned;
+                bool success = DeviceIoControl(hDevice, 0x2D1400, buffer, 52, buffer, (uint)bufferSize, out bytesReturned, IntPtr.Zero);
+                
+                if (success) {
+                    IntPtr logPagePtr = IntPtr.Add(buffer, 40);
+                    SmartData data = new SmartData();
+                    data.CriticalWarning = Marshal.ReadByte(logPagePtr, 0);
+                    data.AvailableSpare = Marshal.ReadByte(logPagePtr, 3);
+                    data.AvailableSpareThreshold = Marshal.ReadByte(logPagePtr, 4);
+                    data.PercentageUsed = Marshal.ReadByte(logPagePtr, 5);
+                    return data;
+                }
+                return null;
+            } finally {
                 Marshal.FreeHGlobal(buffer);
-                return data;
             }
-            Marshal.FreeHGlobal(buffer);
-            return null;
         } finally {
             CloseHandle(hDevice);
         }

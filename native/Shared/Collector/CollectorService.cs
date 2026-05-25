@@ -76,7 +76,7 @@ public class CollectorService
                 report.Cpu.AvgLoadPct = Math.Round(totalLoad / cpuCount, 1);
             }
         }
-        catch { }
+        catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
     }
 
     private static void CollectMemory(SentinelReport report)
@@ -101,7 +101,7 @@ public class CollectorService
                 break;
             }
         }
-        catch { }
+        catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
     }
 
     private static void CollectBattery(SentinelReport report)
@@ -125,35 +125,35 @@ public class CollectorService
                     break;
                 }
             }
-            catch { }
+            catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
 
             try
             {
                 using var battFull = new ManagementObjectSearcher(@"root\wmi", "SELECT FullChargedCapacity FROM BatteryFullChargedCapacity");
                 foreach (var obj in battFull.Get()) { if (int.TryParse(obj["FullChargedCapacity"]?.ToString(), out int f)) fullCap = f; break; }
             }
-            catch { }
+            catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
 
             try
             {
                 using var battDesign = new ManagementObjectSearcher(@"root\wmi", "SELECT DesignedCapacity FROM BatteryStaticData");
                 foreach (var obj in battDesign.Get()) { if (int.TryParse(obj["DesignedCapacity"]?.ToString(), out int d)) designCap = d; break; }
             }
-            catch { }
+            catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
 
             try
             {
                 using var battCycles = new ManagementObjectSearcher(@"root\wmi", "SELECT CycleCount FROM BatteryCycleCount");
                 foreach (var obj in battCycles.Get()) { if (int.TryParse(obj["CycleCount"]?.ToString(), out int c)) cycleCount = c; break; }
             }
-            catch { }
+            catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
 
             try
             {
                 using var battStatus = new ManagementObjectSearcher(@"root\wmi", "SELECT DischargeRate FROM BatteryStatus");
                 foreach (var obj in battStatus.Get()) { if (int.TryParse(obj["DischargeRate"]?.ToString(), out int dr)) dischargeRateMw = dr; break; }
             }
-            catch { }
+            catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
 
             if (designCap != null || fullCap != null || cycleCount != null || status != null)
             {
@@ -172,7 +172,7 @@ public class CollectorService
                 }
             }
         }
-        catch { }
+        catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
     }
 
     private static void CollectThermals(SentinelReport report)
@@ -209,7 +209,7 @@ public class CollectorService
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
 
             if (zones.Count == 0)
             {
@@ -240,7 +240,7 @@ public class CollectorService
                         source = suspectStatic ? "acpi_static_suspect" : "acpi_wmi";
                     }
                 }
-                catch { }
+                catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
             }
 
             if (zones.Count == 0)
@@ -262,7 +262,7 @@ public class CollectorService
 
                     if (zones.Count > 0) source = "ohm";
                 }
-                catch { }
+                catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
             }
 
             if (zones.Count == 0)
@@ -284,7 +284,7 @@ public class CollectorService
 
                     if (zones.Count > 0) source = "lhm";
                 }
-                catch { }
+                catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
             }
 
             report.Thermals = new ThermalsInfo
@@ -300,7 +300,7 @@ public class CollectorService
                 report.Thermals.MaxTempC = zones.Max(z => z.TempC);
             }
         }
-        catch { }
+        catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
     }
 
     private static void CollectStorage(SentinelReport report)
@@ -344,7 +344,7 @@ public class CollectorService
                             }
                         }
                     }
-                    catch { }
+                    catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
 
                     try
                     {
@@ -382,13 +382,13 @@ public class CollectorService
                             }
                         }
                     }
-                    catch { }
+                    catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
                 }
 
                 storageList.Add(device);
             }
         }
-        catch { }
+        catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
 
         report.Storage = storageList;
     }
@@ -411,6 +411,6 @@ public class CollectorService
                 break;
             }
         }
-        catch { }
+        catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
     }
 }
