@@ -87,7 +87,8 @@ export default function HealthTest() {
                     <div className="rounded-xl bg-[#0d1117] border border-border/40 px-5 py-4 w-full">
                       <div className="flex items-center justify-between gap-4 mb-3">
                         <div className="text-xs text-muted-foreground/60 uppercase tracking-wide font-mono">Run in PowerShell</div>
-                        <button
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
                           onClick={handleCopy}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
                         >
@@ -118,7 +119,7 @@ export default function HealthTest() {
                               </motion.div>
                             )}
                           </AnimatePresence>
-                        </button>
+                        </motion.button>
                       </div>
                       <div className="font-mono text-sm text-slate-300 break-all bg-black/40 p-4 rounded-lg border border-border/30 overflow-x-auto whitespace-pre-wrap">
                         <span className="text-cyan-400">Set-ExecutionPolicy Bypass -Scope Process -Force; irm {typeof window !== 'undefined' ? window.location.origin : 'https://sentinelapp.io'}/scripts/sentinel-collect.ps1 -OutFile $env:TEMP\s.ps1; & $env:TEMP\s.ps1</span> <span className="text-amber-400">-DirectUpload</span>
@@ -146,6 +147,16 @@ export default function HealthTest() {
               <Zap className="w-3 h-3" />
               Both options automatically sync to your browser upon completion.
             </p>
+          </AnimateIn>
+
+          <AnimateIn delay={0.2}>
+            <div className="flex flex-col items-center justify-center gap-3 mt-8 p-6 rounded-2xl border border-border/60 bg-card/40">
+              <div className="flex items-center gap-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+                <span className="text-sm font-medium text-foreground">Waiting for device telemetry...</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Run the app or script to see your report instantly.</p>
+            </div>
           </AnimateIn>
 
         </div>

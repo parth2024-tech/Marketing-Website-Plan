@@ -207,7 +207,7 @@ export default function OEMFailures() {
             <StaggerItem key={c.id}>
               <div
                 id={c.id}
-                className={`rounded-xl border ${c.borderColor} ${c.bgColor} overflow-hidden`}
+                className={`rounded-xl border ${c.borderColor} ${c.bgColor} overflow-hidden hover:-translate-y-1 hover:shadow-xl hover:shadow-${c.accentColor.replace('text-', '')}/10 transition-all duration-300 ease-out`}
               >
                 {/* Case header */}
                 <div className="px-7 py-5 border-b border-border/30 flex items-start gap-4">

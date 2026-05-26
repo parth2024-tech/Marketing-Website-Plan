@@ -352,32 +352,34 @@ export default function Scoring() {
         <AnimateIn delay={0.14}>
           <section className="mb-16">
             <h2 className="text-xl font-bold mb-6">Per-component scoring formulas</h2>
-            <div className="space-y-6">
+            <StaggerContainer className="space-y-6" staggerDelay={0.4}>
               {formulas.map((f) => (
-                <div key={f.component} className="surface-card rounded-xl p-6 border border-border/60 hover:border-primary/20 transition-colors">
-                  <div className="flex items-center gap-2 mb-4">
-                    <f.icon className={`w-5 h-5 ${f.color}`} />
-                    <h3 className="font-semibold text-foreground">{f.component}</h3>
+                <StaggerItem key={f.component}>
+                  <div className="surface-card rounded-xl p-6 border border-border/60 hover:border-primary/20 transition-colors">
+                    <div className="flex items-center gap-2 mb-4">
+                      <f.icon className={`w-5 h-5 ${f.color}`} />
+                      <h3 className="font-semibold text-foreground">{f.component}</h3>
+                    </div>
+                    <div className="font-mono text-sm bg-background/60 rounded-lg px-4 py-3 border border-border/40 mb-4 hover:border-primary/40 hover:bg-muted/10 transition-colors group">
+                      <span className="text-primary group-hover:text-primary/80 transition-colors">score</span>{" "}
+                      <span className="text-muted-foreground">= </span>
+                      <span className="text-foreground">{f.formula}</span>
+                    </div>
+                    <ul className="space-y-1 mb-4">
+                      {f.caveats.map((c, i) => (
+                        <li key={i} className="text-xs text-muted-foreground flex items-start gap-2 group-hover:text-muted-foreground/80 transition-colors">
+                          <span className="text-primary mt-0.5">·</span>
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="text-xs text-muted-foreground/70 bg-card/50 rounded-lg px-4 py-3 border border-border/30 font-mono leading-relaxed hover:border-primary/30 transition-colors">
+                      Example: {f.example}
+                    </div>
                   </div>
-                  <div className="font-mono text-sm bg-background/60 rounded-lg px-4 py-3 border border-border/40 mb-4">
-                    <span className="text-primary">score</span>{" "}
-                    <span className="text-muted-foreground">= </span>
-                    <span className="text-foreground">{f.formula}</span>
-                  </div>
-                  <ul className="space-y-1 mb-4">
-                    {f.caveats.map((c, i) => (
-                      <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
-                        <span className="text-primary mt-0.5">·</span>
-                        <span>{c}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="text-xs text-muted-foreground/70 bg-card/50 rounded-lg px-4 py-3 border border-border/30 font-mono leading-relaxed">
-                    Example: {f.example}
-                  </div>
-                </div>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           </section>
         </AnimateIn>
 

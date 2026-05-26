@@ -71,7 +71,7 @@ export default function Home() {
             
             <AnimateIn delay={0.4} direction="up" className="mt-12 w-full">
               <div className="flex flex-col sm:flex-row items-center lg:justify-start justify-center gap-4 w-full">
-                <Link href="/get-started" className="group relative flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl font-bold text-base text-background bg-primary hover:bg-primary/90 glow-cyan transition-all duration-300 shadow-xl overflow-hidden min-w-[220px]">
+                <Link href="/get-started" className="group relative flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl font-bold text-base text-background bg-primary hover:bg-primary/90 glow-cyan transition-all duration-300 shadow-xl overflow-hidden min-w-[220px] animate-cta-pulse">
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                   <Download className="w-5 h-5 relative z-10" /> 
                   <span className="relative z-10">Run Sentinel Free</span>
@@ -162,7 +162,7 @@ export default function Home() {
                       initial={{ pathLength: 0, opacity: 0 }}
                       whileInView={{ pathLength: 1, opacity: 1 }}
                       viewport={{ once: true, margin: "-100px" }}
-                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                      transition={{ duration: 0.8, ease: "easeInOut" }}
                     />
                     <motion.path 
                       d="M 0,10 C 30,15 60,40 100,75 L 100,100 L 0,100 Z" 
@@ -170,7 +170,7 @@ export default function Home() {
                       initial={{ opacity: 0 }}
                       whileInView={{ opacity: 0.15 }}
                       viewport={{ once: true, margin: "-100px" }}
-                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                      transition={{ duration: 0.8, ease: "easeInOut" }}
                     />
                     <defs>
                       <linearGradient id="fadeGradient" x1="0" y1="0" x2="0" y2="1">
@@ -266,7 +266,7 @@ export default function Home() {
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <StaggerItem>
               <Link href="/oem-failures#dell" className="block h-full group">
-                <div className="surface-card rounded-2xl p-8 h-full flex flex-col border border-border/50 group-hover:border-blue-500/50 hover:shadow-[0_0_30px_-10px_rgba(59,130,246,0.2)] transition-all bg-background/40">
+                <div className="surface-card rounded-2xl p-8 h-full flex flex-col border border-border/50 group-hover:border-blue-500/50 hover:shadow-[0_0_30px_-10px_rgba(59,130,246,0.2)] transition-all duration-200 ease-out bg-background/40">
                   <div className="text-xs font-mono text-blue-400 mb-4 uppercase tracking-widest font-semibold">Case Study 01</div>
                   <h3 className="text-xl font-bold text-foreground mb-4">Dell SupportAssist's 50% Lie</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed flex-1">
@@ -280,7 +280,7 @@ export default function Home() {
             </StaggerItem>
             <StaggerItem>
               <Link href="/oem-failures#lenovo" className="block h-full group">
-                <div className="surface-card rounded-2xl p-8 h-full flex flex-col border border-border/50 group-hover:border-red-500/50 hover:shadow-[0_0_30px_-10px_rgba(239,68,68,0.2)] transition-all bg-background/40">
+                <div className="surface-card rounded-2xl p-8 h-full flex flex-col border border-border/50 group-hover:border-red-500/50 hover:shadow-[0_0_30px_-10px_rgba(239,68,68,0.2)] transition-all duration-200 ease-out bg-background/40">
                   <div className="text-xs font-mono text-red-400 mb-4 uppercase tracking-widest font-semibold">Case Study 02</div>
                   <h3 className="text-xl font-bold text-foreground mb-4">Lenovo Vantage Hiding Cycles</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed flex-1">
@@ -294,7 +294,7 @@ export default function Home() {
             </StaggerItem>
             <StaggerItem>
               <Link href="/oem-failures#hp" className="block h-full group">
-                <div className="surface-card rounded-2xl p-8 h-full flex flex-col border border-border/50 group-hover:border-cyan-400/50 hover:shadow-[0_0_30px_-10px_rgba(34,211,238,0.2)] transition-all bg-background/40">
+                <div className="surface-card rounded-2xl p-8 h-full flex flex-col border border-border/50 group-hover:border-cyan-400/50 hover:shadow-[0_0_30px_-10px_rgba(34,211,238,0.2)] transition-all duration-200 ease-out bg-background/40">
                   <div className="text-xs font-mono text-cyan-400 mb-4 uppercase tracking-widest font-semibold">Case Study 03</div>
                   <h3 className="text-xl font-bold text-foreground mb-4">HP's NVMe Wear Blindspot</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed flex-1">
@@ -317,7 +317,7 @@ export default function Home() {
             {differentiators.map((d) => (
               <StaggerItem key={d.title}>
                 <div
-                  className="surface-card rounded-xl p-8 flex flex-col gap-5 hover:border-primary/40 transition-colors group h-full"
+                  className="surface-card rounded-xl p-8 flex flex-col gap-5 hover:border-primary/40 hover:scale-[1.01] hover:shadow-lg transition-all duration-200 ease-out group h-full"
                 >
                   <div className={`w-10 h-10 rounded-lg bg-current/10 flex items-center justify-center ${d.color}`}>
                     <d.icon className="w-5 h-5" />
@@ -341,7 +341,7 @@ export default function Home() {
               {featureHighlights.map((f) => (
                 <div
                   key={f.label}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg bg-card border border-border/60 text-sm font-medium transition-all hover:border-primary/40 ${f.color}`}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg bg-card border border-border/60 text-sm font-medium transition-all duration-150 hover:scale-[1.02] hover:border-primary/40 ${f.color}`}
                 >
                   <f.icon className="w-4 h-4" />
                   <span className="text-foreground">{f.label}</span>
@@ -362,7 +362,11 @@ export default function Home() {
       <HealthFeed />
 
       {/* Waitlist section */}
-      <section className="px-6 py-28" id="waitlist">
+      <section 
+        className="px-6 py-28" 
+        id="waitlist"
+        style={{ background: 'linear-gradient(270deg, hsl(185 85% 55% / 0.03), hsl(265 70% 65% / 0.03), hsl(185 85% 55% / 0.03))', backgroundSize: '400% 400%', animation: 'gradient-shift 10s linear infinite' }}
+      >
         <AnimateIn>
           <div className="max-w-2xl mx-auto text-center flex flex-col items-center gap-8">
             <div className="flex flex-col gap-4">

@@ -264,7 +264,7 @@ export default function HabitAudit() {
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${
-                            selected === opt.penalty ? "border-primary bg-primary" : "border-border/60"
+                            selected === opt.penalty ? "border-primary bg-primary shadow-[0_0_8px_var(--color-primary)]" : "border-border/60"
                           }`}>
                             {selected === opt.penalty && <div className="w-1.5 h-1.5 rounded-full bg-background" />}
                           </div>
@@ -286,13 +286,14 @@ export default function HabitAudit() {
                 <button onClick={handleBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ArrowLeft className="w-3.5 h-3.5" /> Back
                 </button>
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
                   onClick={handleNext}
                   disabled={selected === null}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-background bg-primary hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
                   {current < QUESTIONS.length - 1 ? "Next" : "See my results"} <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                </motion.button>
               </div>
             </AnimateIn>
           </div>

@@ -261,7 +261,7 @@ export default function GetStarted() {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className="mb-8"
             >
               <div className="rounded-xl border border-primary/20 bg-primary/5 px-5 py-4 flex items-center gap-3">
@@ -279,7 +279,7 @@ export default function GetStarted() {
         {/* ── Fleet-specific notice ── */}
         <AnimatePresence>
           {isFleet && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.3, ease: "easeOut" }}>
               <FleetNotice />
             </motion.div>
           )}

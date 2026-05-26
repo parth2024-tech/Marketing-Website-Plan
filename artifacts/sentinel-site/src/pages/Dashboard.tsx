@@ -308,7 +308,7 @@ export default function Dashboard() {
                       <XAxis dataKey="time" hide />
                       <YAxis domain={[0, 100]} stroke="rgba(255,255,255,0.2)" fontSize={10} tickFormatter={(v)=>`${v}%`} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Area type="monotone" dataKey="cpu" stroke={CHART_COLOR_CYAN} strokeWidth={2} fillOpacity={1} fill="url(#colorCpu)" isAnimationActive={false} />
+                      <Area type="monotone" dataKey="cpu" stroke={CHART_COLOR_CYAN} strokeWidth={2} fillOpacity={1} fill="url(#colorCpu)" isAnimationActive={true} animationDuration={300} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -336,8 +336,8 @@ export default function Dashboard() {
                       <XAxis dataKey="time" hide />
                       <YAxis domain={[30, 100]} stroke="rgba(255,255,255,0.2)" fontSize={10} tickFormatter={(v)=>`${v}°`} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Line type="monotone" dataKey="tempCpu" stroke="hsl(38, 92%, 60%)" strokeWidth={2} dot={false} isAnimationActive={false} />
-                      <Line type="monotone" dataKey="tempChassis" stroke="hsl(215, 20%, 55%)" strokeWidth={2} strokeDasharray="4 4" dot={false} isAnimationActive={false} />
+                      <Line type="monotone" dataKey="tempCpu" stroke="hsl(38, 92%, 60%)" strokeWidth={2} dot={false} isAnimationActive={true} animationDuration={300} />
+                      <Line type="monotone" dataKey="tempChassis" stroke="hsl(215, 20%, 55%)" strokeWidth={2} strokeDasharray="4 4" dot={false} isAnimationActive={true} animationDuration={300} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -363,7 +363,7 @@ export default function Dashboard() {
                       <XAxis dataKey="time" hide />
                       <YAxis domain={[0, 100]} stroke="rgba(255,255,255,0.2)" fontSize={10} tickFormatter={(v)=>`${v}%`} />
                       <Tooltip content={<CustomTooltip />} />
-                      <Area type="monotone" dataKey="ram" stroke={CHART_COLOR_VIOLET} strokeWidth={2} fillOpacity={1} fill="url(#colorRam)" isAnimationActive={false} />
+                      <Area type="monotone" dataKey="ram" stroke={CHART_COLOR_VIOLET} strokeWidth={2} fillOpacity={1} fill="url(#colorRam)" isAnimationActive={true} animationDuration={300} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -409,7 +409,7 @@ export default function Dashboard() {
               </div>
               <div className="p-5 flex flex-col gap-4">
                 {AI_FINDINGS.map(finding => (
-                  <div key={finding.id} className={`p-4 rounded-lg border ${finding.bg} flex gap-4`}>
+                  <div key={finding.id} className={`p-4 rounded-lg border ${finding.bg} flex gap-4 ${finding.severity === 'critical' ? 'animate-border-pulse-red' : ''}`}>
                     <div className="mt-0.5">
                       <finding.icon className={`w-5 h-5 ${finding.color}`} />
                     </div>
@@ -483,7 +483,7 @@ export default function Dashboard() {
 
 function MetricTile({ title, icon: Icon, value, subValue, color }: { title: string, icon: any, value: string, subValue: string, color: string }) {
   return (
-    <div className="bg-[#0a0e1a] border border-primary/20 rounded-xl p-4 flex flex-col gap-3 shadow-lg group hover:border-primary/40 transition-colors">
+    <div className="bg-[#0a0e1a] border border-primary/20 rounded-xl p-4 flex flex-col gap-3 shadow-lg group hover:border-primary/40 hover:-translate-y-1 hover:shadow-[0_0_15px_-3px_rgba(34,211,238,0.2)] transition-all duration-200 ease-out">
       <div className="flex items-center justify-between">
         <Icon className="w-5 h-5 text-muted-foreground group-hover:text-white transition-colors" />
         <span className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary group-hover:animate-pulse" />

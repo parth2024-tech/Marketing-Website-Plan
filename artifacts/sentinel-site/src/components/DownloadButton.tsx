@@ -206,7 +206,17 @@ export default function DownloadButton({ slug, label, recommended, preload = tru
       )}
 
       {state.phase === "checking" && (
-        <div className="text-xs text-muted-foreground/50 font-mono">Checking for latest release…</div>
+        <div className="flex flex-col gap-1.5 mt-1">
+          <div className="text-[10px] text-muted-foreground/50 font-mono tracking-widest uppercase">Checking for latest release…</div>
+          <div className="w-full bg-border/40 rounded-full h-1 overflow-hidden relative">
+            <motion.div 
+              className="absolute top-0 left-0 h-full bg-primary"
+              initial={{ width: "0%" }}
+              animate={{ width: "90%" }}
+              transition={{ duration: 10, ease: "easeOut" }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

@@ -177,7 +177,7 @@ function CopyableCode({ code }: { code: string }) {
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   return (
@@ -235,18 +235,24 @@ function FeedbackWidget({ messageId }: { messageId: number }) {
     <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border/40">
       <span className="text-xs text-muted-foreground">Did this resolve your issue?</span>
       <div className="flex items-center gap-2">
-        <button 
+        <motion.button 
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10, duration: 0.15 }}
           onClick={() => setFeedback("up")}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-card border border-border/60 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all text-xs text-muted-foreground"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-card border border-border/60 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors text-xs text-muted-foreground"
         >
           <ThumbsUp className="w-3 h-3" /> Yes
-        </button>
-        <button 
+        </motion.button>
+        <motion.button 
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10, duration: 0.15 }}
           onClick={() => setFeedback("down")}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-card border border-border/60 hover:bg-red-400/10 hover:text-red-400 hover:border-red-400/40 transition-all text-xs text-muted-foreground"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-card border border-border/60 hover:bg-red-400/10 hover:text-red-400 hover:border-red-400/40 transition-colors text-xs text-muted-foreground"
         >
           <ThumbsDown className="w-3 h-3" /> No
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -282,22 +288,26 @@ export default function Troubleshoot() {
   const inputRef = useRef<HTMLInputElement>(null);
   const msgId = useRef(0);
 
+  const [isPreloading, setIsPreloading] = useState(!!topicParam);
+
   // Pre-load context if arriving from a report finding
   useEffect(() => {
     if (topicParam && messages.length === 0) {
-      const entry = KB.find(k => k.topic === topicParam);
-      if (entry) {
-        setMessages([
-          {
-            id: ++msgId.current,
-            role: "assistant",
-            text: `You arrived here because your report flagged an issue: **${titleParam || entry.solution.title}**. Here are the relevant diagnostic steps.`,
-            solutions: [entry.solution]
-          }
-        ]);
-      }
+      setTimeout(() => {
+        const entry = KB.find(k => k.topic === topicParam);
+        if (entry) {
+          setMessages([
+            {
+              id: ++msgId.current,
+              role: "assistant",
+              text: `You arrived here because your report flagged an issue: **${titleParam || entry.solution.title}**. Here are the relevant diagnostic steps.`,
+              solutions: [entry.solution]
+            }
+          ]);
+        }
+        setIsPreloading(false);
+      }, 1000);
     }
-   
   }, [topicParam, titleParam]);
 
   useEffect(() => {
@@ -378,7 +388,15 @@ export default function Troubleshoot() {
  
               {/* Messages */}
               <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-6">
-                {messages.length === 0 && (
+                
+                {isPreloading && (
+                  <div className="max-w-2xl animate-skeleton-pulse space-y-4">
+                    <div className="h-12 w-3/4 bg-muted/20 rounded-xl" />
+                    <div className="h-32 w-full bg-muted/20 rounded-2xl" />
+                  </div>
+                )}
+
+                {messages.length === 0 && !isPreloading && (
                   <div className="flex flex-col items-center justify-center h-full gap-6 py-8">
                     <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center glow-cyan">
                       <MessageCircle className="w-7 h-7 text-primary" />
@@ -442,12 +460,30 @@ export default function Troubleshoot() {
                                   <div className={`flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center text-xs font-mono font-bold mt-0.5 ${step.type === 'decision' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-primary/10 border-primary/30 text-primary'}`}>
                                     {step.type === 'decision' ? '?' : j + 1}
                                   </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                      {renderTextWithBoldPaths(step.text)}
-                                    </p>
-                                    {step.code && <CopyableCode code={step.code} />}
-                                  </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm text-muted-foreground leading-relaxed">
+                                        {renderTextWithBoldPaths(step.text)}
+                                      </p>
+                                      {step.code && <CopyableCode code={step.code} />}
+                                      {step.type === 'decision' && (
+                                        <div className="flex items-center gap-3 mt-3">
+                                          <motion.button 
+                                            whileTap={{ scale: 0.9 }} 
+                                            transition={{ type: "spring", duration: 0.2 }}
+                                            className="px-4 py-1.5 text-xs font-semibold bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors"
+                                          >
+                                            Yes (Pass)
+                                          </motion.button>
+                                          <motion.button 
+                                            whileTap={{ scale: 0.9 }} 
+                                            transition={{ type: "spring", duration: 0.2 }}
+                                            className="px-4 py-1.5 text-xs font-semibold bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
+                                          >
+                                            No (Fail)
+                                          </motion.button>
+                                        </div>
+                                      )}
+                                    </div>
                                 </div>
                               ))}
                               

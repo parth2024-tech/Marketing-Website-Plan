@@ -367,9 +367,16 @@ function ForecastChart() {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-1">Battery Degradation Model</h3>
-          <p className="text-xs text-muted-foreground">
-            {scans === 1 ? "Industry baseline — 0 historical personal scans" : "Personal regression model — 5 historical scans"}
-          </p>
+          <motion.div 
+            initial={{ width: 0 }} 
+            animate={{ width: "100%" }} 
+            transition={{ duration: 0.5, ease: "linear" }}
+            className="overflow-hidden whitespace-nowrap"
+          >
+            <p className="text-xs text-muted-foreground">
+              {scans === 1 ? "Industry baseline — 0 historical personal scans" : "Personal regression model — 5 historical scans"}
+            </p>
+          </motion.div>
         </div>
         <button 
           onClick={() => setScans(s => s === 1 ? 5 : 1)}
@@ -444,7 +451,21 @@ function ForecastChart() {
               dataKey="personal" 
               stroke="#22d3ee" 
               strokeWidth={2} 
-              dot={{ r: 4, fill: "#22d3ee" }} 
+              dot={(props: any) => {
+                if (props.value === null || props.value === undefined) return null;
+                return (
+                  <motion.circle
+                    key={`dot-${props.index}`}
+                    cx={props.cx}
+                    cy={props.cy}
+                    r={4}
+                    fill="#22d3ee"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 1.2 + props.index * 0.15, type: "spring", stiffness: 300, damping: 20 }}
+                  />
+                );
+              }}
               activeDot={{ r: 6 }} 
               name="Your Scans" 
               isAnimationActive={true}
@@ -507,9 +528,9 @@ function ExpandableFinding({ f, style, icon, troubleshootKey }: {
       <AnimatePresence initial={false}>
         {open && (
           <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            initial={{ height: 0, opacity: 0, scaleY: 0, transformOrigin: "top" }}
+            animate={{ height: "auto", opacity: 1, scaleY: 1 }}
+            exit={{ height: 0, opacity: 0, scaleY: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden"
           >
@@ -557,10 +578,10 @@ function ReproducibilityPanel({ result, combinedScoreVal }: { result: ReportResu
       <AnimatePresence initial={false}>
         {open && (
           <motion.div 
-            initial={{ height: 0, opacity: 0, scaleY: 0.95, transformOrigin: "top" }}
+            initial={{ height: 0, opacity: 0, scaleY: 0, transformOrigin: "top" }}
             animate={{ height: "auto", opacity: 1, scaleY: 1 }}
-            exit={{ height: 0, opacity: 0, scaleY: 0.95 }}
-            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+            exit={{ height: 0, opacity: 0, scaleY: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
             className="overflow-hidden"
           >
             <div className="border-t border-border/30 px-6 py-5 space-y-4">
@@ -611,6 +632,14 @@ export default function Report() {
   const [error, setError] = useState<string | null>(null);
   const [loadedFrom, setLoadedFrom] = useState<"server" | "local" | null>(null);
   const [, navigate] = useLocation();
+  const [showBanner, setShowBanner] = useState(true);
+
+  useEffect(() => {
+    if (result?.dataQuality?.structuredWarnings && result.dataQuality.structuredWarnings.length > 0) {
+      const timer = setTimeout(() => setShowBanner(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [result]);
 
   useEffect(() => {
     const id = params?.id;
@@ -719,17 +748,25 @@ export default function Report() {
 
   return (
     <div className="min-h-screen bg-background text-foreground report-printable">
-      {result?.dataQuality?.structuredWarnings && result.dataQuality.structuredWarnings.length > 0 && (
-        <div className="w-full border-b border-amber-500/40 bg-amber-500/10 px-6 py-3">
-          <div className="max-w-3xl mx-auto flex items-center gap-3">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-            <div>
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Data Collection Notes · </span>
-              <span className="text-xs text-amber-400/80">{result.dataQuality.structuredWarnings.map((w: any) => w.title).join(" · ")} — some telemetry was excluded from scoring.</span>
+      <AnimatePresence>
+        {result?.dataQuality?.structuredWarnings && result.dataQuality.structuredWarnings.length > 0 && showBanner && (
+          <motion.div 
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -20, opacity: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="w-full border-b border-red-500/40 bg-red-500/10 px-6 py-3"
+          >
+            <div className="max-w-3xl mx-auto flex items-center gap-3">
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+              <div>
+                <span className="text-xs font-bold text-red-400 uppercase tracking-wider">Data Collection Notes · </span>
+                <span className="text-xs text-red-400/80">{result.dataQuality.structuredWarnings.map((w: any) => w.title).join(" · ")} — some telemetry was excluded from scoring.</span>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
       {loadedFrom === "local" && (
         <div className="w-full bg-amber-500 text-amber-950 px-6 py-4 flex items-center justify-center gap-3 shadow-md z-50 relative">
           <AlertTriangle className="w-5 h-5 shrink-0" />
