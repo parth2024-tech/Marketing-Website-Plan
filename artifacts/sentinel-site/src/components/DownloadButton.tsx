@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Download, Loader2, CheckCircle, AlertTriangle, ExternalLink } from "lucide-react";
+import { motion } from "framer-motion";
 
 type DownloadSlug = "oneshot" | "setup" | "agent";
 
@@ -135,16 +136,19 @@ export default function DownloadButton({ slug, label, recommended, preload = tru
 
   return (
     <div className="flex flex-col gap-2">
-      <button
+      <motion.button
         type="button"
         onClick={handleClick}
         disabled={isLoading}
+        initial={recommended ? { scale: 1 } : false}
+        animate={recommended ? { scale: [1, 1.02, 1] } : false}
+        transition={{ duration: 0.3, type: "spring", bounce: 0.4 }}
         className={`inline-flex w-full items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-semibold transition-all duration-200 disabled:opacity-70 ${
           isUnavailable
             ? "bg-card border border-amber-500/40 text-amber-400/80 cursor-default"
             : recommended
-            ? "bg-primary text-background hover:bg-primary/90 glow-cyan"
-            : "bg-card border border-border/60 text-foreground hover:border-primary/40 hover:bg-primary/5"
+            ? "bg-primary text-background hover:bg-primary/90 glow-cyan hover:scale-[1.02] active:scale-[0.98]"
+            : "bg-card border border-border/60 text-foreground hover:border-primary/40 hover:bg-primary/5 hover:scale-[1.02] active:scale-[0.98]"
         }`}
       >
         {state.phase === "checking" && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -160,7 +164,7 @@ export default function DownloadButton({ slug, label, recommended, preload = tru
         {state.phase === "ready" && label}
         {state.phase === "unavailable" && "Not yet published"}
         {state.phase === "error" && "Retry download"}
-      </button>
+      </motion.button>
 
       {/* Status line under button */}
       {state.phase === "ready" && (

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { MessageCircle, Send, Cpu, Battery, HardDrive, Thermometer, Sparkles, RotateCcw, Copy, Check, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useSearch } from "wouter";
 import AnimateIn from "@/components/AnimateIn";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ── Knowledge Base ──────────────────────────────────────────────────────────
 
@@ -185,9 +186,19 @@ function CopyableCode({ code }: { code: string }) {
         <span className="text-[10px] font-mono text-primary/70 uppercase tracking-widest">PowerShell / Command Prompt</span>
         <button 
           onClick={handleCopy}
-          className="text-primary/60 hover:text-primary transition-colors flex items-center gap-1 text-[10px] font-mono uppercase"
+          className="text-primary/60 hover:text-primary transition-colors flex items-center gap-1 text-[10px] font-mono uppercase min-w-[60px] justify-end"
         >
-          {copied ? <><Check className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
+          <AnimatePresence mode="wait">
+            {copied ? (
+              <motion.div key="copied" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} transition={{ duration: 0.15 }} className="flex items-center gap-1 text-green-400">
+                <Check className="w-3 h-3" /> Copied
+              </motion.div>
+            ) : (
+              <motion.div key="copy" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} transition={{ duration: 0.15 }} className="flex items-center gap-1">
+                <Copy className="w-3 h-3" /> Copy
+              </motion.div>
+            )}
+          </AnimatePresence>
         </button>
       </div>
       <div className="p-3 text-xs font-mono text-cyan-400 overflow-x-auto whitespace-pre">

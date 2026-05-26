@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowRight, ArrowLeft, Share2, RotateCcw, CheckCircle } from "lucide-react";
 import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
+import { motion, animate } from "framer-motion";
 
 interface Question {
   id: string;
@@ -130,7 +131,22 @@ export default function HabitAudit() {
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [selected, setSelected] = useState<number | null>(null);
+  const [displayedScore, setDisplayedScore] = useState(0);
   const [, navigate] = useLocation();
+
+  const totalPenalty = Object.values(answers).reduce((s, v) => s + v, 0);
+  const score = Math.round(((MAX_PENALTY - totalPenalty) / MAX_PENALTY) * 100);
+
+  useEffect(() => {
+    if (step === "results") {
+      const controls = animate(0, score, {
+        duration: 0.8,
+        ease: [0.25, 0.1, 0.25, 1],
+        onUpdate: (val) => setDisplayedScore(Math.round(val))
+      });
+      return () => controls.stop();
+    }
+  }, [step, score]);
 
   const question = QUESTIONS[current];
 
@@ -163,8 +179,6 @@ export default function HabitAudit() {
     setSelected(null);
   }
 
-  const totalPenalty = Object.values(answers).reduce((s, v) => s + v, 0);
-  const score = Math.round(((MAX_PENALTY - totalPenalty) / MAX_PENALTY) * 100);
   const grade = getGrade(score);
   const findings = getFindingsForAnswers(answers);
 
@@ -299,7 +313,7 @@ export default function HabitAudit() {
               <div className="absolute inset-0 bg-gradient-to-b from-primary/3 to-transparent pointer-events-none" />
               <div className="relative">
                 <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-4">Your Habit Score</p>
-                <div className={`text-7xl font-bold tracking-tight mb-2 ${grade.color}`}>{score}</div>
+                <div className={`text-7xl font-bold tracking-tight mb-2 ${grade.color}`}>{displayedScore}</div>
                 <div className="text-muted-foreground text-sm mb-1">/ 100</div>
                 <div className={`text-lg font-semibold mb-3 ${grade.color}`}>{grade.label}</div>
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">{grade.detail}</p>

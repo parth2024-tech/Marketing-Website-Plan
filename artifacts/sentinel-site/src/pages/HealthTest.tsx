@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Terminal, Copy, CheckCheck, Activity, ShieldCheck, Zap, Download } from "lucide-react";
 import AnimateIn from "@/components/AnimateIn";
 import DownloadButton from "@/components/DownloadButton";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
 export default function HealthTest() {
@@ -12,7 +13,7 @@ export default function HealthTest() {
   const handleCopy = () => {
     navigator.clipboard.writeText(scriptCommand).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 1500);
     });
   };
 
@@ -90,17 +91,33 @@ export default function HealthTest() {
                           onClick={handleCopy}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
                         >
-                          {copied ? (
-                            <>
-                              <CheckCheck className="w-3.5 h-3.5 text-green-400" />
-                              <span className="text-green-400">Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              Copy
-                            </>
-                          )}
+                          <AnimatePresence mode="wait">
+                            {copied ? (
+                              <motion.div
+                                key="copied"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ duration: 0.15 }}
+                                className="flex items-center gap-1.5"
+                              >
+                                <CheckCheck className="w-3.5 h-3.5 text-green-400" />
+                                <span className="text-green-400">Copied!</span>
+                              </motion.div>
+                            ) : (
+                              <motion.div
+                                key="copy"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ duration: 0.15 }}
+                                className="flex items-center gap-1.5"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                                Copy
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </button>
                       </div>
                       <div className="font-mono text-sm text-slate-300 break-all bg-black/40 p-4 rounded-lg border border-border/30 overflow-x-auto whitespace-pre-wrap">

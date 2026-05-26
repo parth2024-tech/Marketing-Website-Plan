@@ -48,13 +48,13 @@ export default function Home() {
           
           {/* Left Content Area */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-            <AnimateIn delay={0} direction="left">
+            <AnimateIn delay={0} direction="up">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono font-medium border border-primary/30 text-primary bg-primary/10 mb-8 shadow-sm backdrop-blur-md">
                 <Activity className="w-3.5 h-3.5" /> REVEAL THE INVISIBLE
               </div>
             </AnimateIn>
             
-            <AnimateIn delay={0.1} direction="left">
+            <AnimateIn delay={0.1} direction="up">
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] relative">
                 <span className="block mb-2">OEM diagnostics</span>
                 <span className="block mb-2 text-muted-foreground/80 line-through decoration-red-500/50 decoration-[4px]">lie to you.</span>
@@ -62,14 +62,14 @@ export default function Home() {
               </h1>
             </AnimateIn>
             
-            <AnimateIn delay={0.2} direction="left">
+            <AnimateIn delay={0.2} direction="up">
               <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mt-8">
                 Stop relying on binary Pass/Fail checks that hide hardware degradation. 
                 Our deterministic telemetry exposes exactly what is failing—down to the individual cycle—before your system dies.
               </p>
             </AnimateIn>
             
-            <AnimateIn delay={0.4} direction="left" className="mt-12 w-full">
+            <AnimateIn delay={0.4} direction="up" className="mt-12 w-full">
               <div className="flex flex-col sm:flex-row items-center lg:justify-start justify-center gap-4 w-full">
                 <Link href="/get-started" className="group relative flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl font-bold text-base text-background bg-primary hover:bg-primary/90 glow-cyan transition-all duration-300 shadow-xl overflow-hidden min-w-[220px]">
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
@@ -220,7 +220,7 @@ export default function Home() {
             
             {/* Code Snippet Window */}
             <AnimateIn delay={0.2} direction="left">
-              <div className="rounded-xl border border-border/60 bg-[#0d1117] overflow-hidden shadow-2xl">
+              <div className="rounded-xl border border-border/60 bg-[#0d1117] overflow-hidden shadow-2xl transition-all duration-200 ease-out hover:scale-[1.01] hover:border-primary/50 hover:shadow-[0_0_30px_-10px_rgba(34,211,238,0.3)]">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-[#161b22]">
                   <div className="w-3 h-3 rounded-full bg-red-500/70" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500/70" />

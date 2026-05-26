@@ -16,15 +16,15 @@ interface AnimateInProps {
 }
 
 const directionOffsets: Record<Direction, { x?: number; y?: number }> = {
-  up:    { y: 28 },
-  down:  { y: -28 },
-  left:  { x: 28 },
-  right: { x: -28 },
+  up:    { y: 20 },
+  down:  { y: -20 },
+  left:  { x: 20 },
+  right: { x: -20 },
   fade:  {},
 };
 
-/** Cubic-bezier easing: snappy ease-out */
-const EASE = [0.21, 0.47, 0.32, 0.98] as const;
+/** Apple-style cubic-bezier easing */
+const EASE = [0.25, 0.1, 0.25, 1] as const;
 
 export default function AnimateIn({
   children,

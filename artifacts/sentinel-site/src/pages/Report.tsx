@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ResponsiveContainer, ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea } from "recharts";
 
 import { Link, useParams, useLocation } from "wouter";
@@ -62,19 +62,21 @@ function ScoreRing({ score }: { score: number }) {
   const r = 54;
   const circ = 2 * Math.PI * r;
   const color = score >= 80 ? "#22d3ee" : score >= 60 ? "#f59e0b" : "#f87171";
+  
   const [displayed, setDisplayed] = React.useState(0);
+
   React.useEffect(() => {
-    const duration = 800;
-    const startTime = performance.now();
-    const step = (now: number) => {
-      const progress = Math.min((now - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayed(Math.round(eased * score));
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
+    import("framer-motion").then(({ animate }) => {
+      animate(0, score, {
+        duration: 0.8,
+        ease: [0.25, 0.1, 0.25, 1],
+        onUpdate: (val) => setDisplayed(Math.round(val))
+      });
+    });
   }, [score]);
+
   const dash = (displayed / 100) * circ;
+
   return (
     <div className="relative" style={{ width: 140, height: 140 }}>
       <svg width="140" height="140" viewBox="0 0 140 140" className="rotate-[-90deg] absolute inset-0">
@@ -483,10 +485,18 @@ function ExpandableFinding({ f, style, icon, troubleshootKey }: {
           <div className="text-sm font-semibold text-foreground">{f.title}</div>
           <p className="text-sm text-muted-foreground leading-relaxed mt-1">{f.body}</p>
         </div>
-        <ChevronDown className={`w-4 h-4 text-muted-foreground/40 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-4 h-4 text-muted-foreground/40 shrink-0 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && (
-        <div className="px-5 pb-5 space-y-3 border-t border-border/30 pt-4">
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5 space-y-3 border-t border-border/30 pt-4">
           {f.oemContext && (
             <div className="rounded-lg bg-primary/5 border border-primary/15 px-4 py-3">
               <p className="text-xs font-mono text-primary/60 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
@@ -506,7 +516,9 @@ function ExpandableFinding({ f, style, icon, troubleshootKey }: {
             </Link>
           )}
         </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -522,11 +534,19 @@ function ReproducibilityPanel({ result, combinedScoreVal }: { result: ReportResu
           <span className="text-sm font-semibold text-foreground">How this score was calculated</span>
           <span className="text-xs font-mono text-primary/50 border border-primary/20 bg-primary/5 px-2 py-0.5 rounded">v{result.algoVersion}</span>
         </div>
-        <ChevronDown className={`w-4 h-4 text-muted-foreground/40 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-4 h-4 text-muted-foreground/40 transition-transform duration-400 ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && (
-        <div className="border-t border-border/30 px-6 py-5 space-y-4">
-          <p className="text-xs text-muted-foreground leading-relaxed">Each component is scored 0–100 using a deterministic formula, then weighted. The same inputs always produce the same output.</p>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0, scaleY: 0.95, transformOrigin: "top" }}
+            animate={{ height: "auto", opacity: 1, scaleY: 1 }}
+            exit={{ height: 0, opacity: 0, scaleY: 0.95 }}
+            transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-border/30 px-6 py-5 space-y-4">
+              <p className="text-xs text-muted-foreground leading-relaxed">Each component is scored 0–100 using a deterministic formula, then weighted. The same inputs always produce the same output.</p>
           <div className="space-y-2">
             {result.components.map(c => {
               const w = weights[c.name] ?? 10;
@@ -555,8 +575,10 @@ function ReproducibilityPanel({ result, combinedScoreVal }: { result: ReportResu
           <Link href="/scoring" className="inline-flex items-center gap-1.5 text-xs text-primary/70 hover:text-primary transition-colors">
             Read the full scoring methodology <ArrowRight className="w-3 h-3" />
           </Link>
-        </div>
-      )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -869,7 +891,7 @@ export default function Report() {
                 };
                 const scoreColor = c.score >= 80 ? "#22d3ee" : c.score >= 60 ? "#f59e0b" : "#f87171";
                 return (
-                  <motion.div key={c.name} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + idx * 0.15, duration: 0.4 }}>
+                  <motion.div key={c.name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + idx * 0.1, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-foreground">{c.name}</span>
