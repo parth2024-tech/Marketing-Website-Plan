@@ -451,10 +451,10 @@ export default function Dashboard() {
                     <motion.div 
                       key={log.id}
                       layout="position"
-                      initial={{ opacity: 0, x: -10 }}
+                      initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
                       className="flex items-start gap-3 font-mono text-xs"
                     >
                       <span className="text-muted-foreground/50 shrink-0 w-16">{log.time}</span>

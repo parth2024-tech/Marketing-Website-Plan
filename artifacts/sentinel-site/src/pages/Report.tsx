@@ -405,6 +405,9 @@ function ForecastChart() {
               name="Population Upper"
               legendType="none"
               tooltipType="none"
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
             />
             <Area 
               type="monotone" 
@@ -416,6 +419,9 @@ function ForecastChart() {
               name="Population Lower"
               legendType="none"
               tooltipType="none"
+              isAnimationActive={true}
+              animationDuration={800}
+              animationEasing="ease-out"
             />
             
             {/* Baseline Curve */}
@@ -427,6 +433,9 @@ function ForecastChart() {
               dot={false} 
               name="Population Baseline" 
               strokeDasharray="5 5"
+              isAnimationActive={true}
+              animationDuration={1000}
+              animationEasing="linear"
             />
 
             {/* Personal Scans */}
@@ -438,6 +447,10 @@ function ForecastChart() {
               dot={{ r: 4, fill: "#22d3ee" }} 
               activeDot={{ r: 6 }} 
               name="Your Scans" 
+              isAnimationActive={true}
+              animationDuration={1000}
+              animationEasing="linear"
+              animationBegin={200}
             />
 
             {/* Personal Projection */}
@@ -448,6 +461,10 @@ function ForecastChart() {
                 stroke="#22d3ee" 
                 strokeWidth={2} 
                 strokeDasharray="3 3"
+                isAnimationActive={true}
+                animationDuration={1000}
+                animationEasing="linear"
+                animationBegin={1200}
                 dot={false} 
                 name="Projected Trend" 
               />
@@ -511,8 +528,9 @@ function ExpandableFinding({ f, style, icon, troubleshootKey }: {
             </div>
           )}
           {troubleshootKey && (
-            <Link href={`/troubleshoot?topic=${troubleshootKey}&title=${encodeURIComponent(f.title)}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border border-primary/30 text-primary hover:bg-primary/10 transition-all">
-              <ArrowRight className="w-3.5 h-3.5" /> Get step-by-step fix for this issue
+            <Link href={`/troubleshoot?topic=${troubleshootKey}&title=${encodeURIComponent(f.title)}`} className="inline-flex items-center gap-2 text-xs font-semibold text-primary group relative">
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" /> Get step-by-step fix for this issue
+              <div className="absolute -bottom-1 left-0 h-px bg-primary w-0 group-hover:w-full transition-all duration-200 ease-linear" />
             </Link>
           )}
         </div>

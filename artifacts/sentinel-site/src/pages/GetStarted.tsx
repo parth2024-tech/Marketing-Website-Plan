@@ -105,7 +105,7 @@ function TierCard({
 }) {
   return (
     <div
-      className={`relative surface-card rounded-2xl p-8 flex flex-col gap-6 border transition-all duration-300 hover:scale-[1.02] hover:border-primary/50 hover:shadow-[0_0_40px_-12px_var(--color-primary)] ${
+      className={`relative surface-card rounded-2xl p-8 flex flex-col gap-6 border transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/50 hover:shadow-[0_0_40px_-12px_var(--color-primary)] ${
         recommended
           ? "border-primary/50 shadow-[0_0_40px_-12px_var(--color-primary)]"
           : borderClass
@@ -258,9 +258,9 @@ export default function GetStarted() {
         <AnimatePresence>
           {userType && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.3 }}
               className="mb-8"
             >
