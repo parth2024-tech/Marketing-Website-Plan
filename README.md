@@ -203,3 +203,7 @@ To test the Pairing System with a machine on a different network:
    - Generate a **Pair Code**.
    - Run the script: `.\dell.ps1 -PairCode YOUR_CODE`.
 4. **Instant Sync**: Your browser will automatically detect the upload and show the report.
+
+### Using Localtunnel for API testing
+
+Alternatively, if you are testing the Site on a static host (like Netlify) and the API locally via `localtunnel`, make sure to inject the `Bypass-Tunnel-Reminder: true` header in your site's proxy configuration (e.g. `netlify.toml`) so that API requests aren't blocked by localtunnel's warning page.

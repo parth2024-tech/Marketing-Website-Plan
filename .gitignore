@@ -69,3 +69,6 @@ sentinel-signing.*
 .env
 *.log
 
+
+# Local Netlify folder
+.netlify
