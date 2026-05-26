@@ -188,21 +188,25 @@ pnpm --filter @workspace/api-spec run codegen # Regenerate API clients
   - *Backend Query Processing*: Mounted `/api/fleet/dashboard` which extracts, parses, and aggregates raw telemetry records submitted by active systems. It dynamically tracks metrics (`cpu.avgLoadPct`, `memory.usedPct`, `thermals.maxTempC`), identifies AI-driven health findings, and filters out flagged anomalies in real-time.
   - *Frontend Auto-Refresh & Synchronization*: The dashboard performs non-blocking, background polling every 4 seconds to ensure operational metrics are perfectly in-sync with live system states. Incorporates smooth Recharts animations and transition states for a highly responsive, enterprise-grade user experience.
 
-## Remote Testing & Pairing
+## Remote Testing & Verification
 
-To test the Pairing System with a machine on a different network:
+To verify the Direct Upload flow locally or on a different network:
 
-1. **Expose your local server**: Use a tool like **ngrok** to create a public tunnel.
+1. **Expose your local server**: Use a tool like **ngrok** to create a public tunnel to your API server.
    ```bash
-   ngrok http 3000 # Expose the frontend
-   ngrok http 5000 # Expose the backend
+   ngrok http 5000 # Expose the backend API
    ```
-2. **Update script URLs**: Open the diagnostic script (e.g., `dell.ps1`) and change `$SENTINEL_BASE_URL` to your **Backend ngrok URL**.
-3. **External Laptop**:
-   - Open your **Frontend ngrok URL**.
-   - Generate a **Pair Code**.
-   - Run the script: `.\dell.ps1 -PairCode YOUR_CODE`.
-4. **Instant Sync**: Your browser will automatically detect the upload and show the report.
+2. **Update script URLs**: Open the diagnostic script (e.g., `sentinel-collect.ps1`) and change `$SENTINEL_BASE_URL` to your **Backend ngrok URL**.
+3. **Execute Telemetry Gathering**:
+   - Run the script with the Direct Upload switch:
+     ```powershell
+     .\sentinel-collect.ps1 -DirectUpload
+     ```
+   - The script will securely POST to the API `/api/reports`, receive a `claimToken`, and immediately launch your browser:
+     ```text
+     https://sentinelapp.io/r/{reportId}?claim={claimToken}
+     ```
+4. **Frictionless Auto-Claim**: Your browser will read the `?claim` parameter, save it to local storage to verify you are the owner, and redirect you to the clean report URL seamlessly.
 
 ### Using Localtunnel for API testing
 
