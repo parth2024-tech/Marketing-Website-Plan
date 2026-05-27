@@ -31,12 +31,12 @@ Scoring is fully deterministic and publicly documented — no black-box AI, no m
 
 ## Tech Stack
 
-- **Monorepo** — `pnpm` workspaces, Node.js 24, TypeScript 5.9
+- **Monorepo** — `pnpm` workspaces, Node.js 24, TypeScript 5.9 (Strict type safety enabled monorepo-wide)
 - **Frontend** — React 19 + Vite, Tailwind CSS v4, `wouter` routing, `@tanstack/react-query`, `framer-motion` animations, `Radix UI` primitives
 - **Backend API** — Express 5, `cookie-parser`, `cors`, `pino` logging
 - **Database & Architecture** — PostgreSQL via Drizzle ORM (Refactored for enterprise-grade Multi-Tenant B2B SaaS architecture, leveraging robust relational integrity)
 - **Validation** — Zod (`zod/v4`) + `drizzle-zod`
-- **Testing** — Vitest for highly accurate scoring engine validation, coordinated monorepo-wide using `vitest.workspace.ts` to orchestrate tests across all subprojects seamlessly
+- **Testing & Linting** — Vitest for highly accurate scoring engine validation, coordinated monorepo-wide using `vitest.workspace.ts`. Fully configured ESLint with standard/recommended TypeScript & React Hooks rules.
 - **Shared Libraries**:
   - `@workspace/report-engine` — Schema, scoring engine, habit scoring, forecast
   - `@workspace/db` — Drizzle schema + client
@@ -93,9 +93,10 @@ The marketing site does **not** hard-link to GitHub. Buttons call the API, which
 
 If nothing is available, the API returns **503 JSON** and the UI shows a clear error (instead of sending users to an empty GitHub page).
 
-### CI/CD (`native.yml`)
+### CI/CD (`native.yml` & `web.yml`)
 
-- **Tagged releases (`v*`)** — signed assets attached to a semver GitHub Release.
+- **Web Stack CI (`.github/workflows/web.yml`)** — Every push or pull request targeting the `main` branch automatically checks out the repository, instantiates Node.js and `pnpm`, installs dependencies using a frozen lockfile, runs `pnpm run lint` to enforce standard coding guidelines, performs monorepo-wide typechecking via `pnpm run typecheck`, and builds all subprojects via `pnpm run build` to verify total compilation integrity.
+- **Native Releases (`native.yml`)** — Tagged releases (`v*`) attach signed assets to a semver GitHub Release.
 - **`main` branch** — after each successful native build, a rolling prerelease **`ci-downloads`** is updated so `/get-started` works before the first semver tag.
 - **Local dev** — copy built files into `artifacts/downloads/` or run both `./start_api.sh` and `./start_site.sh` (Vite proxies `/api` to port 5000).
 
@@ -161,6 +162,7 @@ You can use the provided shorthand scripts:
 ### Useful Commands
 
 ```bash
+pnpm run lint               # Run ESLint validation across all workspace packages
 pnpm run typecheck          # Full type check across all packages
 pnpm run build              # Build all packages
 pnpm run test               # Run the comprehensive Vitest unit test suite
