@@ -1,27 +1,48 @@
 /**
- * forecast.ts — Track 2C: Per-device trend forecasting
- *
- * Phase 2B: Population-fitted battery health curve (replaces cycleAnchors).
- * Phase 2C: Linear regression on per-device scan history for real forecasts.
- *
- * Cold-start (< 3 scans): falls back to population curve with honest label.
- * Warm (≥ 3 scans): uses the user's own degradation rate with 95% CI.
+ * @file forecast.ts
+ * @description Track 2C: Per-device trend forecasting and telemetry analysis.
+ * 
+ * Implements two distinct forecasting models:
+ * 1. Phase 2B: Population-fitted battery health curve using an exponential decay model
+ *    calibrated with published OEM battery aging data.
+ * 2. Phase 2C: Warm-start linear regression analysis on user-specific diagnostic scan history,
+ *    providing real-time degradation forecasting along with a 95% confidence interval (CI).
+ * 
+ * Cold-start fallback (< 3 scans) informs users of population curve projections, transitioning
+ * automatically to regression analysis once sufficient datapoints are accumulated.
  */
 
+/**
+ * ScanPoint defines a single historical telemetry payload capture.
+ */
 export interface ScanPoint {
+  /** The offset in fractional/integer days from the first registered device scan. */
   daysFromFirst: number;
+  /** Battery health percentage remaining (e.g. 0 to 100). */
   batteryHealth?: number;
+  /** Maximum registered component temperature in Celsius. */
   maxTempC?: number;
+  /** Solid State Drive (SSD) remaining wear level percentage. */
   ssdWearPct?: number;
 }
 
+/**
+ * Forecast describes the projection metrics computed for a device telemetry trend.
+ */
 export interface Forecast {
+  /** The hardware performance metric targeted by the projection engine. */
   metric: "battery_health" | "ssd_wear" | "max_temp";
+  /** The current value of the performance metric recorded in the latest scan. */
   currentValue: number;
+  /** Estimated degradation rate per calendar month (negative values indicate decline). */
   ratePerMonth: number;
+  /** Projection indicating estimated months until metric hits a critical warning threshold. */
   monthsUntilThreshold: { value: number; ci95: [number, number] };
+  /** The mathematical projection model employed (population curve or regression). */
   model: "population_curve" | "linear_regression";
+  /** Total number of data samples utilized in the forecast calculation. */
   sampleSize: number;
+  /** Human-readable explanation and accuracy indicators for the UI. */
   label: string;
 }
 

@@ -1,6 +1,12 @@
+/**
+ * HabitQuestion represents an individual survey question evaluating a device usage practice.
+ */
 export interface HabitQuestion {
+  /** The unique identifier matching telemetry calculations. */
   id: string;
+  /** The question text prompted in the user interface. */
   text: string;
+  /** Selection choices containing the UI label and corresponding weight score (out of 10). */
   options: { label: string; value: number }[];
 }
 
@@ -55,8 +61,18 @@ export const HABIT_QUESTIONS: HabitQuestion[] = [
     ] },
 ];
 
+/**
+ * HabitAnswers represents a dictionary key-value mapping of Question ID to user choice score value.
+ */
 export type HabitAnswers = Record<string, number>;
 
+/**
+ * Computes an aggregated normalized habit score (0-100) from user answers.
+ * Sums the points assigned to chosen options and compares against maximum possible score.
+ * 
+ * @param answers The answered questionnaire mapped by Question ID.
+ * @returns A rounded integer score out of 100.
+ */
 export function computeHabitScore(answers: HabitAnswers): number {
   const total = HABIT_QUESTIONS.reduce((sum, q) => {
     const val = answers[q.id];

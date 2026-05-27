@@ -74,9 +74,25 @@ export const SentinelReportSchema = z.object({
     .optional(),
 });
 
+/**
+ * SentinelReport type representing the full validated diagnostic JSON payload.
+ */
 export type SentinelReport = z.infer<typeof SentinelReportSchema>;
+
+/**
+ * StorageDevice type representing a single storage drive unit telemetry model.
+ */
 export type StorageDevice = z.infer<typeof StorageDeviceSchema>;
 
+/**
+ * Parses and validates raw JSON telemetry data submitted by a client diagnostic script.
+ * 
+ * Verifies structural conformity against SentinelReportSchema (ver. 1) and generates
+ * helpful, pinpointed validation errors indicating structural path failures.
+ * 
+ * @param raw Raw telemetry payload string.
+ * @returns An object containing the typed SentinelReport data or a descriptive validation error.
+ */
 export function parseReport(raw: string): { data: SentinelReport | null; error: string | null } {
   let parsed: unknown;
   try {
