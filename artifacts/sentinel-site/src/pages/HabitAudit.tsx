@@ -4,10 +4,17 @@ import { ArrowRight, ArrowLeft, Share2, RotateCcw, CheckCircle } from "lucide-re
 import AnimateIn, { StaggerContainer, StaggerItem } from "@/components/AnimateIn";
 import { motion, animate } from "framer-motion";
 
+/**
+ * Interface representing a calibrated habit audit question.
+ */
 interface Question {
+  /** Uniquely maps user answers to diagnostic scoring variables. */
   id: string;
+  /** Primary question displayed on the screen. */
   text: string;
+  /** Secondary contextual hint clarifying the degradation impact. */
   subtext?: string;
+  /** Multi-choice options providing scoring deductions/penalties. */
   options: { label: string; detail?: string; penalty: number }[];
 }
 
@@ -103,6 +110,12 @@ const QUESTIONS: Question[] = [
 
 const MAX_PENALTY = QUESTIONS.reduce((sum, q) => sum + Math.max(...q.options.map((o) => o.penalty)), 0);
 
+/**
+ * Resolves score grading buckets, contextual summary labels, and responsive layout colors.
+ *
+ * @param score Normalized score between 0 and 100.
+ * @returns Grade parameters for UI reporting panels.
+ */
 function getGrade(score: number): { grade: string; label: string; color: string; detail: string } {
   if (score >= 85) return { grade: "A", label: "Excellent habits", color: "text-green-400", detail: "Your usage patterns are among the least damaging possible. Keep it up." };
   if (score >= 70) return { grade: "B", label: "Good habits", color: "text-cyan-400", detail: "A few habits are adding unnecessary stress. Small changes here will compound over years." };
@@ -111,6 +124,13 @@ function getGrade(score: number): { grade: string; label: string; color: string;
   return { grade: "F", label: "Critical habits", color: "text-red-400", detail: "Your laptop is taking more daily damage than almost any other usage pattern. Start with charging and heat." };
 }
 
+/**
+ * Maps question answers to highly descriptive advice items with categorized severity tags.
+ * High urgency flags pinpoint critical degradation vectors (like heat & blocked vents).
+ *
+ * @param answers Key-value mapping of user selections.
+ * @returns Array of formatted finding items for report visualization.
+ */
 function getFindingsForAnswers(answers: Record<string, number>): { title: string; advice: string; urgency: "high" | "medium" | "low" }[] {
   const findings: { title: string; advice: string; urgency: "high" | "medium" | "low" }[] = [];
 
@@ -146,6 +166,7 @@ export default function HabitAudit() {
       });
       return () => controls.stop();
     }
+    return undefined;
   }, [step, score]);
 
   const question = QUESTIONS[current];

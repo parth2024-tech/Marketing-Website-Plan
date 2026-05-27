@@ -13,6 +13,12 @@ import AnimateIn from "@/components/AnimateIn";
 
 // ── OG meta injection ────────────────────────────────────────────────────────
 
+/**
+ * Dynamically injects open graph (OG) metadata properties into the document head.
+ * 
+ * @param property The meta property name.
+ * @param content The value content of the property.
+ */
 function setMeta(property: string, content: string) {
   let el = document.querySelector<HTMLMetaElement>(`meta[property="${property}"]`);
   if (!el) {
@@ -22,6 +28,13 @@ function setMeta(property: string, content: string) {
   }
   el.setAttribute("content", content);
 }
+
+/**
+ * Dynamically updates or creates a standard name-based meta tag in the head.
+ * 
+ * @param name The meta tag name attribute.
+ * @param content The content value to inject.
+ */
 function setMetaName(name: string, content: string) {
   let el = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
   if (!el) {
@@ -58,6 +71,12 @@ const URGENCY_STYLES = {
   info:     { border: "border-l-cyan-400/40", badge: "text-cyan-400 bg-cyan-400/8 border-cyan-400/20"   },
 };
 
+/**
+ * Renders an interactive circular health score indicator ring with standard Apple-style
+ * easing transitions.
+ * 
+ * @param score Overall computed hardware score.
+ */
 function ScoreRing({ score }: { score: number }) {
   const r = 54;
   const circ = 2 * Math.PI * r;
@@ -452,7 +471,7 @@ function ForecastChart() {
               stroke="#22d3ee" 
               strokeWidth={2} 
               dot={(props: any) => {
-                if (props.value === null || props.value === undefined) return null;
+                if (props.value === null || props.value === undefined) return <></>;
                 return (
                   <motion.circle
                     key={`dot-${props.index}`}
@@ -639,6 +658,7 @@ export default function Report() {
       const timer = setTimeout(() => setShowBanner(false), 5000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [result]);
 
   useEffect(() => {
@@ -688,7 +708,7 @@ export default function Report() {
                   }
                 })
                 .catch(() => {});
-            } catch {}
+            } catch (e) { console.error("Legacy upload failed", e); }
           }
           return;
         }
