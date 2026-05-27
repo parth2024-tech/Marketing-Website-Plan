@@ -6,6 +6,7 @@ export const organizationsTable = pgTable("organizations", {
   name: text("name").notNull(),
   ownerId: text("owner_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
   stripeSubscriptionId: text("stripe_subscription_id").unique(),
+  stripeCustomerId: text("stripe_customer_id").unique(),
   stripePriceId: text("stripe_price_id"),
   status: text("status"), // active, trialing, past_due, canceled
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),

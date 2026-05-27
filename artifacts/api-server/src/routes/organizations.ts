@@ -21,7 +21,7 @@ router.post("/", async (req, res) => {
     // In a real app we'd get ownerId from session, here we'll just mock or require an existing owner.
     // For simplicity of phase 1, we just create the org with a dummy owner if needed,
     // or fail if we don't have one. Let's just create a dummy owner if none exist for test purposes.
-    let owner = await db.select().from(usersTable).limit(1);
+    const owner = await db.select().from(usersTable).limit(1);
     let ownerId = owner[0]?.id;
 
     if (!ownerId) {

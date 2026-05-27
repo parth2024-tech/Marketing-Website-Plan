@@ -6,7 +6,7 @@ import express from "express";
 
 const router = Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_mock", {
-  apiVersion: "2024-12-18.acacia",
+  apiVersion: "2026-04-22.dahlia" as any,
 });
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_mock";
@@ -60,7 +60,7 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
         await db.update(organizationsTable)
           .set({ 
             status: subscription.status,
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000)
+            currentPeriodEnd: new Date(((subscription as any).current_period_end || (subscription as any).currentPeriodEnd) * 1000)
           })
           .where(eq(organizationsTable.stripeSubscriptionId, subscription.id));
         break;
