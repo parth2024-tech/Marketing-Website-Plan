@@ -172,7 +172,7 @@ function buildErrorMessage(response: Response, data: unknown): string {
 }
 
 export class ApiError<T = unknown> extends Error {
-  readonly name = "ApiError";
+  override readonly name = "ApiError";
   readonly status: number;
   readonly statusText: string;
   readonly data: T | null;
@@ -200,7 +200,7 @@ export class ApiError<T = unknown> extends Error {
 }
 
 export class ResponseParseError extends Error {
-  readonly name = "ResponseParseError";
+  override readonly name = "ResponseParseError";
   readonly status: number;
   readonly statusText: string;
   readonly headers: Headers;
@@ -208,7 +208,7 @@ export class ResponseParseError extends Error {
   readonly method: string;
   readonly url: string;
   readonly rawBody: string;
-  readonly cause: unknown;
+  override readonly cause: unknown;
 
   constructor(
     response: Response,
@@ -322,6 +322,17 @@ async function parseSuccessBody(
   }
 }
 
+/**
+ * Executes a network request using the global `fetch` API.
+ * Injects pre-configured base URLs, handles authentications/bearers dynamically if configured,
+ * verifies HTTP responses, automatically formats request body headers if payloads are JSON,
+ * and formats any network/parsing failures into normalized `ApiError` or `ResponseParseError` shapes.
+ * 
+ * @template T Expected response data type.
+ * @param input The target endpoint path, absolute URL string, or Request object.
+ * @param options Custom network configuration overrides including `responseType`.
+ * @returns A promise resolving to the parsed response payload.
+ */
 export async function customFetch<T = unknown>(
   input: RequestInfo | URL,
   options: CustomFetchOptions = {},
