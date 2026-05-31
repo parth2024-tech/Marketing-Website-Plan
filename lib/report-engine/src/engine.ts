@@ -163,16 +163,49 @@ function storageScore(r: SentinelReport): ComponentScore | null {
   return { name: "Storage", score, status: scoreStatus(score), detail };
 }
 
+export function expectedMemoryPenalty(usedPct: number): number {
+  if (usedPct <= 70) return 0;
+  const anchors: [number, number][] = [
+    [70, 0],
+    [85, 15],
+    [95, 30],
+    [100, 50]
+  ];
+  for (let i = 1; i < anchors.length; i++) {
+    const [u0, p0] = anchors[i - 1];
+    const [u1, p1] = anchors[i];
+    if (usedPct <= u1) {
+      const t = (usedPct - u0) / (u1 - u0);
+      return p0 + t * (p1 - p0);
+    }
+  }
+  return anchors[anchors.length - 1][1];
+}
+
 function memoryScore(r: SentinelReport): ComponentScore | null {
   const m = r.memory;
   if (!m) return null;
   const used = m.usedPct;
-  const score = used > 90 ? 35 : used > 80 ? 55 : used > 70 ? 75 : 100;
+  const basePenalty = expectedMemoryPenalty(used);
+  
+  let finalPenalty = basePenalty;
+  if (m.pageFaultsPerSec != null) {
+    const swapMultiplier = 1 + (clamp(m.pageFaultsPerSec / 500, 0, 1) * 0.20);
+    finalPenalty = basePenalty * swapMultiplier;
+  }
+  
+  const score = clamp(Math.round(100 - finalPenalty));
+  
+  let detail = `${m.totalGB} GB · ${used.toFixed(0)}% used`;
+  if (m.pageFaultsPerSec != null && m.pageFaultsPerSec > 0) {
+    detail += ` · ${m.pageFaultsPerSec} pg/s`;
+  }
+  
   return {
     name: "Memory",
-    score: clamp(score),
+    score,
     status: scoreStatus(score),
-    detail: `${m.totalGB} GB · ${used.toFixed(0)}% used`,
+    detail,
   };
 }
 

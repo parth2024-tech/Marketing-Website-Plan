@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { expectedBatteryHealth, generateReport, combinedScore, ALGORITHM_VERSION } from './engine';
+import { expectedBatteryHealth, expectedMemoryPenalty, generateReport, combinedScore, ALGORITHM_VERSION } from './engine';
 import type { SentinelReport } from './schema';
 
 describe('Scoring Engine Algorithms', () => {
@@ -31,6 +31,70 @@ describe('Scoring Engine Algorithms', () => {
       expect(combinedScore(100, 100)).toBe(100);
       expect(combinedScore(80, 50)).toBe(71); // (80 * 0.7) + (50 * 0.3) = 56 + 15 = 71
       expect(combinedScore(0, 100)).toBe(30);
+    });
+  });
+
+  describe('expectedMemoryPenalty (Progression & Swap)', () => {
+    it('should return 0 penalty for usage <= 70%', () => {
+      expect(expectedMemoryPenalty(0)).toBe(0);
+      expect(expectedMemoryPenalty(70)).toBe(0);
+    });
+
+    it('should return exact anchor values', () => {
+      expect(expectedMemoryPenalty(85)).toBe(15);
+      expect(expectedMemoryPenalty(95)).toBe(30);
+      expect(expectedMemoryPenalty(100)).toBe(50);
+    });
+
+    it('should interpolate correctly between anchors', () => {
+      // Between 70% (0) and 85% (15) -> 77.5% should be 7.5
+      expect(expectedMemoryPenalty(77.5)).toBe(7.5);
+      // Between 85% (15) and 95% (30) -> 90% should be 22.5
+      expect(expectedMemoryPenalty(90)).toBe(22.5);
+      // Between 95% (30) and 100% (50) -> 97.5% should be 40
+      expect(expectedMemoryPenalty(97.5)).toBe(40);
+    });
+
+    it('should apply page faults swap multiplier correctly in generateReport', () => {
+      const reportBase: SentinelReport = {
+        sentinelSchema: 1,
+        system: { manufacturer: 'TestCorp', model: 'TestBook Pro', hostname: 'test-pc', os: 'Windows 11' },
+        generatedAt: new Date().toISOString(),
+        battery: { health: 100, cycleCount: 10 },
+        thermals: { maxTempC: 45, throttleEvents30min: 0, thermalSource: 'wmi' },
+        storage: [{ model: 'SSD', healthPct: 100, wearLevelPct: 100, freeSpacePct: 50 }],
+        memory: { totalGB: 16, usedPct: 95, pageFaultsPerSec: 250 },
+        cpu: { avgLoadPct: 15 }
+      };
+
+      // usedPct = 95 -> base penalty = 30
+      // pageFaultsPerSec = 250 -> 250 / 500 = 0.5 -> 0.5 * 0.20 = 0.10 additional penalty
+      // total penalty = 30 * 1.10 = 33 -> score = 100 - 33 = 67
+      const result = generateReport(reportBase);
+      const memComp = result.components.find(c => c.name === 'Memory');
+      expect(memComp).toBeDefined();
+      expect(memComp!.score).toBe(67);
+      expect(memComp!.detail).toContain('250 pg/s');
+    });
+
+    it('should not multiply penalty when pageFaultsPerSec is absent', () => {
+      const reportBase: SentinelReport = {
+        sentinelSchema: 1,
+        system: { manufacturer: 'TestCorp', model: 'TestBook Pro', hostname: 'test-pc', os: 'Windows 11' },
+        generatedAt: new Date().toISOString(),
+        battery: { health: 100, cycleCount: 10 },
+        thermals: { maxTempC: 45, throttleEvents30min: 0, thermalSource: 'wmi' },
+        storage: [{ model: 'SSD', healthPct: 100, wearLevelPct: 100, freeSpacePct: 50 }],
+        memory: { totalGB: 16, usedPct: 95 },
+        cpu: { avgLoadPct: 15 }
+      };
+
+      // usedPct = 95 -> base penalty = 30 -> score = 70
+      const result = generateReport(reportBase);
+      const memComp = result.components.find(c => c.name === 'Memory');
+      expect(memComp).toBeDefined();
+      expect(memComp!.score).toBe(70);
+      expect(memComp!.detail).not.toContain('pg/s');
     });
   });
 

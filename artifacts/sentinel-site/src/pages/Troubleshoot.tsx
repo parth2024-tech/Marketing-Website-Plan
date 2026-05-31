@@ -470,16 +470,16 @@ export default function Troubleshoot() {
                                           <motion.button 
                                             whileTap={{ scale: 0.9 }} 
                                             transition={{ type: "spring", duration: 0.2 }}
-                                            className="px-4 py-1.5 text-xs font-semibold bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors"
+                                            className="px-4 py-1.5 text-xs font-semibold bg-primary/10 border border-primary/30 text-primary rounded-lg hover:bg-primary/20 transition-colors"
                                           >
-                                            Yes (Pass)
+                                            Yes
                                           </motion.button>
                                           <motion.button 
                                             whileTap={{ scale: 0.9 }} 
                                             transition={{ type: "spring", duration: 0.2 }}
-                                            className="px-4 py-1.5 text-xs font-semibold bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
+                                            className="px-4 py-1.5 text-xs font-semibold bg-muted/10 border border-border/50 text-muted-foreground rounded-lg hover:bg-muted/20 transition-colors"
                                           >
-                                            No (Fail)
+                                            No
                                           </motion.button>
                                         </div>
                                       )}
