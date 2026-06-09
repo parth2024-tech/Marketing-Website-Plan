@@ -41,11 +41,27 @@ app.use(
 );
 
 // ── CORS — restrict to configured origins ─────────────────────────────────────
+const defaultOrigins = [
+  "https://sentinel-site-rosy.vercel.app",
+  "https://sentinelapp.io",
+  // Allow Vercel preview deployments
+];
+
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(",") ?? ["https://yoursite.com"],
+  origin: (origin, callback) => {
+    const allowed = process.env.ALLOWED_ORIGINS?.split(",") ?? defaultOrigins;
+    // Allow requests with no origin (Invoke-RestMethod, curl, mobile apps)
+    if (!origin) return callback(null, true);
+    // Allow configured origins + any vercel.app preview URL
+    if (allowed.includes(origin) || /\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
   methods: ["GET", "POST", "OPTIONS"],
 }));
+
 
 app.use(cookieParser());
 
