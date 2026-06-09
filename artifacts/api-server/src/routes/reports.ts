@@ -6,6 +6,7 @@ import { eq, and, isNull } from "drizzle-orm";
 import crypto from "node:crypto";
 import { newReportId, newClaimToken, newShareToken, sha256hex } from "../lib/ids";
 import { consumeRateLimit } from "../lib/rateLimit";
+import { emitNewReport } from "../lib/liveFeed";
 import { isResendConfigured } from "../lib/email/config";
 import { buildReportClaimedEmail } from "../lib/email/templates/reportClaimed";
 import { sendTransactionalEmail } from "../lib/email/resendMailer";
@@ -160,6 +161,23 @@ router.post("/", async (req, res) => {
       }
 
       req.log.info({ reportId: id, hasHabit: !!habitAnswers }, "report_created");
+
+      // Emit to live dashboard (fire-and-forget, never blocks the response)
+      try {
+        const raw = reportParsed.data as {
+          system?: { model?: string; os?: string };
+          battery?: { health?: number };
+        };
+        emitNewReport({
+          id,
+          model:         raw.system?.model ?? "Unknown Device",
+          grade:         String((resultJson as Record<string, unknown>).grade ?? "?"),
+          overallScore:  Number((resultJson as Record<string, unknown>).overall ?? 0),
+          os:            raw.system?.os ?? "Unknown OS",
+          batteryHealth: raw.battery?.health ?? null,
+          timestamp:     new Date().toISOString(),
+        });
+      } catch { /* never fail the request */ }
 
       res.status(201).json({ id, claimToken, result: resultJson, habitScore, combinedScore: combined });
       return;
