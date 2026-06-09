@@ -365,7 +365,15 @@ Write-Host ""
 if ($DirectUpload) {
     Write-Host "  Sending data securely to Sentinel cloud..." -ForegroundColor Cyan
     try {
-        $body = [ordered]@{ rawJson = ($output | ConvertTo-Json -Depth 10 | ConvertFrom-Json) } | ConvertTo-Json -Depth 12 -Compress
+        # Build the body: embed rawJson as a pre-parsed object.
+        # IMPORTANT: Use -Depth 15 and avoid round-tripping through ConvertFrom-Json,
+        # because PowerShell collapses single-element arrays to scalars on re-parse.
+        # Instead, embed the raw JSON string and parse it server-side.
+        $rawJsonString = $output | ConvertTo-Json -Depth 10 -Compress
+        # Wrap in the expected envelope: { rawJson: <object> }
+        # We embed as raw JSON to avoid array-collapsing: manually construct the body
+        $body = '{"rawJson":' + $rawJsonString + '}'
+
         $response = Invoke-RestMethod -Method POST `
             -Uri "$SENTINEL_API_URL/api/reports" `
             -ContentType "application/json" `
@@ -385,9 +393,20 @@ if ($DirectUpload) {
         $url = "$SENTINEL_FRONTEND_URL/r/$reportId`?claim=$claimToken"
         Start-Process $url
     } catch {
+        # Try to extract the actual server error message
+        $errMsg = $_
+        try {
+            $errBody = $_.Exception.Response
+            if ($errBody) {
+                $reader = New-Object System.IO.StreamReader($errBody.GetResponseStream())
+                $serverMsg = $reader.ReadToEnd()
+                $reader.Close()
+                $errMsg = "$_ -- Server said: $serverMsg"
+            }
+        } catch {}
         Write-Host ""
         Write-Host "================================================================" -ForegroundColor Yellow
-        Write-Host "  [!] Upload failed: $_" -ForegroundColor Yellow
+        Write-Host "  [!] Upload failed: $errMsg" -ForegroundColor Yellow
         Write-Host "  The server may be waking up (free tier). Wait 30s and retry." -ForegroundColor Yellow
         Write-Host "================================================================" -ForegroundColor Yellow
         Write-Host ""
