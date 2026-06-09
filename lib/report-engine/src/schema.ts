@@ -1,15 +1,21 @@
 import { z } from "zod";
 
+// .nullish() = accepts number | null | undefined
+// This is critical: PowerShell and WMI return JSON null (not undefined) for
+// unavailable hardware metrics. Zod's plain .optional() only accepts undefined
+// and will throw a 422 for any null value. Using .nullish() everywhere a
+// hardware field might be missing is the permanent fix.
+
 export const StorageDeviceSchema = z.object({
-  model: z.string().optional(),
-  type: z.string().optional(),
-  healthPct: z.number().optional(),
-  reallocatedSectors: z.number().optional(),
-  wearLevelPct: z.number().optional(),
-  freeSpacePct: z.number().optional(),
-  totalGB: z.number().optional(),
-  powerOnHours: z.number().optional(),
-  dataSource: z.string().optional(),
+  model: z.string().nullish(),
+  type: z.string().nullish(),
+  healthPct: z.number().nullish(),
+  reallocatedSectors: z.number().nullish(),
+  wearLevelPct: z.number().nullish(),
+  freeSpacePct: z.number().nullish(),
+  totalGB: z.number().nullish(),
+  powerOnHours: z.number().nullish(),
+  dataSource: z.string().nullish(),
 });
 
 export const ThermalZoneSchema = z.object({
@@ -24,54 +30,54 @@ export const SentinelReportSchema = z.object({
     hostname: z.string(),
     model: z.string(),
     manufacturer: z.string(),
-    os: z.string().optional(),
-    osVersion: z.string().optional(),
-    biosVersion: z.string().optional(),
+    os: z.string().nullish(),
+    osVersion: z.string().nullish(),
+    biosVersion: z.string().nullish(),
   }),
   battery: z
     .object({
-      designCapacity: z.number().optional(),
-      fullChargeCapacity: z.number().optional(),
-      cycleCount: z.number().optional(),
-      health: z.number().optional(),
-      status: z.union([z.string(), z.number()]).optional(),
-      dischargeRateMw: z.number().optional(),
+      designCapacity: z.number().nullish(),
+      fullChargeCapacity: z.number().nullish(),
+      cycleCount: z.number().nullish(),
+      health: z.number().nullish(),
+      status: z.union([z.string(), z.number()]).nullish(),
+      dischargeRateMw: z.number().nullish(),
     })
-    .optional(),
+    .nullish(),
   thermals: z
     .object({
-      maxTempC: z.number().optional(),
-      zones: z.array(ThermalZoneSchema).optional(),
-      zoneCount: z.number().optional(),
-      throttleEvents30min: z.number().optional(),
-      thermalSource: z.string().optional(),
-      thermalSamples: z.number().optional(),
+      maxTempC: z.number().nullish(),
+      zones: z.array(ThermalZoneSchema).nullish(),
+      zoneCount: z.number().nullish(),
+      throttleEvents30min: z.number().nullish(),
+      thermalSource: z.string().nullish(),
+      thermalSamples: z.number().nullish(),
     })
-    .optional(),
-  storage: z.array(StorageDeviceSchema).optional(),
+    .nullish(),
+  storage: z.array(StorageDeviceSchema).nullish(),
   memory: z
     .object({
       totalGB: z.number(),
       usedPct: z.number(),
-      pageFaultsPerSec: z.number().optional(),
+      pageFaultsPerSec: z.number().nullish(),
     })
-    .optional(),
+    .nullish(),
   cpu: z
     .object({
-      name: z.string().optional(),
-      cores: z.number().optional(),
-      threads: z.number().optional(),
-      avgLoadPct: z.number().optional(),
-      throttleEvents30min: z.number().optional(),
-      maxClockMhz: z.number().optional(),
+      name: z.string().nullish(),
+      cores: z.number().nullish(),
+      threads: z.number().nullish(),
+      avgLoadPct: z.number().nullish(),
+      throttleEvents30min: z.number().nullish(),
+      maxClockMhz: z.number().nullish(),
     })
-    .optional(),
+    .nullish(),
   startup: z
     .object({
-      lastBootTime: z.string().optional(),
-      lastBootSec: z.number().optional(),
+      lastBootTime: z.string().nullish(),
+      lastBootSec: z.number().nullish(),
     })
-    .optional(),
+    .nullish(),
 });
 
 /**
