@@ -14,7 +14,6 @@ const links = [
   { href: "/get-started", label: "Get Started" },
   { href: "/health-test", label: "Health Test" },
   { href: "/sample-report", label: "Sample Report" },
-  { href: "/pricing", label: "Pricing" },
   { href: "/faq", label: "FAQ" },
   { href: "/waitlist", label: "Join Waitlist" },
 ];
