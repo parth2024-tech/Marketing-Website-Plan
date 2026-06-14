@@ -72,7 +72,7 @@ async function fetchFreshStats(): Promise<LiveStats> {
     const ago7d  = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     // Single query for totals + avg score
-    const [totalRow] = await _db.execute<{
+    const totalResult = await _db.execute<{
       total: string;
       last24h: string;
       last7d: string;
@@ -86,9 +86,11 @@ async function fetchFreshStats(): Promise<LiveStats> {
       FROM reports
       WHERE deleted_at IS NULL
     `);
+    const totalRows = Array.isArray(totalResult) ? totalResult : totalResult.rows;
+    const totalRow = totalRows[0];
 
     // Sample recent rows for distribution data (last 7d, max 500)
-    const rows = await _db.execute<{
+    const rowsResult = await _db.execute<{
       grade: string | null;
       os: string | null;
       battery_health: string | null;
@@ -103,6 +105,7 @@ async function fetchFreshStats(): Promise<LiveStats> {
       ORDER BY created_at DESC
       LIMIT 500
     `);
+    const rows = Array.isArray(rowsResult) ? rowsResult : rowsResult.rows;
 
     const gradeDistribution: Record<string, number> = {};
     const osBreakdown: Record<string, number> = {};

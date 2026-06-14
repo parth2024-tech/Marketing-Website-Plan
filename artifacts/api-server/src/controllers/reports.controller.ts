@@ -34,7 +34,7 @@ const authHeader = req.headers["authorization"];
     const authHeaderStr = Array.isArray(authHeader) ? authHeader[0] : authHeader;
     const deviceToken = typeof authHeaderStr === "string" && authHeaderStr.startsWith("Bearer ") ? authHeaderStr.slice(7).trim() : undefined;
     const idKeyHeader = req.headers["idempotency-key"];
-    const idempotencyKey = Array.isArray(idKeyHeader) ? idKeyHeader[0] : idKeyHeader;
+    const idempotencyKey = typeof idKeyHeader === "string" ? idKeyHeader : (Array.isArray(idKeyHeader) ? idKeyHeader[0] : undefined);
 
     const parsed = PostReportBody.safeParse(req.body);
     if (!parsed.success) {
@@ -61,8 +61,8 @@ const authHeader = req.headers["authorization"];
   }
 
   static async claimReport(req: Request, res: Response) {
-    const { id } = req.params;
-    if (!id || id.length < 4) {
+    const id = req.params.id;
+    if (typeof id !== "string" || id.length < 4) {
       res.status(400).json({ error: "Invalid report ID" });
       return;
     }
@@ -84,8 +84,8 @@ const authHeader = req.headers["authorization"];
   }
 
   static async submitHabitAnswers(req: Request, res: Response) {
-    const { id } = req.params;
-    if (!id || id.length < 4) {
+    const id = req.params.id;
+    if (typeof id !== "string" || id.length < 4) {
       res.status(400).json({ error: "Invalid report ID" });
       return;
     }
@@ -107,8 +107,8 @@ const authHeader = req.headers["authorization"];
   }
 
   static async getReport(req: Request, res: Response) {
-    const { id } = req.params;
-    if (!id || id.length < 4) {
+    const id = req.params.id;
+    if (typeof id !== "string" || id.length < 4) {
       res.status(400).json({ error: "Invalid report ID" });
       return;
     }
@@ -123,8 +123,8 @@ const authHeader = req.headers["authorization"];
   }
 
   static async generateShareToken(req: Request, res: Response) {
-    const { id } = req.params;
-    if (!id || id.length < 4) {
+    const id = req.params.id;
+    if (typeof id !== "string" || id.length < 4) {
       res.status(400).json({ error: "Invalid report ID" });
       return;
     }
@@ -146,8 +146,8 @@ const authHeader = req.headers["authorization"];
   }
 
   static async getSharedReport(req: Request, res: Response) {
-    const { shareToken } = req.params;
-    if (!shareToken || shareToken.length < 10) {
+    const shareToken = req.params.shareToken;
+    if (typeof shareToken !== "string" || shareToken.length < 10) {
       res.status(400).json({ error: "Invalid share token" });
       return;
     }

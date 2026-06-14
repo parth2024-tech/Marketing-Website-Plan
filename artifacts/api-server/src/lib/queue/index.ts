@@ -1,4 +1,4 @@
-import PgBoss from "pg-boss";
+import { PgBoss } from "pg-boss";
 import { logger } from "../logger";
 import { pool } from "@workspace/db";
 import { isResendConfigured } from "../email/config";
@@ -18,23 +18,27 @@ export async function initQueue() {
 
   boss = new PgBoss(process.env.DATABASE_URL);
 
-  boss.on("error", (error) => logger.error({ error }, "pg-boss error"));
+  boss.on("error", (error: any) => logger.error({ error }, "pg-boss error"));
 
   await boss.start();
   logger.info("Background queue started successfully");
 
+  // Ensure queues exist (required in pg-boss v10+ strict mode)
+  await boss.createQueue("send-claim-email");
+  await boss.createQueue("emit-live-feed");
+
   // Define workers
-  await boss.work("send-claim-email", async (job) => {
+  await boss.work("send-claim-email", async (job: any) => {
     const { email, reportId } = job.data as { email: string; reportId: string };
     if (!isResendConfigured()) {
-      logger.warn("Resend is not configured, skipping claim email for", reportId);
+      logger.warn(`Resend is not configured, skipping claim email for ${reportId}`);
       return;
     }
     const { subject, html, text } = buildReportClaimedEmail(email, reportId);
     await sendTransactionalEmail({ to: email, subject, html, text });
   });
 
-  await boss.work("emit-live-feed", async (job) => {
+  await boss.work("emit-live-feed", async (job: any) => {
     const data = job.data as any;
     emitNewReport(data);
   });
