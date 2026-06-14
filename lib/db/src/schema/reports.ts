@@ -14,8 +14,6 @@ export const reportsTable = pgTable(
   "reports",
   {
     id: text("id").primaryKey(),
-    rawJson: jsonb("raw_json").notNull(),
-    resultJson: jsonb("result_json").notNull(),
     algoVersion: integer("algo_version").notNull().default(1),
     claimToken: text("claim_token"),
     shareToken: text("share_token"),

@@ -18,11 +18,13 @@ const env = EnvSchema.parse(process.env); // throws on startup if invalid
 import app from "./app";
 import { startMagicLinkReminderScheduler } from "./lib/magicLinkReminderScheduler";
 import { startCleanupScheduler } from "./lib/cleanupScheduler";
+import { initQueue, stopQueue } from "./lib/queue";
 
 const port = env.PORT;
 
-const server = app.listen(port, () => {
+const server = app.listen(port, async () => {
   logger.info({ port }, "Server listening");
+  await initQueue();
   startMagicLinkReminderScheduler(logger);
   startCleanupScheduler();
 });
@@ -31,8 +33,10 @@ const server = app.listen(port, () => {
 // Allows in-flight requests to complete before process exits on SIGTERM/SIGINT.
 function shutdown(signal: string) {
   logger.info({ signal }, "shutdown_initiated");
-  server.close(() => {
+  server.close(async () => {
     logger.info("http_server_closed");
+    await stopQueue();
+    logger.info("background_queue_closed");
     // Close DB pool here if using a pool manager
     process.exit(0);
   });

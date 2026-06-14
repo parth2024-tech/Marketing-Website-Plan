@@ -1,0 +1,31 @@
+{
+  "ownerId": "tea-d8jrt4km0tmc73flko20",
+  "type": "web_service",
+  "name": "sentinel-api",
+  "repo": "https://github.com/parth2024-tech/Marketing-Website-Plan",
+  "branch": "main",
+  "autoDeploy": "yes",
+  "serviceDetails": {
+    "env": "node",
+    "plan": "free",
+    "region": "oregon",
+    "envSpecificDetails": {
+      "buildCommand": "pnpm install && pnpm run build",
+      "startCommand": "node artifacts/api-server/dist/index.mjs"
+    }
+  },
+  "envVars": [
+    {
+      "key": "DATABASE_URL",
+      "value": "postgresql://neondb_owner:npg_jBFKnfg50SPQ@ep-green-morning-aqq8o9hv.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require"
+    },
+    {
+      "key": "NODE_ENV",
+      "value": "production"
+    },
+    {
+      "key": "PORT",
+      "value": "5000"
+    }
+  ]
+}

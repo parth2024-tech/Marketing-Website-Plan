@@ -4,6 +4,7 @@ import {
   magicLinkTokensTable,
   myReportsSessionsTable,
   reportHabitAnswersTable,
+  reportPayloadsTable,
   usersTable,
 } from "@workspace/db";
 import { eq, and, gt, isNull, isNotNull } from "drizzle-orm";
@@ -194,12 +195,13 @@ router.get("/", async (req, res) => {
     reports = await db
       .select({
         id: reportsTable.id,
-        resultJson: reportsTable.resultJson,
+        resultJson: reportPayloadsTable.resultJson,
         createdAt: reportsTable.createdAt,
         habitScore: reportHabitAnswersTable.habitScore,
         combinedScore: reportHabitAnswersTable.combinedScore,
       })
       .from(reportsTable)
+      .innerJoin(reportPayloadsTable, eq(reportsTable.id, reportPayloadsTable.reportId))
       .leftJoin(
         reportHabitAnswersTable,
         eq(reportsTable.id, reportHabitAnswersTable.reportId)

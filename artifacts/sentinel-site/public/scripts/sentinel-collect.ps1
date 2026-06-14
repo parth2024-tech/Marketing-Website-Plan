@@ -364,51 +364,74 @@ Write-Host ""
 # -- Direct Upload -----------------------------------------------------------------------
 if ($DirectUpload) {
     Write-Host "  Sending data securely to Sentinel cloud..." -ForegroundColor Cyan
-    try {
-        # Build the body: embed rawJson as a pre-parsed object.
-        # IMPORTANT: Use -Depth 15 and avoid round-tripping through ConvertFrom-Json,
-        # because PowerShell collapses single-element arrays to scalars on re-parse.
-        # Instead, embed the raw JSON string and parse it server-side.
-        $rawJsonString = $output | ConvertTo-Json -Depth 10 -Compress
-        # Wrap in the expected envelope: { rawJson: <object> }
-        # We embed as raw JSON to avoid array-collapsing: manually construct the body
-        $body = '{"rawJson":' + $rawJsonString + '}'
-
-        $response = Invoke-RestMethod -Method POST `
-            -Uri "$SENTINEL_API_URL/api/reports" `
-            -ContentType "application/json" `
-            -Body $body `
-            -ErrorAction Stop
-        
-        $reportId = $response.id
-        $claimToken = $response.claimToken
-        
-        Write-Host "" 
-        Write-Host "================================================================" -ForegroundColor Green
-        Write-Host "  [OK] Data sent successfully." -ForegroundColor Green
-        Write-Host "  Opening your report in the browser..." -ForegroundColor Green
-        Write-Host "================================================================" -ForegroundColor Green
-        Write-Host ""
-        
-        $url = "$SENTINEL_FRONTEND_URL/r/$reportId`?claim=$claimToken"
-        Start-Process $url
-    } catch {
-        # Try to extract the actual server error message
-        $errMsg = $_
+    
+    $rawJsonString = $output | ConvertTo-Json -Depth 10 -Compress
+    $body = '{"rawJson":' + $rawJsonString + '}'
+    
+    $maxRetries = 4
+    $retryCount = 0
+    $success = $false
+    
+    while (-not $success -and $retryCount -lt $maxRetries) {
         try {
-            $errBody = $_.Exception.Response
-            if ($errBody) {
-                $reader = New-Object System.IO.StreamReader($errBody.GetResponseStream())
-                $serverMsg = $reader.ReadToEnd()
-                $reader.Close()
-                $errMsg = "$_ -- Server said: $serverMsg"
+            $response = Invoke-RestMethod -Method POST `
+                -Uri "$SENTINEL_API_URL/api/reports" `
+                -ContentType "application/json" `
+                -Body $body `
+                -ErrorAction Stop
+            
+            $reportId = $response.id
+            $claimToken = $response.claimToken
+            
+            Write-Host "" 
+            Write-Host "================================================================" -ForegroundColor Green
+            Write-Host "  [OK] Data sent successfully." -ForegroundColor Green
+            Write-Host "  Opening your report in the browser..." -ForegroundColor Green
+            Write-Host "================================================================" -ForegroundColor Green
+            Write-Host ""
+            
+            $url = "$SENTINEL_FRONTEND_URL/r/$reportId`?claim=$claimToken"
+            Start-Process $url
+            $success = $true
+        } catch {
+            $errMsg = $_
+            $statusCode = 0
+            try {
+                $errBody = $_.Exception.Response
+                if ($errBody) {
+                    $statusCode = [int]$errBody.StatusCode
+                    $reader = New-Object System.IO.StreamReader($errBody.GetResponseStream())
+                    $serverMsg = $reader.ReadToEnd()
+                    $reader.Close()
+                    $errMsg = "$_ -- Server said: $serverMsg"
+                }
+            } catch {}
+            
+            $retryCount++
+            
+            # Retry on 422 (sometimes happens on cold starts with incomplete JSON parsing), 502, 503, 504
+            if ($statusCode -in @(422, 502, 503, 504) -or $statusCode -eq 0) {
+                if ($retryCount -ge $maxRetries) {
+                    Write-Host ""
+                    Write-Host "================================================================" -ForegroundColor Red
+                    Write-Host "  [!] Upload failed after $maxRetries attempts: $errMsg" -ForegroundColor Red
+                    Write-Host "================================================================" -ForegroundColor Red
+                    Write-Host ""
+                } else {
+                    $backoff = [math]::Pow(2, $retryCount)
+                    Write-Host "  [!] Temporary failure (Code $statusCode). Server may be waking up." -ForegroundColor Yellow
+                    Write-Host "  Retrying in $backoff seconds (Attempt $retryCount of $maxRetries)..." -ForegroundColor Yellow
+                    Start-Sleep -Seconds $backoff
+                }
+            } else {
+                # Don't retry for 400, 401, 403, 413, etc.
+                Write-Host ""
+                Write-Host "================================================================" -ForegroundColor Red
+                Write-Host "  [!] Upload failed: $errMsg" -ForegroundColor Red
+                Write-Host "================================================================" -ForegroundColor Red
+                Write-Host ""
+                break
             }
-        } catch {}
-        Write-Host ""
-        Write-Host "================================================================" -ForegroundColor Yellow
-        Write-Host "  [!] Upload failed: $errMsg" -ForegroundColor Yellow
-        Write-Host "  The server may be waking up (free tier). Wait 30s and retry." -ForegroundColor Yellow
-        Write-Host "================================================================" -ForegroundColor Yellow
-        Write-Host ""
+        }
     }
 }

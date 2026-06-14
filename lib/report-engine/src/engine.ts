@@ -659,8 +659,8 @@ export function generateReport(r: SentinelReport): ReportResult {
     generatedAt: r.generatedAt,
     algoVersion: ALGORITHM_VERSION,
     dataQuality: {
-      thermalSource: t?.thermalSource,
-      storageSource: s?.dataSource,
+      thermalSource: t?.thermalSource ?? undefined,
+      storageSource: s?.dataSource ?? undefined,
       warnings,
       structuredWarnings,
     },

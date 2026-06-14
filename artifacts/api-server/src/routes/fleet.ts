@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, reportsTable } from "@workspace/db";
-import { desc, isNull } from "drizzle-orm";
+import { db, reportsTable, reportPayloadsTable } from "@workspace/db";
+import { desc, isNull, eq } from "drizzle-orm";
 import type { ReportResult } from "@workspace/report-engine";
 
 const router = Router();
@@ -11,11 +11,12 @@ router.get("/dashboard", async (req, res) => {
     const recentReports = await db
       .select({
         id: reportsTable.id,
-        resultJson: reportsTable.resultJson,
-        rawJson: reportsTable.rawJson,
+        resultJson: reportPayloadsTable.resultJson,
+        rawJson: reportPayloadsTable.rawJson,
         createdAt: reportsTable.createdAt,
       })
       .from(reportsTable)
+      .innerJoin(reportPayloadsTable, eq(reportsTable.id, reportPayloadsTable.reportId))
       .where(isNull(reportsTable.deletedAt))
       .orderBy(desc(reportsTable.createdAt))
       .limit(50);

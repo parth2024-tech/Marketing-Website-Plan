@@ -4,6 +4,7 @@ import { db, pairSessionsTable, reportsTable } from "@workspace/db";
 import { SentinelReportSchema, generateReport } from "@workspace/report-engine";
 import { eq, lt } from "drizzle-orm";
 import { newPairCode, newReportId, newClaimToken, sha256hex } from "../lib/ids";
+import { ReportsService } from "../services/reports.service";
 import { consumeRateLimit } from "../lib/rateLimit";
 
 const router = Router();
@@ -174,41 +175,26 @@ router.post("/push", async (req, res) => {
     return;
   }
 
-  // Generate report + store it (same logic as POST /api/reports)
-  const resultJson = generateReport(reportParsed.data);
-  let reportId = newReportId();
+  // Generate report + store it via ReportsService
+  try {
+    const ip = req.ip ?? req.socket?.remoteAddress ?? "unknown";
+    const reportResult = await ReportsService.createReport({ rawJson }, ip, undefined, undefined, req.log);
+    const reportId = reportResult.id;
+    const claimToken = reportResult.claimToken;
 
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const claimToken = newClaimToken();
-    try {
-      await db.insert(reportsTable).values({
-        id: reportId,
-        rawJson,
-        resultJson: resultJson as unknown as Record<string, unknown>,
-        claimToken,
-        legacy: false,
-      });
+    // Link the report back to the pair session
+    await db
+      .update(pairSessionsTable)
+      .set({ reportId, claimToken })
+      .where(eq(pairSessionsTable.code, normalizedCode));
 
-      // Link the report back to the pair session
-      await db
-        .update(pairSessionsTable)
-        .set({ reportId, claimToken })
-        .where(eq(pairSessionsTable.code, normalizedCode));
+    req.log.info({ reportId, pairCode: normalizedCode }, "pair_report_pushed");
 
-      req.log.info({ reportId, pairCode: normalizedCode }, "pair_report_pushed");
-
-      res.status(201).json({ ok: true, reportId, claimToken });
-      return;
-    } catch (err: unknown) {
-      const pgErr = err as { code?: string };
-      if (pgErr?.code === "23505") {
-        reportId = newReportId();
-        continue;
-      }
-      req.log.error({ err }, "pair_push_failed");
-      res.status(500).json({ error: "Failed to save report" });
-      return;
-    }
+    res.status(201).json({ ok: true, reportId, claimToken });
+    return;
+  } catch (error: any) {
+    req.log.error({ err: error }, "Failed to create pair report");
+    res.status(500).json({ error: "Failed to create report" });
   }
 
   res.status(500).json({ error: "Failed to generate unique report ID" });

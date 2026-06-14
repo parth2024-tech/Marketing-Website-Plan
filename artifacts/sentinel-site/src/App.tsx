@@ -1,36 +1,38 @@
-import { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m, useReducedMotion, LazyMotion, domAnimation } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import Home from "@/pages/Home";
-import Features from "@/pages/Features";
-import HowItWorks from "@/pages/HowItWorks";
-import WhatItMonitors from "@/pages/WhatItMonitors";
-import FAQ from "@/pages/FAQ";
-import Waitlist from "@/pages/Waitlist";
-import HealthTest from "@/pages/HealthTest";
-import SampleReport from "@/pages/SampleReport";
-import WhySentinel from "@/pages/WhySentinel";
-import Compare from "@/pages/Compare";
-import Pricing from "@/pages/Pricing";
-import Dashboard from "@/pages/Dashboard";
-import OEMFailures from "@/pages/OEMFailures";
-import HabitAudit from "@/pages/HabitAudit";
-import RiskCalculator from "@/pages/RiskCalculator";
-import Report from "@/pages/Report";
-import MyReports from "@/pages/MyReports";
-import Troubleshoot from "@/pages/Troubleshoot";
-import GetStarted from "@/pages/GetStarted";
-import Pair from "@/pages/Pair";
-import Scoring from "@/pages/Scoring";
-import Changelog from "@/pages/Changelog";
-import SharedReport from "@/pages/SharedReport";
-import BillingSettings from "@/pages/BillingSettings";
-import LiveDashboard from "@/pages/LiveDashboard";
-import NotFound from "@/pages/not-found";
+
+// Lazy load pages for bundle splitting
+const Home = React.lazy(() => import("@/pages/Home"));
+const Features = React.lazy(() => import("@/pages/Features"));
+const HowItWorks = React.lazy(() => import("@/pages/HowItWorks"));
+const WhatItMonitors = React.lazy(() => import("@/pages/WhatItMonitors"));
+const FAQ = React.lazy(() => import("@/pages/FAQ"));
+const Waitlist = React.lazy(() => import("@/pages/Waitlist"));
+const HealthTest = React.lazy(() => import("@/pages/HealthTest"));
+const SampleReport = React.lazy(() => import("@/pages/SampleReport"));
+const WhySentinel = React.lazy(() => import("@/pages/WhySentinel"));
+const Compare = React.lazy(() => import("@/pages/Compare"));
+const Pricing = React.lazy(() => import("@/pages/Pricing"));
+const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
+const OEMFailures = React.lazy(() => import("@/pages/OEMFailures"));
+const HabitAudit = React.lazy(() => import("@/pages/HabitAudit"));
+const RiskCalculator = React.lazy(() => import("@/pages/RiskCalculator"));
+const Report = React.lazy(() => import("@/pages/Report"));
+const MyReports = React.lazy(() => import("@/pages/MyReports"));
+const Troubleshoot = React.lazy(() => import("@/pages/Troubleshoot"));
+const GetStarted = React.lazy(() => import("@/pages/GetStarted"));
+const Pair = React.lazy(() => import("@/pages/Pair"));
+const Scoring = React.lazy(() => import("@/pages/Scoring"));
+const Changelog = React.lazy(() => import("@/pages/Changelog"));
+const SharedReport = React.lazy(() => import("@/pages/SharedReport"));
+const BillingSettings = React.lazy(() => import("@/pages/BillingSettings"));
+const LiveDashboard = React.lazy(() => import("@/pages/LiveDashboard"));
+const NotFound = React.lazy(() => import("@/pages/not-found"));
 
 const queryClient = new QueryClient();
 
@@ -62,41 +64,43 @@ function AnimatedRoutes() {
 
   return (
     <AnimatePresence mode="wait">
-      <motion.div
+      <m.div
         key={location}
         {...PAGE_TRANSITION}
         // Ensure the motion div doesn't constrain layout
         style={{ willChange: "opacity, transform" }}
       >
-        <Switch>
-          <Route path="/"                component={Home} />
-          <Route path="/features"        component={Features} />
-          <Route path="/how-it-works"    component={HowItWorks} />
-          <Route path="/what-it-monitors"component={WhatItMonitors} />
-          <Route path="/faq"             component={FAQ} />
-          <Route path="/waitlist"        component={Waitlist} />
-          <Route path="/health-test"     component={HealthTest} />
-          <Route path="/dashboard"       component={Dashboard} />
-          <Route path="/sample-report"   component={SampleReport} />
-          <Route path="/why"             component={WhySentinel} />
-          <Route path="/compare"         component={Compare} />
-          <Route path="/pricing"         component={Pricing} />
-          <Route path="/oem-failures"    component={OEMFailures} />
-          <Route path="/habit-audit"     component={HabitAudit} />
-          <Route path="/risk-calculator" component={RiskCalculator} />
-          <Route path="/troubleshoot"    component={Troubleshoot} />
-          <Route path="/r/:id"           component={Report} />
-          <Route path="/s/:shareToken"   component={SharedReport} />
-          <Route path="/my-reports"      component={MyReports} />
-          <Route path="/get-started"     component={GetStarted} />
-          <Route path="/pair"            component={Pair} />
-          <Route path="/scoring"         component={Scoring} />
-          <Route path="/changelog"       component={Changelog} />
-          <Route path="/billing"         component={BillingSettings} />
-          <Route path="/live"            component={LiveDashboard} />
-          <Route                         component={NotFound} />
-        </Switch>
-      </motion.div>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading...</div>}>
+          <Switch>
+            <Route path="/"                component={Home} />
+            <Route path="/features"        component={Features} />
+            <Route path="/how-it-works"    component={HowItWorks} />
+            <Route path="/what-it-monitors"component={WhatItMonitors} />
+            <Route path="/faq"             component={FAQ} />
+            <Route path="/waitlist"        component={Waitlist} />
+            <Route path="/health-test"     component={HealthTest} />
+            <Route path="/dashboard"       component={Dashboard} />
+            <Route path="/sample-report"   component={SampleReport} />
+            <Route path="/why"             component={WhySentinel} />
+            <Route path="/compare"         component={Compare} />
+            <Route path="/pricing"         component={Pricing} />
+            <Route path="/oem-failures"    component={OEMFailures} />
+            <Route path="/habit-audit"     component={HabitAudit} />
+            <Route path="/risk-calculator" component={RiskCalculator} />
+            <Route path="/troubleshoot"    component={Troubleshoot} />
+            <Route path="/r/:id"           component={Report} />
+            <Route path="/s/:shareToken"   component={SharedReport} />
+            <Route path="/my-reports"      component={MyReports} />
+            <Route path="/get-started"     component={GetStarted} />
+            <Route path="/pair"            component={Pair} />
+            <Route path="/scoring"         component={Scoring} />
+            <Route path="/changelog"       component={Changelog} />
+            <Route path="/billing"         component={BillingSettings} />
+            <Route path="/live"            component={LiveDashboard} />
+            <Route                         component={NotFound} />
+          </Switch>
+        </Suspense>
+      </m.div>
     </AnimatePresence>
   );
 }
@@ -116,9 +120,11 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-        <Router />
-      </WouterRouter>
+      <LazyMotion features={domAnimation} strict>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <Router />
+        </WouterRouter>
+      </LazyMotion>
       <Toaster />
     </QueryClientProvider>
   );
