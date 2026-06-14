@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense } from "react";
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
 import { AnimatePresence, m, useReducedMotion, LazyMotion, domAnimation } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -18,7 +18,6 @@ const SampleReport = React.lazy(() => import("@/pages/SampleReport"));
 const WhySentinel = React.lazy(() => import("@/pages/WhySentinel"));
 const Compare = React.lazy(() => import("@/pages/Compare"));
 const Pricing = React.lazy(() => import("@/pages/Pricing"));
-const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
 const OEMFailures = React.lazy(() => import("@/pages/OEMFailures"));
 const HabitAudit = React.lazy(() => import("@/pages/HabitAudit"));
 const RiskCalculator = React.lazy(() => import("@/pages/RiskCalculator"));
@@ -79,7 +78,9 @@ function AnimatedRoutes() {
             <Route path="/faq"             component={FAQ} />
             <Route path="/waitlist"        component={Waitlist} />
             <Route path="/health-test"     component={HealthTest} />
-            <Route path="/dashboard"       component={Dashboard} />
+            <Route path="/dashboard">
+              <Redirect to="/my-reports" />
+            </Route>
             <Route path="/sample-report"   component={SampleReport} />
             <Route path="/why"             component={WhySentinel} />
             <Route path="/compare"         component={Compare} />

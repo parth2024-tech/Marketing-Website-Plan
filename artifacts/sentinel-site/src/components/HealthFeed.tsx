@@ -155,7 +155,7 @@ export default function HealthFeed() {
                   <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
                   <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
                 </div>
-                <span className="text-xs text-muted-foreground font-mono">sentinel — telemetry feed</span>
+                <span className="text-xs text-muted-foreground font-mono">sentinel — telemetry feed (simulation)</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />

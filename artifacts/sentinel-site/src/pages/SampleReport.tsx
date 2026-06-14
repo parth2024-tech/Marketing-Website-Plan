@@ -122,6 +122,11 @@ export default function SampleReport() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Sample Data Disclaimer Banner */}
+      <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 text-center text-xs font-mono text-amber-400 flex items-center justify-center gap-2">
+        <span>⚠️</span>
+        <span><strong>Sample Report:</strong> This page displays simulated/static diagnostic data for demonstration purposes. It does not represent live telemetry from your current machine.</span>
+      </div>
       {/* Header band */}
       <AnimateIn direction="down" delay={0.1}>
         <div className="border-b border-border/60 bg-card/40 px-6 py-4">
