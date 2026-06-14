@@ -23,6 +23,62 @@ export const ThermalZoneSchema = z.object({
   tempC: z.number(),
 });
 
+export const GpuDeviceSchema = z.object({
+  name: z.string().nullish(),
+  vramGb: z.number().nullish(),
+  driverVersion: z.string().nullish(),
+  driverDate: z.string().nullish(),
+  status: z.string().nullish(),
+  tempC: z.number().nullish(),
+});
+
+export const NetworkAdapterSchema = z.object({
+  name: z.string().nullish(),
+  ip: z.string().nullish(),
+  speed: z.number().nullish(),
+  desc: z.string().nullish(),
+});
+
+export const NetworkSchema = z.object({
+  adapters: z.array(NetworkAdapterSchema).nullish(),
+  connected: z.boolean().nullish(),
+});
+
+export const UpdateSchema = z.object({
+  hotFixId: z.string().nullish(),
+  installedOn: z.string().nullish(),
+});
+
+export const ProcessSchema = z.object({
+  name: z.string().nullish(),
+  cpuS: z.number().nullish(),
+  ramMb: z.number().nullish(),
+});
+
+export const TopProcessesSchema = z.object({
+  cpuHogs: z.array(ProcessSchema).nullish(),
+  ramHogs: z.array(ProcessSchema).nullish(),
+});
+
+export const StartupItemSchema = z.object({
+  name: z.string().nullish(),
+  command: z.string().nullish(),
+});
+
+export const SecuritySchema = z.object({
+  antivirusEnabled: z.boolean().nullish(),
+  realTimeProtection: z.boolean().nullish(),
+  lastFullScan: z.string().nullish(),
+  antivirusSignatureDate: z.string().nullish(),
+  firewallProfilesActive: z.string().nullish(),
+});
+
+export const RecentSystemErrorSchema = z.object({
+  time: z.string().nullish(),
+  source: z.string().nullish(),
+  error: z.string().nullish(),
+});
+
 export const SentinelReportSchema = z.object({
   sentinelSchema: z.literal(1),
   generatedAt: z.string(),
@@ -78,6 +134,13 @@ export const SentinelReportSchema = z.object({
       lastBootSec: z.number().nullish(),
     })
     .nullish(),
+  gpus: z.array(GpuDeviceSchema).nullish(),
+  network: NetworkSchema.nullish(),
+  updates: UpdateSchema.nullish(),
+  topProcesses: TopProcessesSchema.nullish(),
+  startupList: z.array(StartupItemSchema).nullish(),
+  security: SecuritySchema.nullish(),
+  recentErrors: z.array(RecentSystemErrorSchema).nullish(),
 });
 
 /**

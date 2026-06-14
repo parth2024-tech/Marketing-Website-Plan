@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { type ReportResult, type Prediction } from "@/lib/report/engine";
 import AnimateIn from "@/components/AnimateIn";
+import AdvancedDiagnostics from "@/components/AdvancedDiagnostics";
 
 // ── Score ring (reused from Report) ──────────────────────────────────────────
 
@@ -214,6 +215,11 @@ export default function SharedReport() {
                 );
               })}
             </div>
+          </AnimateIn>
+
+          {/* Advanced System Diagnostics */}
+          <AnimateIn delay={0.035}>
+            <AdvancedDiagnostics report={result} />
           </AnimateIn>
 
           {/* Findings */}

@@ -10,6 +10,7 @@ import {
 import { generateReport, type ReportResult, type Prediction } from "@/lib/report/engine";
 import { SentinelReportSchema } from "@/lib/report/schema";
 import AnimateIn from "@/components/AnimateIn";
+import AdvancedDiagnostics from "@/components/AdvancedDiagnostics";
 
 // ── OG meta injection ────────────────────────────────────────────────────────
 
@@ -984,6 +985,11 @@ export default function Report() {
               })}
             </div>
           </div>
+
+          {/* Advanced System Diagnostics */}
+          <AnimateIn delay={0.05}>
+            <AdvancedDiagnostics report={result} />
+          </AnimateIn>
 
           {/* ── Health Forecast Timeline ────────────────────────────────────── */}
           {result.predictions && result.predictions.length > 0 && (
