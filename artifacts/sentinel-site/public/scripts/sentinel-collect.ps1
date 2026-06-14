@@ -1,27 +1,19 @@
 # ============================================================
 #  sentinel-collect.ps1  --  Sentinel Hardware Collector v1
-#  Schema version: 1
+#  Schema version: 1 (Integrated CLI Diagnostic Extensions)
 #
-#  Outputs structured JSON for paste-back parsing at:
-#  sentinelapp.io/health-test -> "Parse your output" tab
-#
-#  Run in PowerShell (no administrator required for most checks):
-#    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-#    .\sentinel-collect.ps1
-#
-#  Direct Upload:
-#    .\sentinel-collect.ps1 -DirectUpload
-#
-#  The JSON is printed to the console AND copied to your clipboard.
+#  Collects hardware details, security metrics, processes,
+#  and errors, then automatically uploads to the Sentinel Cloud.
 # ============================================================
-
-param([switch]$DirectUpload)
 
 $SENTINEL_API_URL      = "https://sentinel-api-zaue.onrender.com"
 $SENTINEL_FRONTEND_URL = "https://sentinel-site-rosy.vercel.app"
 
 $ErrorActionPreference = 'SilentlyContinue'
 $ProgressPreference    = 'SilentlyContinue'
+
+Write-Host ""
+Write-Host "  [+] Initializing Sentinel Diagnostics..." -ForegroundColor Cyan
 
 Add-Type -TypeDefinition @"
 using System;
@@ -84,11 +76,13 @@ public class NvmeSmart {
 }
 "@
 
+Write-Host "  [+] Gathering System Telemetry..." -ForegroundColor Yellow
 
 # -- System -----------------------------------------------------------------------
 $cs   = Get-CimInstance Win32_ComputerSystem
 $os   = Get-CimInstance Win32_OperatingSystem
 $bios = Get-CimInstance Win32_BIOS
+$uptime = (Get-Date) - $os.LastBootUpTime
 
 $system = [ordered]@{
     hostname     = $env:COMPUTERNAME
@@ -96,7 +90,70 @@ $system = [ordered]@{
     manufacturer = $cs.Manufacturer
     os           = $os.Caption
     osVersion    = $os.Version
+    osBuild      = $os.BuildNumber
     biosVersion  = $bios.SMBIOSBIOSVersion
+    uptime       = ("{0}d {1}h {2}m" -f $uptime.Days, $uptime.Hours, $uptime.Minutes)
+}
+
+# -- CPU --------------------------------------------------------------------------
+$proc    = Get-CimInstance Win32_Processor | Select-Object -First 1
+$loadAvg = (Get-CimInstance Win32_Processor | Select-Object -ExpandProperty LoadPercentage | Measure-Object -Average).Average
+
+$cpuTemp = $null
+try {
+    $cpuTempSensor = Get-CimInstance -Namespace "root/OpenHardwareMonitor" -ClassName Sensor -ErrorAction SilentlyContinue |
+                     Where-Object { $_.SensorType -eq "Temperature" -and $_.Name -match "CPU" } |
+                     Select-Object -First 1
+    if ($cpuTempSensor) { $cpuTemp = [math]::Round($cpuTempSensor.Value, 1) }
+} catch {}
+
+$cpu = [ordered]@{
+    name        = $proc.Name.Trim()
+    cores       = [int]($proc.NumberOfCores)
+    threads     = [int]($proc.NumberOfLogicalProcessors)
+    avgLoadPct  = [math]::Round($loadAvg, 1)
+    maxClockMhz = [int]($proc.MaxClockSpeed)
+    tempC       = $cpuTemp
+}
+
+# -- RAM --------------------------------------------------------------------------
+$memOS = Get-CimInstance Win32_OperatingSystem
+$dimms = Get-CimInstance Win32_PhysicalMemory -ErrorAction SilentlyContinue
+$dimmSlots = @()
+foreach ($d in $dimms) {
+    $dimmSlots += [ordered]@{
+        slot   = $d.DeviceLocator
+        sizeGb = [math]::Round($d.Capacity / 1GB, 0)
+        speed  = $d.Speed
+    }
+}
+
+$memory = [ordered]@{
+    totalGB   = [math]::Round($memOS.TotalVisibleMemorySize / 1MB, 1)
+    usedPct   = [math]::Round((($memOS.TotalVisibleMemorySize - $memOS.FreePhysicalMemory) / $memOS.TotalVisibleMemorySize) * 100, 1)
+    dimmSlots = $dimmSlots
+}
+
+# -- GPU --------------------------------------------------------------------------
+$gpusList = @()
+$gpus = Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue
+foreach ($g in $gpus) {
+    $vram = if ($g.AdapterRAM -gt 0) { [math]::Round($g.AdapterRAM/1GB, 1) } else { $null }
+    $gpuTemp = $null
+    try {
+        $gpuTempSensor = Get-CimInstance -Namespace "root/OpenHardwareMonitor" -ClassName Sensor -ErrorAction SilentlyContinue |
+                         Where-Object { $_.SensorType -eq "Temperature" -and $_.Name -match "GPU" } |
+                         Select-Object -First 1
+        if ($gpuTempSensor) { $gpuTemp = [math]::Round($gpuTempSensor.Value, 1) }
+    } catch { }
+    $gpusList += [ordered]@{
+        name          = $g.Caption
+        vramGb        = $vram
+        driverVersion = $g.DriverVersion
+        driverDate    = $g.DriverDate
+        status        = $g.Status
+        tempC         = $gpuTemp
+    }
 }
 
 # -- Battery -----------------------------------------------------------------------
@@ -108,7 +165,6 @@ $battCycles = Get-CimInstance -Namespace root\wmi -ClassName BatteryCycleCount  
 $battStatus = Get-CimInstance -Namespace root\wmi -ClassName BatteryStatus               -ErrorAction SilentlyContinue
 
 if ($battWmi) {
-    # Try multiple sources for design capacity (some OEMs report 0 in BatteryStaticData)
     $designCapRaw = if ($battDesign -and $battDesign.DesignedCapacity -gt 0) {
                         [int]($battDesign.DesignedCapacity)
                     } elseif ($battWmi.DesignCapacity -gt 0) {
@@ -124,30 +180,28 @@ if ($battWmi) {
     $designCap  = $designCapRaw
     $cycles     = if ($battCycles) { [int]($battCycles.CycleCount) } else { $null }
 
-    # Calculate health: prefer capacity-based; fall back to cycle-based estimate
     $health = $null
     if ($designCap -gt 0 -and $fullCap -gt 0) {
         $health = [math]::Round([math]::Min(($fullCap / $designCap) * 100, 100), 1)
     } elseif ($fullCap -gt 0 -and $designCap -eq 0) {
-        # Design cap unavailable — store full cap only; report engine will handle it
-        $designCap = $fullCap  # best-effort: assume design = full (shows 100% health)
+        $designCap = $fullCap
         $health = 100.0
     }
 
     $discharge  = if ($battStatus) { [int]($battStatus.DischargeRate) } else { $null }
 
     $battery = [ordered]@{
-        designCapacity     = $designCap
-        fullChargeCapacity = $fullCap
-        cycleCount         = $cycles
-        health             = $health
-        status             = [int]($battWmi.BatteryStatus)
-        dischargeRateMw    = $discharge
+        designCapacity      = $designCap
+        fullChargeCapacity  = $fullCap
+        cycleCount          = $cycles
+        health              = $health
+        status              = [int]($battWmi.BatteryStatus)
+        dischargeRateMw     = $discharge
+        estimatedRuntimeMin = if ($battWmi.EstimatedRunTime) { [int]($battWmi.EstimatedRunTime) } else { $null }
     }
 }
 
-
-# -- Thermals -----------------------------------------------------------------------
+# -- Thermals ---------------------------------------------------------------------
 function Get-ThermalData {
     # 1. Performance Counter
     $samples = Get-Counter "\Thermal Zone Information(*)\Temperature" -SampleInterval 1 -MaxSamples 2 -ErrorAction SilentlyContinue
@@ -220,23 +274,6 @@ function Get-ThermalData {
         }
     } catch {}
 
-    # 4. LibreHardwareMonitor
-    try {
-        $lhm = Get-CimInstance -Namespace root\LibreHardwareMonitor -ClassName Sensor -Filter "SensorType='Temperature'" -ErrorAction Stop
-        if ($lhm) {
-            $zList = @()
-            foreach ($s in $lhm) {
-                if ($s.Name -match "CPU Package|CPU Core") {
-                    $zList += [ordered]@{ name = $s.Name; tempC = [math]::Round($s.Value, 1) }
-                }
-            }
-            if ($zList.Count -eq 0) {
-                foreach ($s in $lhm) { $zList += [ordered]@{ name = $s.Name; tempC = [math]::Round($s.Value, 1) } }
-            }
-            return @{ source = "lhm"; zones = $zList }
-        }
-    } catch {}
-
     return @{ source = "unavailable"; zones = @() }
 }
 
@@ -257,7 +294,7 @@ $thermals = [ordered]@{
     thermalSamples = $thermalZones.Count
 }
 
-# -- Storage -----------------------------------------------------------------------
+# -- Storage ----------------------------------------------------------------------
 $storageList = @()
 $physDisks   = Get-PhysicalDisk -ErrorAction SilentlyContinue
 foreach ($disk in $physDisks) {
@@ -276,7 +313,6 @@ foreach ($disk in $physDisks) {
         $poh = [int]($reliability.PowerOnHours)
         $wear = [int]($reliability.Wear)
         if ($disk.BusType -eq 17 -and ($wear -eq 0 -or $null -eq $reliability.Wear)) {
-            # NVMe fallback method
             $smart = [NvmeSmart]::GetSmartInfo($disk.DeviceId)
             if ($smart) {
                 $wearLevelPct = if ($smart.PercentageUsed -gt 100) { 0 } else { 100 - $smart.PercentageUsed }
@@ -304,31 +340,126 @@ foreach ($disk in $physDisks) {
     }
 }
 
-# -- Memory -----------------------------------------------------------------------
-$memOS = Get-CimInstance Win32_OperatingSystem
-$memory = [ordered]@{
-    totalGB  = [math]::Round($memOS.TotalVisibleMemorySize / 1MB, 1)
-    usedPct  = [math]::Round((($memOS.TotalVisibleMemorySize - $memOS.FreePhysicalMemory) / $memOS.TotalVisibleMemorySize) * 100, 1)
+# -- Network ----------------------------------------------------------------------
+$adaptersList = @()
+$adapters = Get-NetAdapter -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq "Up" }
+foreach ($a in $adapters) {
+    $ip = (Get-NetIPAddress -InterfaceIndex $a.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue).IPAddress
+    $adaptersList += [ordered]@{
+        name  = $a.Name
+        ip    = $ip
+        speed = [math]::Round($a.LinkSpeed/1MB, 0)
+        desc  = $a.InterfaceDescription
+    }
+}
+$ping = Test-Connection -ComputerName "8.8.8.8" -Count 2 -Quiet -ErrorAction SilentlyContinue
+$network = [ordered]@{
+    adapters    = $adaptersList
+    connected   = [bool]$ping
 }
 
-# -- CPU -----------------------------------------------------------------------
-$proc    = Get-CimInstance Win32_Processor | Select-Object -First 1
-$loadAvg = (Get-CimInstance Win32_Processor | Select-Object -ExpandProperty LoadPercentage | Measure-Object -Average).Average
+# -- Updates ----------------------------------------------------------------------
+$lastUpdate = $null
+try {
+    $wu = Get-HotFix -ErrorAction SilentlyContinue | Sort-Object InstalledOn -Descending | Select-Object -First 1
+    if ($wu) {
+        $lastUpdate = [ordered]@{
+            hotFixId    = $wu.HotFixID
+            installedOn = $wu.InstalledOn.ToString('o')
+        }
+    }
+} catch {}
 
-$cpu = [ordered]@{
-    name        = $proc.Name.Trim()
-    cores       = [int]($proc.NumberOfCores)
-    threads     = [int]($proc.NumberOfLogicalProcessors)
-    avgLoadPct  = [math]::Round($loadAvg, 1)
-    maxClockMhz = [int]($proc.MaxClockSpeed)
+# -- Processes ---------------------------------------------------------------------
+$cpuHogs = @()
+$ramHogs = @()
+try {
+    $procs = Get-Process -ErrorAction SilentlyContinue
+    $cpuHogs = $procs | Sort-Object CPU -Descending | Select-Object -First 5 | ForEach-Object {
+        [ordered]@{
+            name  = $_.ProcessName
+            cpuS  = [math]::Round($_.CPU, 1)
+            ramMb = [math]::Round($_.WorkingSet64/1MB, 1)
+        }
+    }
+    $ramHogs = $procs | Sort-Object WorkingSet64 -Descending | Select-Object -First 5 | ForEach-Object {
+        [ordered]@{
+            name  = $_.ProcessName
+            ramMb = [math]::Round($_.WorkingSet64/1MB, 1)
+            cpuS  = [math]::Round($_.CPU, 1)
+        }
+    }
+} catch {}
+
+$topProcesses = [ordered]@{
+    cpuHogs = $cpuHogs
+    ramHogs = $ramHogs
 }
 
-# -- Startup -----------------------------------------------------------------------
+# -- Startup ----------------------------------------------------------------------
+$startupList = @()
+try {
+    $startups = Get-CimInstance Win32_StartupCommand -ErrorAction SilentlyContinue
+    foreach ($s in $startups) {
+        $startupList += [ordered]@{
+            name    = $s.Name
+            command = $s.Command
+        }
+    }
+} catch {}
+
 $startup = [ordered]@{
     lastBootTime = $os.LastBootUpTime.ToString('o')
 }
 
-# -- Assemble -----------------------------------------------------------------------
+# -- Security ---------------------------------------------------------------------
+$avEnabled = $null
+$rtpEnabled = $null
+$lastFullScan = $null
+$avSignature = $null
+try {
+    $defender = Get-MpComputerStatus -ErrorAction SilentlyContinue
+    if ($defender) {
+        $avEnabled = $defender.AntivirusEnabled
+        $rtpEnabled = $defender.RealTimeProtectionEnabled
+        $lastFullScan = if ($defender.FullScanEndTime) { $defender.FullScanEndTime.ToString('o') } else { $null }
+        $avSignature = if ($defender.AntivirusSignatureLastUpdated) { $defender.AntivirusSignatureLastUpdated.ToString('o') } else { $null }
+    }
+} catch {}
+
+$fwActive = ""
+try {
+    $fw = Get-NetFirewallProfile -ErrorAction SilentlyContinue | Where-Object { $_.Enabled -eq $true }
+    if ($fw) { $fwActive = ($fw.Name -join ", ") }
+} catch {}
+
+$security = [ordered]@{
+    antivirusEnabled       = $avEnabled
+    realTimeProtection     = $rtpEnabled
+    lastFullScan           = $lastFullScan
+    antivirusSignatureDate = $avSignature
+    firewallProfilesActive = $fwActive
+}
+
+# -- Recent Errors -----------------------------------------------------------------
+$recentErrorsList = @()
+try {
+    $since  = (Get-Date).AddHours(-24)
+    $errors = Get-EventLog -LogName System -EntryType Error -After $since -Newest 10 -ErrorAction SilentlyContinue
+    if ($errors) {
+        foreach ($e in $errors) {
+            $msg = $e.Message
+            if ($msg.Length -gt 150) { $msg = $msg.Substring(0, 150) }
+            $recentErrorsList += [ordered]@{
+                time   = $e.TimeGenerated.ToString('o')
+                source = $e.Source
+                error  = $msg
+            }
+        }
+    }
+} catch {}
+
+# -- Assemble JSON -----------------------------------------------------------------
 $output = [ordered]@{
     sentinelSchema = 1
     generatedAt    = (Get-Date -Format 'o')
@@ -339,99 +470,73 @@ $output = [ordered]@{
     memory         = $memory
     cpu            = $cpu
     startup        = $startup
+    gpus           = $gpusList
+    network        = $network
+    updates        = $lastUpdate
+    topProcesses   = $topProcesses
+    startupList    = $startupList
+    security       = $security
+    recentErrors   = $recentErrorsList
 }
 
-$json = $output | ConvertTo-Json -Depth 10 -Compress
+# -- Direct Upload Only (No JSON printed to Terminal) ------------------------------
+Write-Host "  [+] Diagnostics complete." -ForegroundColor Green
+Write-Host "  [~] Sending data securely to Sentinel cloud..." -ForegroundColor Cyan
 
-Write-Host ""
-Write-Host "================================================================"
-Write-Host "  Sentinel Collect -- output below"
-Write-Host "================================================================"
-Write-Host $json
-Write-Host "================================================================"
-Write-Host ""
+$rawJsonString = $output | ConvertTo-Json -Depth 10 -Compress
+$body = '{"rawJson":' + $rawJsonString + '}'
 
-try {
-    $json | Set-Clipboard
-    Write-Host "  [OK] Output copied to clipboard." -ForegroundColor Green
-} catch {
-    Write-Host "  (Could not copy to clipboard -- copy the JSON above manually.)" -ForegroundColor Yellow
-}
+$maxRetries = 4
+$retryCount = 0
+$success = $false
 
-Write-Host "  Paste it at: sentinel-site-rosy.vercel.app/health-test  -> 'Parse your output'" -ForegroundColor Cyan
-Write-Host ""
-
-# -- Direct Upload -----------------------------------------------------------------------
-if ($DirectUpload) {
-    Write-Host "  Sending data securely to Sentinel cloud..." -ForegroundColor Cyan
-    
-    $rawJsonString = $output | ConvertTo-Json -Depth 10 -Compress
-    $body = '{"rawJson":' + $rawJsonString + '}'
-    
-    $maxRetries = 4
-    $retryCount = 0
-    $success = $false
-    
-    while (-not $success -and $retryCount -lt $maxRetries) {
+while (-not $success -and $retryCount -lt $maxRetries) {
+    try {
+        $response = Invoke-RestMethod -Method POST `
+            -Uri "$SENTINEL_API_URL/api/reports" `
+            -ContentType "application/json" `
+            -Body $body `
+            -ErrorAction Stop
+        
+        $reportId = $response.id
+        $claimToken = $response.claimToken
+        
+        Write-Host "  [OK] Telemetry uploaded successfully." -ForegroundColor Green
+        Write-Host "  [+] Opening diagnostic dashboard in your default browser..." -ForegroundColor Green
+        Write-Host ""
+        
+        $url = "$SENTINEL_FRONTEND_URL/r/$reportId`?claim=$claimToken"
+        Start-Process $url
+        $success = $true
+    } catch {
+        $errMsg = $_
+        $statusCode = 0
         try {
-            $response = Invoke-RestMethod -Method POST `
-                -Uri "$SENTINEL_API_URL/api/reports" `
-                -ContentType "application/json" `
-                -Body $body `
-                -ErrorAction Stop
-            
-            $reportId = $response.id
-            $claimToken = $response.claimToken
-            
-            Write-Host "" 
-            Write-Host "================================================================" -ForegroundColor Green
-            Write-Host "  [OK] Data sent successfully." -ForegroundColor Green
-            Write-Host "  Opening your report in the browser..." -ForegroundColor Green
-            Write-Host "================================================================" -ForegroundColor Green
-            Write-Host ""
-            
-            $url = "$SENTINEL_FRONTEND_URL/r/$reportId`?claim=$claimToken"
-            Start-Process $url
-            $success = $true
-        } catch {
-            $errMsg = $_
-            $statusCode = 0
-            try {
-                $errBody = $_.Exception.Response
-                if ($errBody) {
-                    $statusCode = [int]$errBody.StatusCode
-                    $reader = New-Object System.IO.StreamReader($errBody.GetResponseStream())
-                    $serverMsg = $reader.ReadToEnd()
-                    $reader.Close()
-                    $errMsg = "$_ -- Server said: $serverMsg"
-                }
-            } catch {}
-            
-            $retryCount++
-            
-            # Retry on 422 (sometimes happens on cold starts with incomplete JSON parsing), 502, 503, 504
-            if ($statusCode -in @(422, 502, 503, 504) -or $statusCode -eq 0) {
-                if ($retryCount -ge $maxRetries) {
-                    Write-Host ""
-                    Write-Host "================================================================" -ForegroundColor Red
-                    Write-Host "  [!] Upload failed after $maxRetries attempts: $errMsg" -ForegroundColor Red
-                    Write-Host "================================================================" -ForegroundColor Red
-                    Write-Host ""
-                } else {
-                    $backoff = [math]::Pow(2, $retryCount)
-                    Write-Host "  [!] Temporary failure (Code $statusCode). Server may be waking up." -ForegroundColor Yellow
-                    Write-Host "  Retrying in $backoff seconds (Attempt $retryCount of $maxRetries)..." -ForegroundColor Yellow
-                    Start-Sleep -Seconds $backoff
-                }
-            } else {
-                # Don't retry for 400, 401, 403, 413, etc.
-                Write-Host ""
-                Write-Host "================================================================" -ForegroundColor Red
-                Write-Host "  [!] Upload failed: $errMsg" -ForegroundColor Red
-                Write-Host "================================================================" -ForegroundColor Red
-                Write-Host ""
-                break
+            $errBody = $_.Exception.Response
+            if ($errBody) {
+                $statusCode = [int]$errBody.StatusCode
+                $reader = New-Object System.IO.StreamReader($errBody.GetResponseStream())
+                $serverMsg = $reader.ReadToEnd()
+                $reader.Close()
+                $errMsg = "$_ -- Server said: $serverMsg"
             }
+        } catch {}
+        
+        $retryCount++
+        
+        if ($statusCode -in @(422, 502, 503, 504) -or $statusCode -eq 0) {
+            if ($retryCount -ge $maxRetries) {
+                Write-Host "  [!] Upload failed after $maxRetries attempts: $errMsg" -ForegroundColor Red
+                Write-Host ""
+            } else {
+                $backoff = [math]::Pow(2, $retryCount)
+                Write-Host "  [!] Upload temporary error (Code $statusCode). Retrying in $backoff seconds..." -ForegroundColor Yellow
+                Start-Sleep -Seconds $backoff
+            }
+        } else {
+            Write-Host "  [!] Upload failed: $errMsg" -ForegroundColor Red
+            Write-Host ""
+            break
         }
     }
 }
