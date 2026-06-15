@@ -1,215 +1,153 @@
-# Sentinel — Hardware Diagnostic Monitor
+# Sentinel — Deterministic Hardware Diagnostics & Telemetry
 
-A dark, precision-designed multi-page marketing website and application for a Windows laptop hardware diagnostic tool. Users run a local diagnostic script (PowerShell/Python), paste the JSON output into the site, and receive a scored, explainable hardware health report persisted in PostgreSQL.
+Sentinel is a precision-engineered diagnostics platform designed to monitor, score, and forecast Windows laptop hardware health. By running lightweight, local telemetry collectors, users obtain transparent, deterministic diagnostic reports that are securely processed and stored. 
 
-Scoring is fully deterministic and publicly documented — no black-box AI, no machine learning. The same inputs always produce the same output.
+Every hardware score and failure forecast is fully deterministic and publicly documented — eliminating black-box algorithms and ensuring total transparency for power users and enterprise fleet administrators.
 
-## Features
+---
 
-- **Multi-page Marketing Site** — Sleek responsive dark/futuristic layout featuring live OEM vs Sentinel side-by-side comparison, public TS formula previews, and scroll-triggered linear regression timelines.
-- **Advanced JSON Ingestion Surface** — CodeMirror-powered code editor surface validating against `sentinelSchema` in real time with precise error paths. Instantly pulls device model and timestamp, and offers single-click demo payload loading to eliminate friction.
-- **Calibrated Habit Audits** — Interactive audit with micro-explanation tooltips mapping habits (dust vent buildup, charging threshold limits, SSD wear-level margins) directly to component scores, complete with a real-time habit score indicator.
-- **Premium Diagnostic Reports** — Features an 800ms circular score gauge (custom Apple-style easing `cubic-bezier(0.25, 0.1, 0.25, 1)`), sequential staggered component cards via Framer Motion, three-layer component details (raw telemetry + english status + scoring math), and prominent top-pinned Data Quality banners. Highly polished UI with micro-animations respecting `prefers-reduced-motion`.
-- **Action-Oriented Findings & Troubleshooting** — Expandable details for all flagged items with specific urgency levels (Critical, Warning, Info) and direct links to the Troubleshooting Assistant for step-by-step guides.
-- **Score Reproducibility Console** — Open-source math verification panel displaying the exact inputs, formulas, and weights used to calculate the score, ensuring total credibility.
-- **Deterministic Scoring Engine** — Five-component weighted health score (Battery 30%, Thermals 25%, Storage 25%, Memory 10%, CPU 10%) computed server-side from documented formulas. Algorithm version is stamped on every report.
-- **Public Scoring Methodology** — `/scoring` page documents every formula, threshold, and weight with worked examples so any user can reproduce a score by hand.
-- **Health Forecast Timeline** — Population-curve baseline (cold start) graduating to per-device linear regression with 95% CI intervals as scan history accumulates. Model source is labelled on every projection.
-- **OEM Failure Case Studies** — `/oem-failures` page documenting research into misleading OEM diagnostic tools (Dell SupportAssist, Lenovo Vantage, HP Support Assistant).
-- **Diagnostic Scripts** — Generic (PowerShell), Dell (PowerShell), Lenovo (PowerShell), and HP (Python) collection scripts. Implements multi-source telemetry (WMI, Performance Counters, OHM/LHM) with tiered fallback and hardware-level IOCTL querying for NVMe SMART health.
-- **Diagnostic Transparency** — Integrated sensor validation (e.g., detecting static ACPI readings) with real-time UI warnings ("Data Collection Notes") when telemetry quality is suspect.
-- **Unified Diagnostic Schema** — Standardized `sentinelSchema:1` format used across all collection scripts (PS1/PY) and the core scoring engine to ensure data integrity.
-- **Hardware Health Report Flow** — Paste JSON → complete habit audit → receive scored report with component breakdown, findings, and forecast timeline.
-- **Troubleshooting Assistant** — Intelligent context-aware knowledge base mapped to exact score patterns (Battery Drain, Thermal Throttling). Includes URL-based context pre-loading directly from reports, copyable CLI blocks, explicit pass/fail decision nodes, and helpfulness feedback signals.
-- **Risk Calculator & Dashboard** — Interactive failure-risk estimation and multi-report comparison views.
-- **Real-Time Fleet Telemetry & Analytics Dashboard** — A live SaaS-grade fleet monitoring command center (`/dashboard`) powered by real-time hardware telemetry pushed from the C# Sentinel Agents and scripts. Integrates sliding time-series metrics visualization (CPU load, RAM consumption, CPU and chassis temperatures) with auto-refresh polling, multi-tenant scoped report aggregation, live system alert logs, and centralized AI telemetry findings.
-- **Account & Claim System** — Passwordless magic-link auth (15-min token → 30-day session cookie). Reports are claimable by email after submission.
-- **Device Pairing** — Agent-friendly pairing flow (`/pair`) with `pairToken`/`deviceToken` handshake so a local agent can push reports and auto-claim them.
-- **Three-tier Onboarding** — `/get-started` features smart conditional routing for Personal vs Fleet users, explicitly displaying time estimates, prerequisites, and step-by-step previews for Tier 1 (Agent), Tier 2 (One-Shot), and Tier 3 (Script). Incorporates real-time GitHub release polling for download status.
-- **Waitlist Gate** — Pro findings blurred behind a waitlist capture form.
-- **Custom 404** — Brand-aligned error page.
+## Key Features
+
+### 💻 Local Telemetry Collectors
+* **Tier 1: Enterprise Agent (`SentinelAgent`)** — A lightweight C# background service that runs silently without taskbar icons or user interruptions. Auto-registers systems using tenant-level organization tokens and is deployable via MSI (`SentinelSetup.msi`) through GPO, SCCM, or Intune.
+* **Tier 2: 1-Click GUI (`SentinelOneShot`)** — A standalone C# executable that performs a one-time hardware diagnostic run and opens the resulting report in the browser instantly upon completion.
+* **Tier 3: PowerShell & Python Scripts** — Open-source scripts that scrape system parameters using WMI, CIM, and low-level hardware IOCTL queries (for NVMe SMART health parameters) with robust fallback levels.
+
+### 📊 Transparent Diagnostic Engine
+* **Deterministic Scoring Model** — Computes a weighted overall health score (Battery 30%, Thermals 25%, Storage 25%, Memory 10%, CPU 10%) based on open formulas. Reports are stamped with the active algorithm version.
+* **Worked Math Verification** — The scoring methodology page (`/scoring`) documents all thresholds and weights. Reports include an interactive score console displaying the raw parameters, rules, and mathematical formulas used to derive the grades.
+* **Anomaly & Trend Forecasting** — Projects system health and battery capacity using linear regression models with 95% confidence intervals once device history accumulates.
+* **Data Quality Assurances** — Excludes suspicious firmware data (e.g., fixed ACPI static thermal zones) and warns users via a Data Quality Banner when sensor fidelity is compromised.
+
+### 🌐 Web Platform & Real-Time Telemetry
+* **Real-Time Global Feed (`/live`)** — A real-time telemetry feed and monitoring dashboard powered by Server-Sent Events (SSE). It streams diagnostic counts, grade distributions, and incoming scan alerts directly from the database to active sessions.
+* **Secured Ingestion** — Paste-based or agent-paired JSON ingestion built with CodeMirror, validating payloads against a strict schema in real time.
+* **Calibrated Habit Audits** — An interactive audit flow connecting user charging habits, vent clearance, and rest patterns directly to final component scores.
+* **Troubleshooting Assistant** — An automated troubleshooting database linking specific failure patterns (thermal throttling, excessive battery wear) to step-by-step remediation procedures.
+* **Magic-Link Authentication** — Passwordless authentication initiating a secure 15-minute token verified via a 30-day session cookie.
+
+---
 
 ## Tech Stack
 
-- **Monorepo** — `pnpm` workspaces, Node.js 24, TypeScript 5.9 (Strict type safety enabled monorepo-wide)
-- **Frontend** — React 19 + Vite, Tailwind CSS v4, `wouter` routing, `@tanstack/react-query`, `framer-motion` animations, `Radix UI` primitives
-- **Backend API** — Express 5, `cookie-parser`, `cors`, `pino` logging
-- **Database & Architecture** — PostgreSQL via Drizzle ORM (Refactored for enterprise-grade Multi-Tenant B2B SaaS architecture, leveraging robust relational integrity)
-- **Validation** — Zod (`zod/v4`) + `drizzle-zod`
-- **Testing & Linting** — Vitest for highly accurate scoring engine validation, coordinated monorepo-wide using `vitest.workspace.ts`. Fully configured ESLint with standard/recommended TypeScript & React Hooks rules.
-- **Shared Libraries**:
-  - `@workspace/report-engine` — Schema, scoring engine, habit scoring, forecast
-  - `@workspace/db` — Drizzle schema + client
-  - `@workspace/api-spec` — OpenAPI specification and `orval` codegen config
-  - `@workspace/api-zod` — Generated Zod schemas from API spec
-  - `@workspace/api-client-react` — Generated React hooks for API interaction
+* **Monorepo Management** — Coordinated with `pnpm` workspaces (Node.js 24+, TypeScript 5.9).
+* **Frontend** — React 19, Vite, Tailwind CSS v4, `wouter` router, `@tanstack/react-query`, `framer-motion` animations, and Radix UI primitives.
+* **Backend API** — Express 5, `cookie-parser`, `cors`, and `pino` logger.
+* **Database & ORM** — PostgreSQL managed via Drizzle ORM. Optimized for multi-tenant SaaS architecture (explicit separation of `users`, `organizations`, `organizationMembers`, `devices`, and `reports`).
+* **Validation & Code Generation** — Zod schema validation integrated with OpenAPI contracts (`@workspace/api-spec`) and `orval` client hook generation.
+* **Testing & Linting** — Vitest test runner orchestrated via `vitest.workspace.ts`. Code guidelines enforced through ESLint.
+
+---
 
 ## Project Structure
 
 ```text
 ├── artifacts/
-│   ├── api-server/         # Express API (reports, auth, waitlist, device pairing)
-│   ├── sentinel-site/      # Main React/Vite marketing + app frontend
-│   │   └── public/scripts/ # Diagnostic scripts (dell.ps1, lenovo.ps1, hp.py)
-│   ├── novasentinel/       # Nova Dashboard redesign (React/Vite)
-│   └── mockup-sandbox/     # UI/UX mockup and prototyping sandbox
-├── native/                 # C#/.NET Windows applications
-│   ├── SentinelAgent/      # Tier 1 background service & WiX installer
-│   ├── SentinelOneShot/    # Tier 2 standalone GUI executable
-│   ├── SentinelTestHarness/# Developer test tool for native logic
-│   ├── Shared/             # Shared collector (WMI/NVMe) & uploader logic
-│   └── sign-binaries.ps1   # Script for code-signing native executables
+│   ├── api-server/         # Express API server (routes, auth, pairings, live feeds)
+│   ├── sentinel-site/      # React/Vite marketing and web application frontend
+│   │   └── public/scripts/ # Telemetry diagnostic collectors (collect.ps1, HP.py)
+│   ├── novasentinel/       # Nova Dashboard interface redesign (React/Vite)
+│   └── mockup-sandbox/     # UI/UX design mockups and staging prototypes
+├── native/                 # C#/.NET native Windows tools
+│   ├── SentinelAgent/      # Tier 1 background collector service ( tray app + MSI installer)
+│   ├── SentinelOneShot/    # Tier 2 one-click diagnostic GUI utility
+│   ├── SentinelTestHarness/# Native testing utilities for developer verification
+│   └── Shared/             # Shared system query (WMI/CIM/IOCTL) and upload modules
 ├── lib/
-│   ├── db/                 # Drizzle ORM schema and database client
-│   ├── report-engine/      # Shared scoring logic
-│   ├── api-spec/           # API contract (OpenAPI)
-│   ├── api-zod/            # Generated Zod validation
-│   └── api-client-react/   # Generated API hooks
-├── scripts/                # Workspace-level maintenance scripts
-├── start_api.sh            # Shorthand to start API (Port 5000)
-├── start_site.sh           # Shorthand to start Site (Port 3000)
+│   ├── db/                 # Drizzle database schemas and PostgreSQL client
+│   ├── report-engine/      # Shared scoring, grading, and validation logic
+│   ├── api-spec/           # OpenAPI specifications and schema generation config
+│   ├── api-zod/            # Zod validation schemas compiled from OpenAPI spec
+│   └── api-client-react/   # Type-safe React query hooks generated from API spec
+├── start_api.sh            # Runs the Express API server (Port 5000)
+├── start_site.sh           # Runs the Vite frontend server (Port 3000)
 └── pnpm-workspace.yaml
 ```
 
+---
+
 ## Native Binaries & Downloads
 
-The `native/` directory contains C# tools for data collection:
-- **SentinelAgent** — background service with system tray and WiX installer (`SentinelSetup.msi`)
-- **SentinelOneShot** — one-time scan executable (Tier 2 on `/get-started`)
+The `/get-started` page polls release information dynamically. Instead of hard-linking download buttons to GitHub, the Vite client calls the API server, which resolves files using the following resolution chain:
 
-### How `/get-started` downloads work
+1. **Environment Variables** — `SENTINEL_DOWNLOAD_URL_SETUP`, `SENTINEL_DOWNLOAD_URL_ONESHOT`, or `SENTINEL_DOWNLOAD_URL_AGENT`.
+2. **Local Assets** — Serves files directly from the local `artifacts/downloads/` directory.
+3. **GitHub Releases** — Fetches release assets matching the configured `SENTINEL_GITHUB_REPO` repository target.
 
-The marketing site does **not** hard-link to GitHub. Buttons call the API, which resolves files in this order:
+If no binaries are found, the API returns a `503 Service Unavailable` error, allowing the UI to display a user-friendly download troubleshooting tip.
 
-1. **Env override** — `SENTINEL_DOWNLOAD_URL_SETUP`, `SENTINEL_DOWNLOAD_URL_ONESHOT`, or `SENTINEL_DOWNLOAD_URL_AGENT`
-2. **Local bundle** — `artifacts/downloads/` (see `artifacts/downloads/README.md`)
-3. **GitHub Releases** — any release (including prereleases) on `SENTINEL_GITHUB_REPO` / `parth2024-tech/Marketing-Website-Plan`
-
-| Endpoint | File |
-|----------|------|
-| `GET /api/downloads/latest/setup` | `SentinelSetup.msi` |
-| `GET /api/downloads/latest/oneshot` | `SentinelOneShot.exe` |
-| `GET /api/downloads/latest/agent` | `SentinelAgent.exe` |
-
-If nothing is available, the API returns **503 JSON** and the UI shows a clear error (instead of sending users to an empty GitHub page).
-
-### CI/CD (`native.yml` & `web.yml`)
-
-- **Web Stack CI (`.github/workflows/web.yml`)** — Every push or pull request targeting the `main` branch automatically checks out the repository, instantiates Node.js and `pnpm`, installs dependencies using a frozen lockfile, runs `pnpm run lint` to enforce standard coding guidelines, performs monorepo-wide typechecking via `pnpm run typecheck`, and builds all subprojects via `pnpm run build` to verify total compilation integrity.
-- **Native Releases (`native.yml`)** — Tagged releases (`v*`) attach signed assets to a semver GitHub Release.
-- **`main` branch** — after each successful native build, a rolling prerelease **`ci-downloads`** is updated so `/get-started` works before the first semver tag.
-- **Local dev** — copy built files into `artifacts/downloads/` or run both `./start_api.sh` and `./start_site.sh` (Vite proxies `/api` to port 5000).
-
-Build and sign locally on Windows:
-
-```powershell
-.\build-native.ps1
-.\native\sign-binaries.ps1 -CertPath .\your-cert.pfx -CertPassword '...'
-Copy-Item artifacts\bin\SentinelOneShot\SentinelOneShot.exe artifacts\downloads\
-Copy-Item artifacts\bin\SentinelAgent\SentinelAgent.exe artifacts\downloads\
-Copy-Item artifacts\bin\SentinelSetup.msi artifacts\downloads\
-```
-
-Optional API env for higher GitHub rate limits: `GITHUB_TOKEN` or `SENTINEL_GITHUB_TOKEN`.
+---
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 24+
-- pnpm
-- PostgreSQL database
+* **Node.js** v24 or higher
+* **pnpm** package manager
+* **PostgreSQL** database instance
 
-### Installation
-
+### 1. Installation
+Clone the repository and install all dependencies:
 ```bash
 git clone https://github.com/parth2024-tech/Marketing-Website-Plan.git
 cd Marketing-Website-Plan
 pnpm install
 ```
 
-### Environment Variables
-
-Set `DATABASE_URL` in `artifacts/api-server/.env`:
-
+### 2. Environment Configuration
+Create a `.env` file in `artifacts/api-server/` containing your PostgreSQL connection string:
 ```env
 DATABASE_URL="postgres://user:password@localhost:5432/sentinel"
 ```
 
-### Push Database Schema
-
-Ensure your database is provisioned and local PostgreSQL is running, then run the migration command:
-
+### 3. Database Migration
+Ensure your PostgreSQL instance is running, and push the relational schema:
 ```bash
-DATABASE_URL="postgres://postgres:postgres@localhost:5432/sentinel" pnpm --filter @workspace/db run push
+pnpm --filter @workspace/db run push
 ```
+*Note: During database provisioning, `drizzle-kit` will prompt to map columns. Confirm the schema changes to create the relational multi-tenant SaaS tables.*
 
-*Note: Since the database schema has been evolved from a flat email-based structure to an advanced relational model (`users`, `organizations`, `organizationMembers`), `drizzle-kit` will prompt to confirm whether the column `email` in the `devices` table is renamed or a new column. When prompted, select **`+ org_id create column`** to preserve relational design alignment.*
-
-### Running Locally
-
-You can use the provided shorthand scripts:
-
-**API Server** (port 5000):
+### 4. Running the Development Servers
+Start the API backend:
 ```bash
 ./start_api.sh
 ```
 
-**Frontend** (port 3000):
+Start the React web application:
 ```bash
 ./start_site.sh
 ```
 
-### Useful Commands
+The frontend application will be available at `http://localhost:3000/`, automatically proxying API queries to port `5000`.
+
+---
+
+## Core Development Commands
 
 ```bash
-pnpm run lint               # Run ESLint validation across all workspace packages
-pnpm run typecheck          # Full type check across all packages
-pnpm run build              # Build all packages
-pnpm run test               # Run the comprehensive Vitest unit test suite
-pnpm --filter @workspace/api-spec run codegen # Regenerate API clients
+pnpm run lint               # Run ESLint validation across all workspace modules
+pnpm run typecheck          # Verify TypeScript compilation monorepo-wide
+pnpm run build              # Compile all shared libraries and artifacts
+pnpm run test               # Run the Vitest unit test suite
+pnpm --filter @workspace/api-spec run codegen # Recompile OpenAPI specs to React hooks
 ```
 
-## Architecture Decisions
+---
 
-- **Multi-Tenant SaaS Relational Alignment** — Transitioned from a flat email-based system to an enterprise-grade SaaS hierarchy. Relational models explicitly separate:
-  - `users` (Centralized user identity, profile configurations, Stripe customer data)
-  - `organizations` (B2B Tenant groupings, fleet settings, subscription plans)
-  - `organizationMembers` (Many-to-many RBAC association linking users to organizations)
-  - `devices` & `reports` tables explicitly bind to `orgId` and `userId` foreign key targets for clean isolation boundaries.
-  - *API & Route Realignment*: The API services (`/api/my-reports`, `/api/devices`, and `/api/reports`) have been completely refactored to align with these relations. User queries and device claim validations resolve records using the `usersTable` and secure foreign key targets rather than insecure flat email checks, and paired local agents automatically bind report submissions using tenant-level `orgId` resolution.
-- **Robust Vite Environment Defaults** — Pre-configured Vite settings inside all frontend projects (`sentinel-site`, `novasentinel`, and `mockup-sandbox`) supply sensible default fallbacks for `PORT` (defaulting to `3000`) and `BASE_PATH` (defaulting to `/`). This prevents environment mismatch compilation failures during automated testing or local monorepo builds.
-- **Deterministic scoring** — No ML, no randomness. `ALGORITHM_VERSION` is incremented whenever formulas change; old reports retain their original version stamp.
-- **Server-side trust** — `generateReport` runs exclusively on the API server. Client input is untreated; only pre-validated for fast UI feedback.
-- **API Specification & Codegen** — The API contract is defined in `@workspace/api-spec` using OpenAPI. Zod schemas and React hooks are automatically generated to ensure type safety across the network boundary.
-- **Diagnostic Transparency** — The engine tracks `dataSource` metadata. Suspect telemetry (like static ACPI zones) is flagged and excluded from scoring to prevent false penalties.
-- **Layered Telemetry Fallback** — Collection scripts attempt high-fidelity WMI/IOCTL sources first, falling back to performance counters only when necessary.
-- **Wear level semantics** — Higher percentages mean healthier (percentage of life remaining, not consumed).
-- **Magic-link auth** — No passwords. Email initiates a 15-minute token; successful claim sets a 30-day session cookie.
-- **Device pairing** — `POST /api/devices/pair` → short-lived `pairToken` → `POST /api/devices/claim` with email → persistent `deviceToken`.
-- **Real-Time Fleet Telemetry & Polling Engine** — Replaced all random mock data in the enterprise Fleet Dashboard with actual hardware telemetry queried dynamically from the PostgreSQL `reports` table.
-  - *Backend Query Processing*: Mounted `/api/fleet/dashboard` which extracts, parses, and aggregates raw telemetry records submitted by active systems. It dynamically tracks metrics (`cpu.avgLoadPct`, `memory.usedPct`, `thermals.maxTempC`), identifies AI-driven health findings, and filters out flagged anomalies in real-time.
-  - *Frontend Auto-Refresh & Synchronization*: The dashboard performs non-blocking, background polling every 4 seconds to ensure operational metrics are perfectly in-sync with live system states. Incorporates smooth Recharts animations and transition states for a highly responsive, enterprise-grade user experience.
+## Remote Diagnostics Verification
 
-## Remote Testing & Verification
+To test the direct script upload mechanism from an external system:
 
-To verify the Direct Upload flow locally or on a different network:
-
-1. **Expose your local server**: Use a tool like **ngrok** to create a public tunnel to your API server.
+1. **Expose Local API**: Route public traffic to your local port 5000 (e.g. using ngrok):
    ```bash
-   ngrok http 5000 # Expose the backend API
+   ngrok http 5000
    ```
-2. **Update script URLs**: Open the diagnostic script (e.g., `sentinel-collect.ps1`) and change `$SENTINEL_BASE_URL` to your **Backend ngrok URL**.
-3. **Execute Telemetry Gathering**:
-   - Run the script with the Direct Upload switch:
-     ```powershell
-     .\sentinel-collect.ps1 -DirectUpload
-     ```
-   - The script will securely POST to the API `/api/reports`, receive a `claimToken`, and immediately launch your browser:
-     ```text
-     https://sentinelapp.io/r/{reportId}?claim={claimToken}
-     ```
-4. **Frictionless Auto-Claim**: Your browser will read the `?claim` parameter, save it to local storage to verify you are the owner, and redirect you to the clean report URL seamlessly.
-
-### Using Localtunnel for API testing
-
-Alternatively, if you are testing the Site on a static host (like Netlify) and the API locally via `localtunnel`, make sure to inject the `Bypass-Tunnel-Reminder: true` header in your site's proxy configuration (e.g. `netlify.toml`) so that API requests aren't blocked by localtunnel's warning page.
+2. **Update Telemetry Endpoint**: Edit the telemetry script (`sentinel-collect.ps1`) and set `$SENTINEL_BASE_URL` to your tunnel URL.
+3. **Execute Telemetry Upload**:
+   Run the collector script with the direct upload switch:
+   ```powershell
+   .\sentinel-collect.ps1 -DirectUpload
+   ```
+   Upon successful transmission, the script will fetch the report's `claimToken` and open your default browser directly to:
+   ```text
+   http://localhost:3000/r/{reportId}?claim={claimToken}
+   ```
