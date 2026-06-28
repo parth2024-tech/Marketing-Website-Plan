@@ -96,20 +96,38 @@ export function expectedBatteryHealth(cycles: number): number {
 function batteryScore(r: SentinelReport): ComponentScore | null {
   const b = r.battery;
   if (!b) return null;
-  const health = b.health ?? 100;
+
+  // If health is unknown (no capacity data at all), don't assume 100 — return null
+  // so it doesn't silently inflate the overall score.
+  if (b.health == null && b.fullChargeCapacity == null && b.designCapacity == null) return null;
+
+  const health = b.health ?? 85; // if partial data, assume moderate not perfect
   const cycles = b.cycleCount ?? 0;
   const expected = expectedBatteryHealth(cycles);
   let score = health;
+
+  // Penalise faster-than-expected degradation
   const gap = expected - health;
-  if (gap > 10) score -= Math.min(20, gap - 10);
-  // Discharge rate penalty — high discharge under idle speeds degradation
+  if (gap > 5) score -= Math.min(25, (gap - 5) * 1.5);
+
+  // Discharge rate penalty — high drain suggests swelling or controller issues
   if (b.dischargeRateMw != null && b.dischargeRateMw < -8000) {
-    score -= 5; // unusual drain
+    score -= 8; // abnormally high drain
   } else if (b.dischargeRateMw != null && b.dischargeRateMw < -5000) {
-    score -= 2;
+    score -= 4;
   }
-  score = clamp(score, 30, 100);
-  let detail = `${health.toFixed(1)}% capacity`;
+
+  // Cycle count penalty on top of health — even healthy-looking batteries
+  // at very high cycles are genuinely at risk
+  if (cycles > 900) score -= 10;
+  else if (cycles > 700) score -= 5;
+  else if (cycles > 500) score -= 2;
+
+  // Cap: a battery can never score above 97 (no battery is truly perfect)
+  // Floor: even a dead battery has some score for being present
+  score = clamp(score, 20, 97);
+
+  let detail = health != null ? `${health.toFixed(1)}% capacity` : "Capacity unknown";
   if (cycles) detail += ` · ${cycles} cycles`;
   if (b.fullChargeCapacity && b.designCapacity) {
     const full = Math.round(b.fullChargeCapacity / 1000);
@@ -127,60 +145,89 @@ function thermalScore(r: SentinelReport): ComponentScore | null {
   if (!t || t.maxTempC == null) return null;
   if (t.thermalSource === "unavailable" || t.thermalSource === "acpi_static_suspect") return null;
   const max = t.maxTempC;
+
+  // Stricter temperature thresholds — consumer chips throttle at 90°C+
+  // and long-term sustained temps above 75°C cause measurable degradation
   let score =
-    max > 95 ? 10 :
-    max > 90 ? 30 :
-    max > 85 ? 50 :
-    max > 80 ? 65 :
-    max > 75 ? 80 : 100;
+    max > 98 ? 5 :
+    max > 93 ? 20 :
+    max > 88 ? 40 :
+    max > 83 ? 60 :
+    max > 78 ? 75 :
+    max > 72 ? 88 : 97;
+
   const throttle = t.throttleEvents30min ?? 0;
-  if (throttle > 30) score -= 30;
-  else if (throttle > 20) score -= 20;
-  else if (throttle > 10) score -= 12;
-  else if (throttle > 5) score -= 7;
-  else if (throttle > 3) score -= 5;
+  if (throttle > 30) score -= 35;
+  else if (throttle > 20) score -= 25;
+  else if (throttle > 10) score -= 15;
+  else if (throttle > 5) score -= 9;
+  else if (throttle > 2) score -= 5;
+  else if (throttle > 0) score -= 2;
+
   score = clamp(score);
-  const detail = `${max.toFixed(1)}°C peak${throttle ? ` · ${throttle} throttle events` : ""}`;
+  const detail = `${max.toFixed(1)}°C peak · source: ${t.thermalSource ?? "unknown"}${throttle ? ` · ${throttle} throttle events/30min` : ""}`;
   return { name: "Thermals", score, status: scoreStatus(score), detail };
 }
 
 function storageScore(r: SentinelReport): ComponentScore | null {
   if (!r.storage?.length) return null;
   const primary = r.storage[0];
-  if (primary.dataSource === "unavailable" && (primary.type?.includes("NVMe") || primary.model?.includes("NVMe"))) return null;
+
+  // If the drive is explicitly unavailable (couldn't read health), exclude it
+  // entirely rather than giving a fake healthy score
+  if (primary.dataSource === "unavailable") return null;
+
   const wear = primary.wearLevelPct ?? primary.healthPct;
   const realloc = primary.reallocatedSectors ?? 0;
   const free = primary.freeSpacePct ?? 100;
+  const poh = primary.powerOnHours ?? 0;
+
   let score: number;
   if (wear != null) {
-    // wearLevelPct / healthPct = percentage of life REMAINING (higher = healthier)
+    // wear = percentage of endurance REMAINING (100 = brand new, 0 = end of life)
     score = clamp(wear);
-    if (realloc > 0) score -= Math.min(40, realloc * 5);
+
+    // Penalise reallocated sectors heavily — this is a serious early failure signal
+    if (realloc > 0) score -= Math.min(50, realloc * 8);
+
+    // Power-on hours penalty — even if wear counter looks OK,
+    // drives with very high hours are statistically closer to failure
+    if (poh > 50000) score -= 15;
+    else if (poh > 30000) score -= 8;
+    else if (poh > 20000) score -= 4;
   } else {
-    // NVMe fallback — uncertain, cap at 95
-    score = 95;
-    if (realloc > 0) score -= Math.min(40, realloc * 10);
-    if (free < 10) score -= 15;
-    else if (free < 20) score -= 5;
-    score = clamp(score, 0, 95);
+    // We can't verify wear — don't be generous.
+    // Cap at 82 ("watch" range) to signal uncertainty honestly.
+    score = 82;
+    if (realloc > 0) score -= Math.min(50, realloc * 10);
+    score = clamp(score, 0, 82);
   }
-  if (free < 5) score -= 20;
-  else if (free < 10) score -= 10;
-  else if (free < 15) score -= 5;
+
+  // Free space penalties — SSDs need headroom for garbage collection
+  if (free < 5) score -= 25;
+  else if (free < 10) score -= 15;
+  else if (free < 15) score -= 7;
+  else if (free < 20) score -= 3;
+
   score = clamp(score);
-  let detail = primary.model ?? "SSD";
+  let detail = primary.model ?? "Drive";
+  if (wear != null) detail += ` · ${wear}% endurance`;
   if (free != null) detail += ` · ${free.toFixed(1)}% free`;
-  if (realloc) detail += ` · ${realloc} reallocated sectors`;
+  if (poh > 0) detail += ` · ${poh.toLocaleString()}h runtime`;
+  if (realloc) detail += ` · ${realloc} bad sectors`;
   return { name: "Storage", score, status: scoreStatus(score), detail };
 }
 
 export function expectedMemoryPenalty(usedPct: number): number {
-  if (usedPct <= 70) return 0;
+  // Penalty starts at 55% used — that's a realistic "normal" idle for Windows 11
+  // Previously started at 70% which let 60–69% pass as perfect, which is wrong.
+  if (usedPct <= 55) return 0;
   const anchors: [number, number][] = [
-    [70, 0],
-    [85, 15],
-    [95, 30],
-    [100, 50]
+    [55, 0],
+    [70, 8],
+    [80, 18],
+    [90, 32],
+    [100, 55]
   ];
   for (let i = 1; i < anchors.length; i++) {
     const [u0, p0] = anchors[i - 1];
@@ -198,45 +245,60 @@ function memoryScore(r: SentinelReport): ComponentScore | null {
   if (!m) return null;
   const used = m.usedPct;
   const basePenalty = expectedMemoryPenalty(used);
-  
+
   let finalPenalty = basePenalty;
-  if (m.pageFaultsPerSec != null) {
-    const swapMultiplier = 1 + (clamp(m.pageFaultsPerSec / 500, 0, 1) * 0.20);
-    finalPenalty = basePenalty * swapMultiplier;
-  }
-  
-  let score = clamp(Math.round(100 - finalPenalty));
-  // Low RAM penalty — very small RAM causes persistent high usage
-  if (m.totalGB <= 4) score = Math.min(score, 60);
-  else if (m.totalGB <= 6) score = Math.min(score, 75);
-  
-  let detail = `${m.totalGB} GB RAM · ${used.toFixed(0)}% used`;
   if (m.pageFaultsPerSec != null && m.pageFaultsPerSec > 0) {
-    detail += ` · ${m.pageFaultsPerSec} pg/s`;
+    // High page faults = heavy pagefile use = SSD wear + slowdowns
+    // More aggressive multiplier than before
+    const pfMultiplier = 1 + Math.min(0.5, m.pageFaultsPerSec / 300);
+    finalPenalty = basePenalty * pfMultiplier;
+    // Page faults themselves add a direct penalty too
+    if (m.pageFaultsPerSec > 500) finalPenalty += 15;
+    else if (m.pageFaultsPerSec > 200) finalPenalty += 8;
+    else if (m.pageFaultsPerSec > 50) finalPenalty += 3;
   }
-  
-  return {
-    name: "Memory",
-    score,
-    status: scoreStatus(score),
-    detail,
-  };
+
+  let score = clamp(Math.round(100 - finalPenalty));
+
+  // Low total RAM hard cap — these machines genuinely cannot perform well
+  if (m.totalGB <= 4) score = Math.min(score, 55);
+  else if (m.totalGB <= 6) score = Math.min(score, 70);
+  else if (m.totalGB <= 8 && used > 80) score = Math.min(score, 75);
+
+  let detail = `${m.totalGB} GB RAM · ${used.toFixed(1)}% used`;
+  if (m.pageFaultsPerSec != null && m.pageFaultsPerSec > 0) {
+    detail += ` · ${m.pageFaultsPerSec.toLocaleString()} page faults/s`;
+  }
+
+  return { name: "Memory", score, status: scoreStatus(score), detail };
 }
 
 function cpuScore(r: SentinelReport): ComponentScore | null {
   const c = r.cpu;
   if (!c) return null;
-  let score = 100;
+  let score = 97; // Start at 97, not 100 — no CPU is ever perfect
   const load = c.avgLoadPct ?? 0;
   const throttle = c.throttleEvents30min ?? 0;
-  if (load > 85) score -= 20;
-  else if (load > 70) score -= 10;
-  if (throttle > 20) score -= 25;
-  else if (throttle > 10) score -= 15;
-  else if (throttle > 3) score -= 8;
+
+  // Load penalties — start penalising earlier (50% is a real signal)
+  if (load > 90) score -= 30;
+  else if (load > 80) score -= 20;
+  else if (load > 70) score -= 13;
+  else if (load > 60) score -= 7;
+  else if (load > 50) score -= 3;
+
+  // Throttle penalties — these are real hardware events from Windows Event Log
+  if (throttle > 30) score -= 35;
+  else if (throttle > 20) score -= 25;
+  else if (throttle > 10) score -= 18;
+  else if (throttle > 5) score -= 10;
+  else if (throttle > 2) score -= 5;
+  else if (throttle > 0) score -= 2;
+
   score = clamp(score);
   let detail = c.name ?? "CPU";
-  if (load) detail += ` · ${load.toFixed(0)}% avg load`;
+  if (load) detail += ` · ${load.toFixed(1)}% avg load`;
+  if (throttle > 0) detail += ` · ${throttle} throttle events/30min`;
   return { name: "CPU", score, status: scoreStatus(score), detail };
 }
 
@@ -694,11 +756,29 @@ export function generateReport(r: SentinelReport): ReportResult {
     weightedSum += c.score * w;
     totalWeight += w;
   }
-  const overall = clamp(Math.round(weightedSum / (totalWeight || 1)));
+  let overall = clamp(Math.round(weightedSum / (totalWeight || 1)));
+
+  // ── Uptime penalty ─────────────────────────────────────────────────────
+  // Long uptime = background process accumulation, deferred restarts, memory pressure
+  const uptimeSec = r.startup?.lastBootSec ?? 0;
+  const uptimeDays = uptimeSec / 86400;
+  if (uptimeDays > 30) overall = clamp(overall - 6);
+  else if (uptimeDays > 14) overall = clamp(overall - 3);
+  else if (uptimeDays > 7) overall = clamp(overall - 1);
+
+  // ── Incomplete data cap ────────────────────────────────────────────────
+  // When components are excluded due to missing hardware data, the weighted
+  // average is calculated only on the remaining good-looking components,
+  // which artificially inflates the overall score. Cap it honestly.
+  const scoredCount = components.length;
+  if (scoredCount < 3) overall = Math.min(overall, 70);
+  else if (scoredCount < 4) overall = Math.min(overall, 82);
+  else if (scoredCount < 5) overall = Math.min(overall, 90);
+
   const grade =
-    overall < 40 ? "F" : overall < 55 ? "D" : overall < 65 ? "C" : overall < 80 ? "B" : "A";
+    overall < 30 ? "F" : overall < 50 ? "D" : overall < 70 ? "C" : overall < 85 ? "B" : "A";
   const gradeLabel =
-    overall < 40 ? "Critical" : overall < 55 ? "Poor" : overall < 65 ? "Fair" : overall < 80 ? "Good" : "Excellent";
+    overall < 30 ? "Critical" : overall < 50 ? "Poor" : overall < 70 ? "Fair" : overall < 85 ? "Good" : "Excellent";
 
   const warnings: string[] = [];
   const structuredWarnings: DataQualityWarning[] = [];
@@ -727,15 +807,28 @@ export function generateReport(r: SentinelReport): ReportResult {
   }
 
   const s = r.storage?.[0];
-  if (s && s.dataSource === "unavailable" && (s.type?.includes("NVMe") || s.model?.includes("NVMe"))) {
-    warnings.push("NVMe wear data could not be retrieved — storage score excluded from overall calculation.");
+  // Flag any drive where health data couldn't be read
+  if (s && s.dataSource === "unavailable") {
+    warnings.push("Drive health data could not be retrieved — storage score excluded from overall calculation.");
     structuredWarnings.push({
       type: "nvme_unavailable",
       severity: "medium",
-      title: "NVMe health data could not be retrieved",
-      detail: "Your NVMe drive's S.M.A.R.T. health attributes could not be read, likely because the drive requires elevated permissions or uses a non-standard NVMe command set. Storage wear scoring has been excluded to avoid inaccurate results.",
-      oemComparison: "OEM tools often have privileged access to NVMe health data through vendor-specific drivers. However, they typically only report a binary pass/fail rather than detailed wear metrics.",
+      title: "Drive health data could not be retrieved",
+      detail: "Your drive's S.M.A.R.T. health attributes could not be read, likely because the drive requires elevated permissions or uses a non-standard command set. Storage wear scoring has been excluded to avoid inaccurate results.",
+      oemComparison: "OEM tools often have privileged access to drive health data through vendor-specific drivers. However, they typically only report a binary pass/fail rather than detailed wear metrics.",
       excludedFromScoring: true,
+    });
+  }
+
+  // Warn about long uptime
+  if (uptimeDays > 7) {
+    structuredWarnings.push({
+      type: "info",
+      severity: uptimeDays > 14 ? "medium" : "low",
+      title: `System uptime: ${Math.round(uptimeDays)} days without reboot`,
+      detail: `Your system has been running for ${Math.round(uptimeDays)} days without a restart. Long uptimes allow background processes to accumulate, memory to fragment, and deferred Windows updates to stack up. A restart is recommended to restore peak performance and apply pending security patches.`,
+      oemComparison: "OEM diagnostic tools do not measure or report system uptime as a health factor.",
+      excludedFromScoring: false,
     });
   }
 

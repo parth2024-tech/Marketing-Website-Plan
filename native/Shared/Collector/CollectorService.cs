@@ -51,32 +51,69 @@ public class CollectorService
 
             report.System.Hostname = Environment.MachineName;
 
-            using var procSearcher = new ManagementObjectSearcher("SELECT Name, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed, LoadPercentage FROM Win32_Processor");
+            using var procSearcher = new ManagementObjectSearcher("SELECT Name, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed FROM Win32_Processor");
             report.Cpu = new CpuInfo();
-            double totalLoad = 0;
-            int cpuCount = 0;
 
             foreach (var obj in procSearcher.Get())
             {
-                if (cpuCount == 0)
-                {
-                    report.Cpu.Name = obj["Name"]?.ToString()?.Trim();
-                    if (int.TryParse(obj["NumberOfCores"]?.ToString(), out int cores)) report.Cpu.Cores = cores;
-                    if (int.TryParse(obj["NumberOfLogicalProcessors"]?.ToString(), out int threads)) report.Cpu.Threads = threads;
-                    if (int.TryParse(obj["MaxClockSpeed"]?.ToString(), out int clock)) report.Cpu.MaxClockMhz = clock;
-                }
-                if (double.TryParse(obj["LoadPercentage"]?.ToString(), out double load))
-                {
-                    totalLoad += load;
-                }
-                cpuCount++;
+                report.Cpu.Name = obj["Name"]?.ToString()?.Trim();
+                if (int.TryParse(obj["NumberOfCores"]?.ToString(), out int cores)) report.Cpu.Cores = cores;
+                if (int.TryParse(obj["NumberOfLogicalProcessors"]?.ToString(), out int threads)) report.Cpu.Threads = threads;
+                if (int.TryParse(obj["MaxClockSpeed"]?.ToString(), out int clock)) report.Cpu.MaxClockMhz = clock;
+                break; // Only need first physical CPU
             }
-            if (cpuCount > 0)
-            {
-                report.Cpu.AvgLoadPct = Math.Round(totalLoad / cpuCount, 1);
-            }
+
+            // Sample CPU load twice with a 2-second gap to get a real average
+            // (single WMI snapshot is unreliable — captures load at one instant only)
+            double load1 = GetCpuLoadPct();
+            System.Threading.Thread.Sleep(2000);
+            double load2 = GetCpuLoadPct();
+            report.Cpu.AvgLoadPct = Math.Round((load1 + load2) / 2.0, 1);
+
+            // Collect CPU thermal throttle events from the last 30 minutes
+            // via Windows Event Log (Event ID 37 = CPU throttle due to thermal)
+            report.Cpu.ThrottleEvents30min = GetCpuThrottleEvents30Min();
         }
         catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
+    }
+
+    private static double GetCpuLoadPct()
+    {
+        try
+        {
+            using var searcher = new ManagementObjectSearcher("SELECT LoadPercentage FROM Win32_Processor");
+            double total = 0; int count = 0;
+            foreach (var obj in searcher.Get())
+            {
+                if (double.TryParse(obj["LoadPercentage"]?.ToString(), out double l)) { total += l; count++; }
+            }
+            return count > 0 ? total / count : 0;
+        }
+        catch { return 0; }
+    }
+
+    private static int GetCpuThrottleEvents30Min()
+    {
+        // Event 37 in Microsoft-Windows-Kernel-Processor-Power/Operational
+        // = processor performance reduced due to thermal/power constraint.
+        // Event 19 in System = power source changed (used as secondary signal).
+        int count = 0;
+        try
+        {
+            var cutoff = DateTime.UtcNow.AddMinutes(-30);
+            var query = new System.Diagnostics.Eventing.Reader.EventLogQuery(
+                "Microsoft-Windows-Kernel-Processor-Power/Operational",
+                System.Diagnostics.Eventing.Reader.PathType.LogName,
+                "*[System[(EventID=37) and TimeCreated[@SystemTime >= '" + cutoff.ToString("o") + "']]]")
+            {
+                ReverseDirection = false
+            };
+            using var reader = new System.Diagnostics.Eventing.Reader.EventLogReader(query);
+            System.Diagnostics.Eventing.Reader.EventRecord? ev;
+            while ((ev = reader.ReadEvent()) != null) { count++; ev.Dispose(); }
+        }
+        catch { /* Event log unavailable or access denied — return 0 */ }
+        return count;
     }
 
     private static void CollectMemory(SentinelReport report)
@@ -87,15 +124,40 @@ public class CollectorService
             foreach (var obj in searcher.Get())
             {
                 if (double.TryParse(obj["TotalVisibleMemorySize"]?.ToString(), out double totalKb) &&
-                    double.TryParse(obj["FreePhysicalMemory"]?.ToString(), out double freeKb))
+                    double.TryParse(obj["FreePhysicalMemory"]?.ToString(), out double freeKb1))
                 {
+                    // Sample twice, 2 seconds apart, to get a representative used %
+                    // (a single snapshot can catch a brief idle dip and report 30% when
+                    //  the machine actually runs at 70% under normal usage)
+                    System.Threading.Thread.Sleep(2000);
+                    double freeKb2 = freeKb1;
+                    using var searcher2 = new ManagementObjectSearcher("SELECT FreePhysicalMemory FROM Win32_OperatingSystem");
+                    foreach (var obj2 in searcher2.Get())
+                    {
+                        if (double.TryParse(obj2["FreePhysicalMemory"]?.ToString(), out double f)) freeKb2 = f;
+                        break;
+                    }
+                    // Use the LOWER free value (more conservative / more accurate peak)
+                    double freeKb = Math.Min(freeKb1, freeKb2);
                     double totalGb = totalKb / (1024.0 * 1024.0);
                     double usedPct = ((totalKb - freeKb) / totalKb) * 100.0;
-                    
+
+                    // Measure page faults per second via Performance Counter
+                    int? pageFaultsPerSec = null;
+                    try
+                    {
+                        var pc = new PerformanceCounter("Memory", "Page Faults/sec");
+                        _ = pc.NextValue(); // first call always 0 — discard
+                        System.Threading.Thread.Sleep(1000);
+                        pageFaultsPerSec = (int)Math.Round(pc.NextValue());
+                    }
+                    catch { /* Performance counters unavailable */ }
+
                     report.Memory = new MemoryInfo
                     {
                         TotalGB = Math.Round(totalGb, 1),
-                        UsedPct = Math.Round(usedPct, 1)
+                        UsedPct = Math.Round(usedPct, 1),
+                        PageFaultsPerSec = pageFaultsPerSec
                     };
                 }
                 break;
@@ -339,7 +401,7 @@ public class CollectorService
                                 if (drive.IsReady && drive.TotalSize > 0)
                                 {
                                     device.FreeSpacePct = Math.Round((double)drive.TotalFreeSpace / drive.TotalSize * 100.0, 1);
-                                    break; // Use the first valid volume found
+                                    break;
                                 }
                             }
                         }
@@ -353,12 +415,15 @@ public class CollectorService
                         {
                             if (int.TryParse(rel["PowerOnHours"]?.ToString(), out int poh)) device.PowerOnHours = poh;
                             if (int.TryParse(rel["ReadErrorsUncorrected"]?.ToString(), out int reu)) device.ReallocatedSectors = reu;
-                            
+
                             if (int.TryParse(rel["Wear"]?.ToString(), out int wear))
                             {
-                                if (busType == 17 && wear == 0)
+                                bool isNvme = busType == 17;
+                                bool wearSeemsMissing = (wear == 0) && isNvme;
+
+                                if (wearSeemsMissing)
                                 {
-                                    // NVMe Fallback
+                                    // NVMe: try SMART ioctl first
                                     if (int.TryParse(deviceId, out int driveNumber))
                                     {
                                         var smart = NvmeSmart.GetSmartInfo(driveNumber);
@@ -369,10 +434,24 @@ public class CollectorService
                                         }
                                         else
                                         {
-                                            device.DataSource = "reliability_counter";
-                                            device.WearLevelPct = wear;
+                                            // Cannot read NVMe wear — mark unavailable so engine excludes it
+                                            device.WearLevelPct = null;
+                                            device.DataSource = "unavailable";
                                         }
                                     }
+                                }
+                                else if (wear > 0)
+                                {
+                                    // Reliability counter returned real wear data
+                                    device.DataSource = "reliability_counter";
+                                    device.WearLevelPct = wear;
+                                }
+                                else if (!isNvme && wear == 0)
+                                {
+                                    // SATA SSD: Wear=0 means brand new or counter not incremented yet.
+                                    // Set to 99 (effectively full health) and use healthPct as fallback.
+                                    device.WearLevelPct = 99;
+                                    device.DataSource = "reliability_counter";
                                 }
                                 else
                                 {
@@ -403,9 +482,12 @@ public class CollectorService
                 string? bootTimeStr = obj["LastBootUpTime"]?.ToString();
                 if (!string.IsNullOrEmpty(bootTimeStr))
                 {
+                    var bootTime = ManagementDateTimeConverter.ToDateTime(bootTimeStr);
+                    var uptimeSec = (int)(DateTime.Now - bootTime).TotalSeconds;
                     report.Startup = new StartupInfo
                     {
-                        LastBootTime = ManagementDateTimeConverter.ToDateTime(bootTimeStr).ToString("o")
+                        LastBootTime = bootTime.ToUniversalTime().ToString("o"),
+                        LastBootSec = uptimeSec
                     };
                 }
                 break;
