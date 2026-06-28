@@ -21,6 +21,8 @@ public class CollectorService
         CollectThermals(report);
         CollectStorage(report);
         CollectStartup(report);
+        CollectStartupPrograms(report);
+        CollectSecurity(report);
 
         return report;
     }
@@ -494,5 +496,121 @@ public class CollectorService
             }
         }
         catch (Exception ex) { Debug.WriteLine($"Collection error: {ex.Message}"); }
+    }
+
+    private static void CollectStartupPrograms(SentinelReport report)
+    {
+        // Collect startup programs from WMI and registry Run keys.
+        // Used by the engine to flag excessive startup items in findings.
+        var items = new List<StartupItem>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            // WMI: Win32_StartupCommand covers HKLM/HKCU Run and Startup folders
+            using var searcher = new ManagementObjectSearcher("SELECT Name, Command FROM Win32_StartupCommand");
+            foreach (var obj in searcher.Get())
+            {
+                string? name = obj["Name"]?.ToString();
+                string? command = obj["Command"]?.ToString();
+                if (name != null && seen.Add(name))
+                    items.Add(new StartupItem { Name = name, Command = command });
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine($"Collection error (startupPrograms WMI): {ex.Message}"); }
+
+        try
+        {
+            // Supplement with direct registry read to catch entries WMI misses
+            string[] runKeys = [
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce",
+            ];
+            var hives = new[] { Microsoft.Win32.Registry.CurrentUser, Microsoft.Win32.Registry.LocalMachine };
+            foreach (var hive in hives)
+            {
+                foreach (var keyPath in runKeys)
+                {
+                    using var key = hive.OpenSubKey(keyPath);
+                    if (key == null) continue;
+                    foreach (string valueName in key.GetValueNames())
+                    {
+                        if (seen.Add(valueName))
+                        {
+                            string? val = key.GetValue(valueName)?.ToString();
+                            items.Add(new StartupItem { Name = valueName, Command = val });
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex) { Debug.WriteLine($"Collection error (startupPrograms registry): {ex.Message}"); }
+
+        if (items.Count > 0)
+            report.StartupList = items;
+    }
+
+    private static void CollectSecurity(SentinelReport report)
+    {
+        // Collect antivirus/security posture from SecurityCenter2 WMI namespace
+        // and Windows Firewall active profile state from the registry.
+        try
+        {
+            var secInfo = new SecurityInfo();
+            bool hasAv = false;
+
+            // SecurityCenter2 lives in root\SecurityCenter2 (Vista and later)
+            using var avSearcher = new ManagementObjectSearcher(
+                @"root\SecurityCenter2",
+                "SELECT displayName, productState FROM AntiVirusProduct");
+
+            foreach (var obj in avSearcher.Get())
+            {
+                // productState is a 6-digit hex-encoded bitmask:
+                //   Bit 12–13 (nibble 3 from right): 0x1 = not enabled, 0x0 = enabled
+                //   Bit 4–5 (nibble 1 from right): 0x0 = up-to-date, 0x1 = out of date
+                if (!int.TryParse(obj["productState"]?.ToString(), out int state)) continue;
+                string hex = state.ToString("X");
+                int enabledNibble = hex.Length >= 6 ? (hex[2] - '0') : 0; // nibble at position 2 from left (position 3 from right)
+                bool avEnabled = enabledNibble != 1;
+                secInfo.AntivirusEnabled = avEnabled;
+                secInfo.RealTimeProtection = avEnabled; // SecurityCenter2 doesn't expose this separately
+                hasAv = true;
+                break; // Use first registered AV product
+            }
+
+            if (!hasAv)
+            {
+                // No AV registered in SecurityCenter2 — this is a significant finding
+                secInfo.AntivirusEnabled = false;
+                secInfo.RealTimeProtection = false;
+            }
+
+            // Windows Firewall active profile from registry
+            try
+            {
+                using var fwKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                    @"SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\StandardProfile");
+                if (fwKey != null)
+                {
+                    int fwEnabled = (int)(fwKey.GetValue("EnableFirewall") ?? 0);
+                    // Check which profile is currently active
+                    using var activeKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                        @"SOFTWARE\Policies\Microsoft\WindowsFirewall");
+                    string activeProfile = "Unknown";
+                    if (activeKey != null)
+                    {
+                        object? profileType = activeKey.GetValue("PolicyVersion");
+                        activeProfile = profileType != null ? "Domain" : "Standard";
+                    }
+                    if (fwEnabled == 1) secInfo.FirewallProfilesActive = "Private";
+                    else secInfo.FirewallProfilesActive = "Public (Firewall may be off)";
+                }
+            }
+            catch (Exception ex) { Debug.WriteLine($"Collection error (firewall): {ex.Message}"); }
+
+            report.Security = secInfo;
+        }
+        catch (Exception ex) { Debug.WriteLine($"Collection error (security): {ex.Message}"); }
     }
 }

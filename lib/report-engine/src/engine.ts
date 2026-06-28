@@ -47,6 +47,8 @@ export interface ReportResult {
     /** Structured warnings with type, severity, and OEM comparison context */
     structuredWarnings: DataQualityWarning[];
   };
+  /** The raw validated telemetry payload — used by the UI to render data-driven charts */
+  rawReport: SentinelReport;
 }
 
 export interface DataQualityWarning {
@@ -179,7 +181,9 @@ function storageScore(r: SentinelReport): ComponentScore | null {
 
   const wear = primary.wearLevelPct ?? primary.healthPct;
   const realloc = primary.reallocatedSectors ?? 0;
-  const free = primary.freeSpacePct ?? 100;
+  // !! Do NOT default freeSpacePct to 100 — that would make full drives look empty.
+  // If the partition letter lookup failed, we simply have no free-space data.
+  const free = primary.freeSpacePct; // may be null
   const poh = primary.powerOnHours ?? 0;
 
   let score: number;
@@ -187,32 +191,35 @@ function storageScore(r: SentinelReport): ComponentScore | null {
     // wear = percentage of endurance REMAINING (100 = brand new, 0 = end of life)
     score = clamp(wear);
 
-    // Penalise reallocated sectors heavily — this is a serious early failure signal
+    // Penalise reallocated sectors heavily — serious early failure signal
     if (realloc > 0) score -= Math.min(50, realloc * 8);
 
-    // Power-on hours penalty — even if wear counter looks OK,
-    // drives with very high hours are statistically closer to failure
+    // Power-on hours penalty — drives with very high hours are statistically riskier
     if (poh > 50000) score -= 15;
     else if (poh > 30000) score -= 8;
     else if (poh > 20000) score -= 4;
   } else {
     // We can't verify wear — don't be generous.
-    // Cap at 82 ("watch" range) to signal uncertainty honestly.
-    score = 82;
+    // Cap at 78 (watch range) to signal uncertainty honestly.
+    score = 78;
     if (realloc > 0) score -= Math.min(50, realloc * 10);
-    score = clamp(score, 0, 82);
+    score = clamp(score, 0, 78);
   }
 
   // Free space penalties — SSDs need headroom for garbage collection
-  if (free < 5) score -= 25;
-  else if (free < 10) score -= 15;
-  else if (free < 15) score -= 7;
-  else if (free < 20) score -= 3;
+  // Only apply when we actually have the data (null = partition letter not found)
+  if (free != null) {
+    if (free < 5) score -= 25;
+    else if (free < 10) score -= 15;
+    else if (free < 15) score -= 7;
+    else if (free < 20) score -= 3;
+  }
 
   score = clamp(score);
   let detail = primary.model ?? "Drive";
   if (wear != null) detail += ` · ${wear}% endurance`;
   if (free != null) detail += ` · ${free.toFixed(1)}% free`;
+  else detail += ` · free space unknown`;
   if (poh > 0) detail += ` · ${poh.toLocaleString()}h runtime`;
   if (realloc) detail += ` · ${realloc} bad sectors`;
   return { name: "Storage", score, status: scoreStatus(score), detail };
@@ -522,13 +529,15 @@ function generateFindings(r: SentinelReport): Finding[] {
       urgency: "info", pro: false });
   }
 
-  // Startup list impact
+  // Startup program impact
+  // NOTE: requires r.startupList to be populated by the collector.
+  // The C# collector sends this via Win32_StartupCommand + registry enumeration.
   const startupCount = (r.startupList ?? []).length;
   if (startupCount > 15) {
     findings.push({
       component: "CPU",
-      title: `${startupCount} startup programs detected — impacting boot time`,
-      body: `Your system has ${startupCount} programs configured to launch at startup. Excessive startup items increase boot time, raise idle CPU usage, and reduce available RAM from the moment you log in.`,
+      title: `${startupCount} startup programs — impacting boot time`,
+      body: `Your system has ${startupCount} programs set to launch at startup. This increases boot time, raises idle CPU usage, and reduces available RAM from the first moment you log in. Review and disable non-essential startup items in Task Manager.`,
       oemContext: "OEM diagnostic tools do not audit startup programs. Task Manager's Startup tab shows them, but no OEM tool aggregates startup impact on system health scoring.",
       urgency: startupCount > 25 ? "warning" : "info",
       pro: false,
@@ -537,36 +546,61 @@ function generateFindings(r: SentinelReport): Finding[] {
     findings.push({
       component: "CPU",
       title: `${startupCount} startup programs — moderate boot impact`,
-      body: `${startupCount} startup programs detected. Consider reviewing which are essential to reduce boot time and idle resource consumption.`,
+      body: `${startupCount} programs launch at startup. Consider reviewing which are essential to reduce boot time and idle resource use.`,
       oemContext: "Startup program auditing is absent from all major OEM diagnostic tools.",
       urgency: "info",
       pro: false,
     });
   }
 
-  // Security finding
+  // Security posture
+  // NOTE: requires r.security to be populated by the collector.
+  // The C# collector gathers this via SecurityCenter2 WMI class.
   const sec = r.security;
   if (sec) {
-    if (!sec.antivirusEnabled || !sec.realTimeProtection) {
+    if (sec.antivirusEnabled === false || sec.realTimeProtection === false) {
       findings.push({
         component: "Security",
-        title: "Antivirus or real-time protection disabled",
+        title: sec.antivirusEnabled === false ? "Antivirus disabled" : "Real-time protection is off",
         body: `Sentinel detected that ${
-          !sec.antivirusEnabled ? "antivirus is not enabled" : "real-time protection is disabled"
-        }. This leaves your system exposed to malware that can cause data loss, file corruption, and hardware degradation through sustained high CPU loads.`,
+          sec.antivirusEnabled === false
+            ? "antivirus software is not active on this system"
+            : "real-time protection is currently disabled"
+        }. Without active protection, malware can run unchecked and cause data loss, file corruption, and hardware damage through sustained CPU abuse.`,
         oemContext: "OEM diagnostic tools do not audit security posture. Dell SupportAssist, Lenovo Vantage, and HP Support Assistant check for driver and BIOS updates — not whether your system is actively protected.",
         urgency: "critical",
         pro: false,
       });
-    } else if (sec.firewallProfilesActive && !sec.firewallProfilesActive.toLowerCase().includes("private") && !sec.firewallProfilesActive.toLowerCase().includes("domain")) {
+    } else if (
+      sec.firewallProfilesActive &&
+      !sec.firewallProfilesActive.toLowerCase().includes("private") &&
+      !sec.firewallProfilesActive.toLowerCase().includes("domain")
+    ) {
       findings.push({
         component: "Security",
-        title: "Firewall profile may be set to Public",
-        body: `Your active firewall profile appears to be Public. On a Public network profile, Windows blocks more incoming connections by default — but it is worth verifying you are not accidentally using a Public profile on a trusted home/office network, which can block file sharing and other features.`,
+        title: "Firewall is on Public profile",
+        body: `Your active firewall profile is set to Public, which restricts some network features. If this machine is on a trusted home or office network, switch to the Private profile for better connectivity.`,
         oemContext: "OEM tools do not audit Windows Firewall profile configuration.",
         urgency: "info",
         pro: false,
       });
+    }
+    // Outdated AV signatures
+    if (sec.antivirusSignatureDate) {
+      try {
+        const sigDate = new Date(sec.antivirusSignatureDate);
+        const daysSinceSig = (Date.now() - sigDate.getTime()) / (1000 * 86400);
+        if (daysSinceSig > 7) {
+          findings.push({
+            component: "Security",
+            title: `Antivirus signatures ${Math.round(daysSinceSig)} days old`,
+            body: `Your antivirus definitions haven't been updated in ${Math.round(daysSinceSig)} days. Outdated signatures mean new malware threats won't be detected. Enable automatic updates or update manually now.`,
+            oemContext: "OEM tools check for software updates but do not specifically flag stale antivirus signature databases.",
+            urgency: daysSinceSig > 30 ? "warning" : "info",
+            pro: false,
+          });
+        }
+      } catch { /* ignore date parse errors */ }
     }
   }
 
@@ -839,6 +873,7 @@ export function generateReport(r: SentinelReport): ReportResult {
     system: { model: r.system.model, hostname: r.system.hostname, os: r.system.os ?? "" },
     generatedAt: r.generatedAt,
     algoVersion: ALGORITHM_VERSION,
+    rawReport: r,
     dataQuality: {
       thermalSource: t?.thermalSource ?? undefined,
       storageSource: s?.dataSource ?? undefined,

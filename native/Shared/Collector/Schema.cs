@@ -87,4 +87,21 @@ public class SentinelReport
     public MemoryInfo? Memory { get; set; }
     public CpuInfo? Cpu { get; set; }
     public StartupInfo? Startup { get; set; }
+    public List<StartupItem>? StartupList { get; set; }
+    public SecurityInfo? Security { get; set; }
+}
+
+public class StartupItem
+{
+    public string? Name { get; set; }
+    public string? Command { get; set; }
+}
+
+public class SecurityInfo
+{
+    public bool? AntivirusEnabled { get; set; }
+    public bool? RealTimeProtection { get; set; }
+    public string? LastFullScan { get; set; }
+    public string? AntivirusSignatureDate { get; set; }
+    public string? FirewallProfilesActive { get; set; }
 }

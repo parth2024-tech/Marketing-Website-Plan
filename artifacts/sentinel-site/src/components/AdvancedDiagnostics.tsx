@@ -15,8 +15,9 @@ export default function AdvancedDiagnostics({ report }: { report: any }) {
   const hasProcesses = report.topProcesses && (report.topProcesses.cpuHogs?.length > 0 || report.topProcesses.ramHogs?.length > 0);
   const hasErrors = report.recentErrors && report.recentErrors.length > 0;
   const hasUpdates = report.updates && report.updates.hotFixId;
+  const hasStartupList = report.startupList && report.startupList.length > 0;
 
-  if (!hasGpus && !hasNetwork && !hasSecurity && !hasProcesses && !hasErrors && !hasUpdates) {
+  if (!hasGpus && !hasNetwork && !hasSecurity && !hasProcesses && !hasErrors && !hasUpdates && !hasStartupList) {
     return null;
   }
 
@@ -41,7 +42,7 @@ export default function AdvancedDiagnostics({ report }: { report: any }) {
 
       {/* Content */}
       <AnimatePresence initial={false}>
-        {(isOpen || window.location.search.includes("print")) && (
+        {(isOpen || (typeof window !== "undefined" && window.location.search.includes("print"))) && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}

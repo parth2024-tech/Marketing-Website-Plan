@@ -8,12 +8,10 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
-// ── Proxy trust ───────────────────────────────────────────────────────────────
-// When behind a reverse proxy (nginx, cloud LB, etc.), trust the first proxy
-// hop so that req.ip resolves to the real client IP from X-Forwarded-For.
-// In production, replace `true` with the specific proxy subnet for stricter
-// security (e.g., "loopback" or "10.0.0.0/8").
-app.set("trust proxy", true);
+// Trust only the first proxy hop (Render's load balancer).
+// Using `true` trusts all proxies and allows X-Forwarded-For spoofing.
+// Using `1` means only the immediate upstream proxy is trusted, which is safe on Render.
+app.set("trust proxy", 1);
 
 // ── Security headers (Helmet) ─────────────────────────────────────────────────
 // Adds X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security,
@@ -78,7 +76,6 @@ app.get("/health", (_req: Request, res: Response) => {
     service: "sentinel-api",
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version ?? "0.0.0",
   });
 });
 

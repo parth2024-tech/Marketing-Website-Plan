@@ -387,184 +387,175 @@ function ClaimPanel({ id }: { id: string }) {
 }
 
 
-
-function ForecastChart() {
-  const [scans, setScans] = useState(1);
-  
-  // Simulated data for the chart
-  const data = [
-    { month: "Jan", popBase: 95, popMin: 90, popMax: 100, personal: 96 },
-    { month: "Feb", popBase: 92, popMin: 85, popMax: 98, personal: 94 },
-    { month: "Mar", popBase: 88, popMin: 80, popMax: 95, personal: 89 },
-    { month: "Apr", popBase: 85, popMin: 75, popMax: 92, personal: 87 },
-    { month: "May", popBase: 81, popMin: 70, popMax: 90, personal: 84 },
-    { month: "Jun", popBase: 78, popMin: 65, popMax: 88, personal: 80 },
-    { month: "Jul", popBase: 74, popMin: 60, popMax: 85, personal: null },
-    { month: "Aug", popBase: 70, popMin: 55, popMax: 82, personal: null },
-    { month: "Sep", popBase: 66, popMin: 50, popMax: 78, personal: null },
-    { month: "Oct", popBase: 62, popMin: 45, popMax: 75, personal: null },
-    { month: "Nov", popBase: 58, popMin: 40, popMax: 72, personal: null },
-    { month: "Dec", popBase: 54, popMin: 35, popMax: 68, personal: null },
+// Battery degradation chart driven by real battery data from the report.
+// Plots the industry-standard expected degradation curve (from the engine's
+// cycle anchors) and marks the user's actual current health point.
+function BatteryDegradationChart({ battery }: { battery: { health?: number | null; cycleCount?: number | null } | null | undefined }) {
+  // Expected degradation curve — matches cycleAnchors in engine.ts exactly
+  const curvePoints = [
+    { cycles: 0, expected: 100 },
+    { cycles: 100, expected: 97 },
+    { cycles: 200, expected: 92 },
+    { cycles: 300, expected: 85 },
+    { cycles: 500, expected: 75 },
+    { cycles: 700, expected: 65 },
+    { cycles: 1000, expected: 50 },
   ];
 
-  // We only show personal points up to the 'scans' count, and project the rest.
-  const chartData = data.map((d, i) => {
-    if (scans === 1) {
-      return { ...d, personal: i === 4 ? d.personal : null }; // only 1 point at "May" (now)
-    } else {
-      // 5 scans: Jan to May
-      if (i <= 4) return d;
-      // Regression line for the rest
-      const slope = -2.8; // derived
-      const proj = 84 + slope * (i - 4);
-      return { ...d, personalProj: proj };
-    }
-  });
+  const health = battery?.health;
+  const cycles = battery?.cycleCount;
+
+  // Build chart data: the degradation curve + user's actual position
+  const chartData = curvePoints.map((p) => ({
+    cycles: p.cycles,
+    expected: p.expected,
+    // Mark the user's current data point at their exact cycle count
+    actual:
+      cycles != null && Math.abs(p.cycles - cycles) < 60
+        ? health ?? null
+        : null,
+  }));
+
+  // Determine how the user compares to expectations
+  const gap =
+    health != null && cycles != null
+      ? (() => {
+          // Interpolate expected value at user's cycle count
+          for (let i = 1; i < curvePoints.length; i++) {
+            const p0 = curvePoints[i - 1];
+            const p1 = curvePoints[i];
+            if (cycles <= p1.cycles) {
+              const t = (cycles - p0.cycles) / (p1.cycles - p0.cycles);
+              return (p0.expected + t * (p1.expected - p0.expected)) - health;
+            }
+          }
+          return 0;
+        })()
+      : null;
+
+  if (!battery || (health == null && cycles == null)) {
+    return (
+      <div className="surface-card rounded-2xl p-6 border border-border/60 mb-6 flex items-center justify-center h-48">
+        <p className="text-sm text-muted-foreground/50">Battery data not available for this system</p>
+      </div>
+    );
+  }
 
   return (
     <div className="surface-card rounded-2xl p-6 border border-border/60 mb-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
         <div>
-          <h3 className="text-sm font-semibold text-foreground mb-1">Battery Degradation Model</h3>
-          <motion.div 
-            initial={{ width: 0 }} 
-            animate={{ width: "100%" }} 
-            transition={{ duration: 0.5, ease: "linear" }}
-            className="overflow-hidden whitespace-nowrap"
-          >
-            <p className="text-xs text-muted-foreground">
-              {scans === 1 ? "Industry baseline — 0 historical personal scans" : "Personal regression model — 5 historical scans"}
-            </p>
-          </motion.div>
+          <h3 className="text-sm font-semibold text-foreground mb-1">Battery Degradation Curve</h3>
+          <p className="text-xs text-muted-foreground">
+            Your battery vs. expected health at {cycles ?? "?"} charge cycles
+            {gap != null && gap > 5
+              ? ` · ${gap.toFixed(0)}pts below expected — degrading faster than average`
+              : gap != null && gap < -5
+              ? ` · ${Math.abs(gap).toFixed(0)}pts above expected — degrading slower than average`
+              : " · degrading at expected rate"}
+          </p>
         </div>
-        <button 
-          onClick={() => setScans(s => s === 1 ? 5 : 1)}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium border border-primary/30 text-primary hover:bg-primary/10 transition-colors"
-        >
-          Toggle Demo: {scans === 1 ? "Simulate returning user" : "Simulate new user"}
-        </button>
+        {health != null && (
+          <div className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${
+            health >= 80 ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/10" :
+            health >= 60 ? "border-yellow-500/40 text-yellow-400 bg-yellow-500/10" :
+            "border-red-500/40 text-red-400 bg-red-500/10"
+          }`}>
+            {health.toFixed(1)}% actual health
+          </div>
+        )}
       </div>
 
-      <div className="h-64 w-full">
+      <div className="h-52 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-            <XAxis dataKey="month" stroke="#ffffff40" fontSize={10} tickMargin={10} />
-            <YAxis domain={[0, 100]} stroke="#ffffff40" fontSize={10} />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
-              itemStyle={{ color: '#e2e8f0' }}
+            <XAxis
+              dataKey="cycles"
+              stroke="#ffffff40"
+              fontSize={10}
+              tickMargin={8}
+              tickFormatter={(v) => `${v}cy`}
             />
-            <Legend wrapperStyle={{ fontSize: '12px' }} />
-            
-            <ReferenceArea x1="Sep" x2="Dec" fill="#ef4444" fillOpacity={0.1} />
-            <ReferenceArea x1="Sep" x2="Dec" y1={100} y2={100} stroke="none" label={{ position: 'insideTop', value: 'Replacement Zone', fill: '#ef4444', fontSize: 10, opacity: 0.8 }} fill="none" />
+            <YAxis domain={[40, 100]} stroke="#ffffff40" fontSize={10} tickFormatter={(v) => `${v}%`} />
+            <Tooltip
+              contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "8px", fontSize: "11px" }}
+              itemStyle={{ color: "#e2e8f0" }}
+              formatter={(value: any, name: string) => [
+                `${Number(value).toFixed(1)}%`,
+                name === "expected" ? "Industry baseline" : "Your battery",
+              ]}
+              labelFormatter={(label) => `${label} cycles`}
+            />
 
-            {/* Baseline Population Band (Confidence Interval) */}
-            <Area 
-              type="monotone" 
-              dataKey="popMax" 
-              stroke="none" 
-              fill="#ffffff" 
-              fillOpacity={0.03} 
-              activeDot={false}
-              name="Population Upper"
-              legendType="none"
-              tooltipType="none"
-              isAnimationActive={true}
-              animationDuration={800}
-              animationEasing="ease-out"
-            />
-            <Area 
-              type="monotone" 
-              dataKey="popMin" 
-              stroke="none" 
-              fill="#000000" 
-              fillOpacity={0.2} 
-              activeDot={false}
-              name="Population Lower"
-              legendType="none"
-              tooltipType="none"
-              isAnimationActive={true}
-              animationDuration={800}
-              animationEasing="ease-out"
-            />
-            
-            {/* Baseline Curve */}
-            <Line 
-              type="monotone" 
-              dataKey="popBase" 
-              stroke="#ffffff30" 
-              strokeWidth={2} 
-              dot={false} 
-              name="Population Baseline" 
+            {/* Replace zone: health < 60% */}
+            <ReferenceArea y1={0} y2={60} fill="#ef4444" fillOpacity={0.05} />
+            <ReferenceLine y={60} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.4}
+              label={{ value: "Replace threshold", position: "insideTopRight", fill: "#ef4444", fontSize: 9, opacity: 0.7 }} />
+
+            {/* Expected degradation curve */}
+            <Line
+              type="monotone"
+              dataKey="expected"
+              stroke="#ffffff35"
+              strokeWidth={2}
+              dot={false}
+              name="expected"
               strokeDasharray="5 5"
               isAnimationActive={true}
-              animationDuration={1000}
-              animationEasing="linear"
+              animationDuration={800}
             />
 
-            {/* Personal Scans */}
-            <Line 
-              type="monotone" 
-              dataKey="personal" 
-              stroke="#22d3ee" 
-              strokeWidth={2} 
+            {/* User's actual data point */}
+            <Line
+              type="monotone"
+              dataKey="actual"
+              stroke="#22d3ee"
+              strokeWidth={0}
               dot={(props: any) => {
                 if (props.value === null || props.value === undefined) return <></>;
                 return (
                   <motion.circle
-                    key={`dot-${props.index}`}
+                    key="user-dot"
                     cx={props.cx}
                     cy={props.cy}
-                    r={4}
+                    r={7}
                     fill="#22d3ee"
+                    stroke="#0f172a"
+                    strokeWidth={2}
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 1.2 + props.index * 0.15, type: "spring", stiffness: 300, damping: 20 }}
+                    transition={{ delay: 0.9, type: "spring", stiffness: 250, damping: 18 }}
                   />
                 );
               }}
-              activeDot={{ r: 6 }} 
-              name="Your Scans" 
-              isAnimationActive={true}
-              animationDuration={1000}
-              animationEasing="linear"
-              animationBegin={200}
+              activeDot={{ r: 9, fill: "#22d3ee" }}
+              name="actual"
+              isAnimationActive={false}
             />
-
-            {/* Personal Projection */}
-            {scans > 1 && (
-              <Line 
-                type="monotone" 
-                dataKey="personalProj" 
-                stroke="#22d3ee" 
-                strokeWidth={2} 
-                strokeDasharray="3 3"
-                isAnimationActive={true}
-                animationDuration={1000}
-                animationEasing="linear"
-                animationBegin={1200}
-                dot={false} 
-                name="Projected Trend" 
-              />
-            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
-      
-      {scans > 1 && (
-        <div className="mt-4 flex items-center justify-between text-xs border-t border-border/30 pt-4">
-          <div className="text-muted-foreground">Confidence interval narrowed by 68% using local regression.</div>
-          <div className="text-primary font-medium flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            Next scan recommended: Jun 15
-          </div>
+
+      <div className="mt-4 flex items-center gap-6 text-xs border-t border-border/30 pt-4">
+        <div className="flex items-center gap-2 text-muted-foreground/60">
+          <span className="w-6 h-px border-t-2 border-dashed border-white/30 inline-block" />
+          Industry baseline
         </div>
-      )}
+        <div className="flex items-center gap-2 text-primary/80">
+          <span className="w-3 h-3 rounded-full bg-cyan-400 inline-block" />
+          Your battery
+        </div>
+        {gap != null && Math.abs(gap) > 3 && (
+          <div className={`ml-auto font-medium ${gap > 0 ? "text-amber-400" : "text-emerald-400"}`}>
+            {gap > 0 ? `▼ ${gap.toFixed(0)}pts below curve` : `▲ ${Math.abs(gap).toFixed(0)}pts above curve`}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
 
 function ExpandableFinding({ f, style, icon, troubleshootKey }: {
   f: any; style: any; icon: React.ReactNode; troubleshootKey: string;
@@ -1111,7 +1102,7 @@ export default function Report() {
                 <p className="text-xs text-muted-foreground/50 leading-relaxed -mt-1 mb-1">
                   How long before each component becomes a problem — based on current readings and degradation curves.
                 </p>
-                <ForecastChart />
+                <BatteryDegradationChart battery={result.rawReport?.battery ?? null} />
                 {result.predictions.map((pred, i) => {
                   const severityStyles = {
                     stable: {
