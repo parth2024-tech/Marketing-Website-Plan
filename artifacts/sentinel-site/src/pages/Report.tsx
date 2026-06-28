@@ -78,19 +78,21 @@ const URGENCY_STYLES = {
  * 
  * @param score Overall computed hardware score.
  */
-function ScoreRing({ score }: { score: number }) {
-  const r = 54;
+function ScoreRing({ score, size = 148 }: { score: number; size?: number }) {
+  const strokeW = 11;
+  const r = (size - strokeW) / 2;
   const circ = 2 * Math.PI * r;
   const color = score >= 80 ? "#22d3ee" : score >= 60 ? "#f59e0b" : "#f87171";
-  
+  const glowColor = score >= 80 ? "#06b6d4" : score >= 60 ? "#d97706" : "#ef4444";
+
   const [displayed, setDisplayed] = React.useState(0);
 
   React.useEffect(() => {
     import("framer-motion").then(({ animate }) => {
       animate(0, score, {
-        duration: 0.8,
+        duration: 1.0,
         ease: [0.25, 0.1, 0.25, 1],
-        onUpdate: (val) => setDisplayed(Math.round(val))
+        onUpdate: (val) => setDisplayed(Math.round(val)),
       });
     });
   }, [score]);
@@ -98,16 +100,53 @@ function ScoreRing({ score }: { score: number }) {
   const dash = (displayed / 100) * circ;
 
   return (
-    <div className="relative" style={{ width: 140, height: 140 }}>
-      <svg width="140" height="140" viewBox="0 0 140 140" className="rotate-[-90deg] absolute inset-0">
-        <circle cx="70" cy="70" r={r} fill="none" stroke="currentColor" strokeWidth="10" className="text-border/20" />
-        <circle cx="70" cy="70" r={r} fill="none" stroke={color} strokeWidth="10"
-          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-          style={{ filter: `drop-shadow(0 0 8px ${color})` }} />
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      {/* Ambient glow behind ring */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{ background: `radial-gradient(circle, ${glowColor}18 0%, transparent 70%)` }}
+      />
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="rotate-[-90deg] absolute inset-0"
+      >
+        {/* Track */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeW}
+          className="text-border/15"
+        />
+        {/* Progress arc */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeW}
+          strokeDasharray={`${dash} ${circ}`}
+          strokeLinecap="round"
+          style={{
+            filter: `drop-shadow(0 0 10px ${color}) drop-shadow(0 0 3px ${color})`,
+            transition: "stroke-dasharray 0.05s linear",
+          }}
+        />
       </svg>
+      {/* Score text — centred inside ring (only rendered here, NOT duplicated outside) */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="text-4xl font-bold tabular-nums" style={{ color }}>{displayed}</div>
-        <div className="text-xs text-muted-foreground">/100</div>
+        <div
+          className="text-4xl font-black tabular-nums leading-none"
+          style={{ color, textShadow: `0 0 20px ${color}60` }}
+        >
+          {displayed}
+        </div>
+        <div className="text-[11px] font-mono text-muted-foreground/50 mt-0.5">/100</div>
       </div>
     </div>
   );
@@ -827,51 +866,118 @@ export default function Report() {
 
           {/* Overall score */}
           <AnimateIn>
-            <div className="surface-card rounded-2xl p-8">
-              <div className="flex items-center gap-8 flex-wrap">
-                <div className="relative shrink-0">
-                  <ScoreRing score={combinedScoreVal ?? result.overall} />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <div className="text-2xl font-bold tabular-nums">{combinedScoreVal ?? result.overall}</div>
-                    <div className="text-xs text-muted-foreground">/100</div>
-                  </div>
+            <div className="surface-card rounded-2xl overflow-hidden">
+              {/* Grade header strip */}
+              <div
+                className="px-7 py-3 flex items-center justify-between"
+                style={{
+                  background:
+                    (combinedScoreVal ?? result.overall) >= 80
+                      ? "linear-gradient(90deg, #06b6d415, transparent)"
+                      : (combinedScoreVal ?? result.overall) >= 60
+                      ? "linear-gradient(90deg, #d9770615, transparent)"
+                      : "linear-gradient(90deg, #ef444415, transparent)",
+                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2
+                    className="w-4 h-4"
+                    style={{
+                      color:
+                        (combinedScoreVal ?? result.overall) >= 80
+                          ? "#22d3ee"
+                          : (combinedScoreVal ?? result.overall) >= 60
+                          ? "#f59e0b"
+                          : "#f87171",
+                    }}
+                  />
+                  <span className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest">
+                    Sentinel Hardware Audit
+                  </span>
                 </div>
-                <div className="flex-1">
-                  <div className="text-2xl font-bold mb-1 flex items-center gap-3">
-                    {result.grade} — {result.gradeLabel}
-                    {loadedFrom === "local" && (
-                      <span className="text-xs font-mono text-amber-500 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 rounded-full font-normal tracking-wide flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> unverified
+                <div className="flex items-center gap-2">
+                  {loadedFrom === "synced" && (
+                    <span className="text-xs font-mono text-green-400/60 border border-green-400/20 bg-green-400/5 px-2 py-0.5 rounded-full">
+                      verified
+                    </span>
+                  )}
+                  {loadedFrom === "local" && (
+                    <span className="text-xs font-mono text-amber-500 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> unverified
+                    </span>
+                  )}
+                  <span className="text-xs font-mono text-muted-foreground/40">v{result.algoVersion}</span>
+                </div>
+              </div>
+
+              {/* Main score layout — grid so it never wraps awkwardly */}
+              <div className="p-7 grid grid-cols-[auto_1fr] gap-8 items-center">
+                {/* Left: Score ring (no duplicate text overlay here — ring renders its own number) */}
+                <ScoreRing score={combinedScoreVal ?? result.overall} size={148} />
+
+                {/* Right: Grade + summary */}
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-3 mb-1 flex-wrap">
+                    <span
+                      className="text-5xl font-black tracking-tight leading-none"
+                      style={{
+                        color:
+                          (combinedScoreVal ?? result.overall) >= 80
+                            ? "#22d3ee"
+                            : (combinedScoreVal ?? result.overall) >= 60
+                            ? "#f59e0b"
+                            : "#f87171",
+                      }}
+                    >
+                      {result.grade}
+                    </span>
+                    <span className="text-xl font-semibold text-foreground/80">{result.gradeLabel}</span>
+                  </div>
+
+                  {/* Hardware + habit breakdown row */}
+                  {combinedScoreVal !== null ? (
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      <span className="text-xs font-mono text-muted-foreground/50 bg-muted/20 border border-border/30 px-2 py-0.5 rounded">
+                        Hardware {result.overall}
+                      </span>
+                      <span className="text-xs text-muted-foreground/30">+</span>
+                      <span className="text-xs font-mono text-accent/80 bg-accent/8 border border-accent/20 px-2 py-0.5 rounded">
+                        Habits {habitScore}
+                      </span>
+                      <span className="text-xs text-muted-foreground/30">→</span>
+                      <span className="text-xs font-mono text-primary font-semibold bg-primary/8 border border-primary/20 px-2 py-0.5 rounded">
+                        Combined {combinedScoreVal}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="h-3 mb-3" />
+                  )}
+
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                    {(combinedScoreVal ?? result.overall) >= 85
+                      ? "Your hardware is in excellent shape. Minor items to keep an eye on."
+                      : (combinedScoreVal ?? result.overall) >= 70
+                      ? "Hardware is generally healthy. A few components need attention."
+                      : (combinedScoreVal ?? result.overall) >= 55
+                      ? "Several components need attention. Review the findings below."
+                      : "Multiple components are degraded. Prioritise the critical findings."}
+                  </p>
+
+                  {/* Finding summary pills */}
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    {publicFindings.filter((f) => f.urgency === "critical").length > 0 && (
+                      <span className="text-red-400 bg-red-400/8 border border-red-400/25 px-2.5 py-1 rounded-full font-mono font-medium">
+                        ⚠ {publicFindings.filter((f) => f.urgency === "critical").length} critical
                       </span>
                     )}
-                  </div>
-                  {combinedScoreVal !== null && (
-                    <div className="flex items-center gap-3 mb-3 text-xs font-mono">
-                      <span className="text-muted-foreground/60">Hardware</span>
-                      <span className="text-foreground">{result.overall}</span>
-                      <span className="text-muted-foreground/40">+</span>
-                      <span className="text-muted-foreground/60">Habits</span>
-                      <span className="text-accent">{habitScore}</span>
-                      <span className="text-muted-foreground/40">→</span>
-                      <span className="text-primary font-semibold">Combined {combinedScoreVal}</span>
-                    </div>
-                  )}
-                  <div className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                    {(combinedScoreVal ?? result.overall) >= 80
-                      ? "Your hardware is in good shape. A few items to watch."
-                      : (combinedScoreVal ?? result.overall) >= 60
-                      ? "Some components need attention. Review the findings below."
-                      : "Multiple components are degraded. Prioritise the critical findings."}
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="text-red-400/80 bg-red-400/5 border border-red-400/20 px-2 py-0.5 rounded-full font-mono">
-                      {publicFindings.filter((f) => f.urgency === "critical").length} critical
-                    </span>
-                    <span className="text-amber-400/80 bg-amber-400/5 border border-amber-400/20 px-2 py-0.5 rounded-full font-mono">
-                      {publicFindings.filter((f) => f.urgency === "warning").length} warnings
-                    </span>
-                    <span className="text-cyan-400/80 bg-cyan-400/5 border border-cyan-400/20 px-2 py-0.5 rounded-full font-mono">
-                      {publicFindings.filter((f) => f.urgency === "info").length} healthy
+                    {publicFindings.filter((f) => f.urgency === "warning").length > 0 && (
+                      <span className="text-amber-400 bg-amber-400/8 border border-amber-400/25 px-2.5 py-1 rounded-full font-mono font-medium">
+                        ▲ {publicFindings.filter((f) => f.urgency === "warning").length} warnings
+                      </span>
+                    )}
+                    <span className="text-cyan-400/70 bg-cyan-400/5 border border-cyan-400/20 px-2.5 py-1 rounded-full font-mono">
+                      ✓ {publicFindings.filter((f) => f.urgency === "info").length} healthy
                     </span>
                   </div>
                 </div>
@@ -959,11 +1065,12 @@ export default function Report() {
               {result.components.map((c, idx) => {
                 const s = STATUS_STYLES[c.status];
                 const INTERP: Record<string, string> = {
-                  Battery: c.score >= 80 ? "Battery is healthy." : c.score >= 60 ? `Your battery retains ${c.score}% effective capacity — adequate but declining.` : `Battery severely degraded at ${c.score}% — plan replacement soon.`,
-                  Thermals: c.score >= 80 ? "Cooling system is performing well." : c.score >= 60 ? "Temperatures are elevated — consider cleaning vents." : "Critical heat levels — thermal paste may need replacement.",
-                  Storage: c.score >= 80 ? "Drive health and free space are in good condition." : c.score >= 60 ? "Storage showing wear — monitor closely." : "Critical drive wear or low space — back up now.",
-                  Memory: c.score >= 80 ? "Memory usage is healthy." : c.score >= 60 ? "Memory usage moderately high." : "System under memory pressure — expect slowdowns.",
-                  CPU: c.score >= 80 ? "CPU load is healthy with no throttling." : c.score >= 60 ? "Some CPU throttling detected." : "Significant throttling is impacting performance.",
+                  Battery: c.score >= 80 ? "Battery is healthy — no immediate action needed." : c.score >= 60 ? `Battery retaining ${c.score}% effective capacity. Adequate but degrading — plan replacement in 12–18 months.` : `Battery severely degraded at ${c.score}%. Runtime is significantly reduced and unexpected shutdowns may occur. Replace soon.`,
+                  Thermals: c.score >= 80 ? "Cooling system is performing well within safe limits." : c.score >= 60 ? "Temperatures are elevated above recommended range. Consider cleaning vents and checking airflow." : "Critical heat levels detected. Thermal paste replacement and vent cleaning are strongly recommended.",
+                  Storage: c.score >= 80 ? "Drive health and free space are both in good condition." : c.score >= 60 ? "Storage showing wear or low free space — monitor closely and maintain backups." : "Critical drive wear or critically low free space detected — back up all data immediately.",
+                  Memory: c.score >= 80 ? "Memory usage is healthy with adequate headroom." : c.score >= 60 ? "Memory usage is moderately high. Heavy multitasking may cause slowdowns." : "System is under significant memory pressure — frequent slowdowns and pagefile activity expected.",
+                  CPU: c.score >= 80 ? "CPU load is healthy with no throttling detected." : c.score >= 60 ? "Some CPU throttling detected — cooling system may need attention." : "Significant thermal throttling is actively reducing your CPU performance.",
+                  Security: c.score >= 80 ? "Security posture looks good." : "Security configuration requires attention — see findings.",
                 };
                 const scoreColor = c.score >= 80 ? "#22d3ee" : c.score >= 60 ? "#f59e0b" : "#f87171";
                 return (
