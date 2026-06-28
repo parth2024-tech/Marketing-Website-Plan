@@ -44,33 +44,7 @@ export default function HealthTest() {
       <section className="px-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-8">
           
-          {/* Option A: The App */}
-          <AnimateIn delay={0.05}>
-            <div className="rounded-2xl border border-primary/40 bg-primary/5 overflow-hidden relative">
-              <div className="absolute top-0 right-0 px-4 py-1.5 bg-primary/20 text-primary text-xs font-bold uppercase tracking-wider rounded-bl-xl border-b border-l border-primary/30">
-                Recommended
-              </div>
-              <div className="p-8">
-                <div className="flex items-start gap-5">
-                  <div className="w-12 h-12 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
-                    <ShieldCheck className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-xl font-bold text-foreground mb-2">Option A: 1-Click Trusted App</h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                      The easiest way to run the diagnostic. Download our verified, signed executable. 
-                      It runs instantly in the background and opens your browser when finished. No terminal required.
-                    </p>
-                    <div className="max-w-sm">
-                      <DownloadButton slug="oneshot" label="Download Sentinel App" recommended />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </AnimateIn>
-
-          {/* Option B: The Script */}
+          {/* The Script */}
           <AnimateIn delay={0.1}>
             <div className="rounded-2xl border border-border/60 bg-card/40 overflow-hidden">
               <div className="p-8">
@@ -79,9 +53,9 @@ export default function HealthTest() {
                     <Terminal className="w-6 h-6 text-muted-foreground" />
                   </div>
                   <div className="flex-1 w-full min-w-0">
-                    <h2 className="text-xl font-bold text-foreground mb-2">Option B: PowerShell One-Liner</h2>
+                    <h2 className="text-xl font-bold text-foreground mb-2">Run the Diagnostic Script</h2>
                     <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                      For power users who prefer not to run an executable. Open PowerShell as Administrator and run the open-source script.
+                      Open PowerShell as Administrator and run the open-source script.
                     </p>
                     
                     <div className="rounded-xl bg-[#0d1117] border border-border/40 px-5 py-4 w-full">
