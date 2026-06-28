@@ -70,6 +70,18 @@ app.use(cookieParser());
 app.use(express.json({ limit: "256kb" }));
 app.use(express.urlencoded({ extended: true, limit: "256kb" }));
 
+// ── Health check ─────────────────────────────────────────────────────────────
+// Used by Render health checks, uptime monitors, and the PowerShell script.
+app.get("/health", (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: "ok",
+    service: "sentinel-api",
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version ?? "0.0.0",
+  });
+});
+
 app.use("/api", router);
 
 // ── Global error handler ──────────────────────────────────────────────────────
