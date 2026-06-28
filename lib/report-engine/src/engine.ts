@@ -99,45 +99,56 @@ function batteryScore(r: SentinelReport): ComponentScore | null {
   const b = r.battery;
   if (!b) return null;
 
-  // If health is unknown (no capacity data at all), don't assume 100 — return null
-  // so it doesn't silently inflate the overall score.
-  if (b.health == null && b.fullChargeCapacity == null && b.designCapacity == null) return null;
+  // If health is unknown (no capacity data at all), exclude from scoring.
+  // Don't default to 85 — that would silently inflate the overall score.
+  if (b.health == null) {
+    // Still possible to compute a partial score from cycles alone (rare case)
+    if (b.cycleCount == null) return null;
+    // Very high cycle count with no health data = at minimum a warning-grade score
+    if (b.cycleCount > 800) return { name: "Battery", score: 55, status: "watch", detail: `${b.cycleCount} cycles · health data unavailable` };
+    if (b.cycleCount > 600) return { name: "Battery", score: 65, status: "watch", detail: `${b.cycleCount} cycles · health data unavailable` };
+    return null; // not enough data for a reliable score
+  }
 
-  const health = b.health ?? 85; // if partial data, assume moderate not perfect
+  const health = b.health;
   const cycles = b.cycleCount ?? 0;
   const expected = expectedBatteryHealth(cycles);
   let score = health;
 
-  // Penalise faster-than-expected degradation
+  // Penalise faster-than-expected degradation relative to the population curve
   const gap = expected - health;
   if (gap > 5) score -= Math.min(25, (gap - 5) * 1.5);
 
-  // Discharge rate penalty — high drain suggests swelling or controller issues
-  if (b.dischargeRateMw != null && b.dischargeRateMw < -8000) {
-    score -= 8; // abnormally high drain
-  } else if (b.dischargeRateMw != null && b.dischargeRateMw < -5000) {
-    score -= 4;
+  // Discharge rate penalty:
+  // BatteryStatus.DischargeRate from WMI can be positive or negative depending
+  // on the driver. Negative = discharging. Positive = charging. Normalise to
+  // always use the magnitude for drain calculations.
+  const drainMw = b.dischargeRateMw != null ? -Math.abs(b.dischargeRateMw) : null;
+  if (drainMw != null && drainMw < -8000) {
+    score -= 8; // >8W drain at idle/light load = abnormal, suggests cell swelling
+  } else if (drainMw != null && drainMw < -5000) {
+    score -= 4; // >5W drain = elevated
   }
 
-  // Cycle count penalty on top of health — even healthy-looking batteries
-  // at very high cycles are genuinely at risk
-  if (cycles > 900) score -= 10;
-  else if (cycles > 700) score -= 5;
-  else if (cycles > 500) score -= 2;
+  // Cycle count penalty — even a healthy-looking battery at very high cycles
+  // is statistically closer to sudden failure
+  if (cycles > 900) score -= 12;
+  else if (cycles > 700) score -= 7;
+  else if (cycles > 500) score -= 3;
 
-  // Cap: a battery can never score above 97 (no battery is truly perfect)
-  // Floor: even a dead battery has some score for being present
+  // Cap: no battery ever scores 100. Floor: dead battery still has some score for being present
   score = clamp(score, 20, 97);
 
-  let detail = health != null ? `${health.toFixed(1)}% capacity` : "Capacity unknown";
+  let detail = `${health.toFixed(1)}% capacity`;
   if (cycles) detail += ` · ${cycles} cycles`;
   if (b.fullChargeCapacity && b.designCapacity) {
-    const full = Math.round(b.fullChargeCapacity / 1000);
-    const design = Math.round(b.designCapacity / 1000);
-    detail += ` · ${full}/${design} Wh`;
+    // Convert mWh to Wh for display
+    const fullWh = (b.fullChargeCapacity / 1000).toFixed(1);
+    const designWh = (b.designCapacity / 1000).toFixed(1);
+    detail += ` · ${fullWh}/${designWh} Wh`;
   }
-  if (b.dischargeRateMw != null && b.dischargeRateMw < 0) {
-    detail += ` · ${(Math.abs(b.dischargeRateMw) / 1000).toFixed(1)}W draw`;
+  if (drainMw != null && drainMw < 0) {
+    detail += ` · ${(Math.abs(drainMw) / 1000).toFixed(1)}W draw`;
   }
   return { name: "Battery", score, status: scoreStatus(score), detail };
 }
@@ -148,8 +159,8 @@ function thermalScore(r: SentinelReport): ComponentScore | null {
   if (t.thermalSource === "unavailable" || t.thermalSource === "acpi_static_suspect") return null;
   const max = t.maxTempC;
 
-  // Stricter temperature thresholds — consumer chips throttle at 90°C+
-  // and long-term sustained temps above 75°C cause measurable degradation
+  // Strict temperature thresholds — based on real-world throttle data:
+  // Intel/AMD consumer chips throttle at 100°C, sustained 85°C+ causes measurable degradation
   let score =
     max > 98 ? 5 :
     max > 93 ? 20 :
@@ -159,6 +170,7 @@ function thermalScore(r: SentinelReport): ComponentScore | null {
     max > 72 ? 88 : 97;
 
   const throttle = t.throttleEvents30min ?? 0;
+  // Throttle penalties are compounded on top of the temperature-based score
   if (throttle > 30) score -= 35;
   else if (throttle > 20) score -= 25;
   else if (throttle > 10) score -= 15;
@@ -167,7 +179,17 @@ function thermalScore(r: SentinelReport): ComponentScore | null {
   else if (throttle > 0) score -= 2;
 
   score = clamp(score);
-  const detail = `${max.toFixed(1)}°C peak · source: ${t.thermalSource ?? "unknown"}${throttle ? ` · ${throttle} throttle events/30min` : ""}`;
+
+  // Human-readable source label for the UI
+  const sourceLabel: Record<string, string> = {
+    performance_counter: "Win32 Performance Counter",
+    acpi_wmi: "ACPI/WMI",
+    ohm: "OpenHardwareMonitor",
+    lhm: "LibreHardwareMonitor",
+  };
+  const source = sourceLabel[t.thermalSource ?? ""] ?? t.thermalSource ?? "unknown";
+
+  const detail = `${max.toFixed(1)}°C peak · source: ${source}${throttle ? ` · ${throttle} throttle events/30min` : ""}`;
   return { name: "Thermals", score, status: scoreStatus(score), detail };
 }
 
@@ -255,25 +277,28 @@ function memoryScore(r: SentinelReport): ComponentScore | null {
 
   let finalPenalty = basePenalty;
   if (m.pageFaultsPerSec != null && m.pageFaultsPerSec > 0) {
-    // High page faults = heavy pagefile use = SSD wear + slowdowns
-    // More aggressive multiplier than before
-    const pfMultiplier = 1 + Math.min(0.5, m.pageFaultsPerSec / 300);
+    // High page faults = active pagefile use = SSD wear + latency spikes
+    // Apply a multiplier based on the severity of page fault rate
+    const pfMultiplier = 1 + Math.min(0.6, m.pageFaultsPerSec / 250);
     finalPenalty = basePenalty * pfMultiplier;
-    // Page faults themselves add a direct penalty too
-    if (m.pageFaultsPerSec > 500) finalPenalty += 15;
+    // Also add direct penalty tiers for extreme page fault rates
+    if (m.pageFaultsPerSec > 1000) finalPenalty += 25;
+    else if (m.pageFaultsPerSec > 500) finalPenalty += 15;
     else if (m.pageFaultsPerSec > 200) finalPenalty += 8;
     else if (m.pageFaultsPerSec > 50) finalPenalty += 3;
   }
 
   let score = clamp(Math.round(100 - finalPenalty));
 
-  // Low total RAM hard cap — these machines genuinely cannot perform well
-  if (m.totalGB <= 4) score = Math.min(score, 55);
-  else if (m.totalGB <= 6) score = Math.min(score, 70);
-  else if (m.totalGB <= 8 && used > 80) score = Math.min(score, 75);
+  // Capacity hard caps — physical RAM size creates a ceiling on how well
+  // memory can ever perform regardless of current usage percentage
+  if (m.totalGB <= 4) score = Math.min(score, 50);       // 4 GB = can't run modern Windows without pagefile
+  else if (m.totalGB <= 6) score = Math.min(score, 68);  // 6 GB = borderline for Win11
+  else if (m.totalGB <= 8 && used > 75) score = Math.min(score, 75); // 8 GB at high usage
+  else if (m.totalGB <= 8 && used > 85) score = Math.min(score, 65); // 8 GB critically full
 
   let detail = `${m.totalGB} GB RAM · ${used.toFixed(1)}% used`;
-  if (m.pageFaultsPerSec != null && m.pageFaultsPerSec > 0) {
+  if (m.pageFaultsPerSec != null && m.pageFaultsPerSec > 10) {
     detail += ` · ${m.pageFaultsPerSec.toLocaleString()} page faults/s`;
   }
 
@@ -694,26 +719,27 @@ function generatePredictions(r: SentinelReport): Prediction[] {
   // Storage prediction
   if (s) {
     const wear = s.wearLevelPct ?? s.healthPct;
-    const free = s.freeSpacePct ?? 100;
+    // Use actual freeSpacePct — don't default to 100 (hides critically full drives)
+    const free = s.freeSpacePct;
     const realloc = s.reallocatedSectors ?? 0;
     if (realloc > 0) {
       predictions.push({
         component: "Storage",
-        currentValue: `${realloc} reallocated sectors · ${free.toFixed(0)}% free`,
+        currentValue: `${realloc} reallocated sector${realloc > 1 ? "s" : ""}${free != null ? ` · ${free.toFixed(0)}% free` : ""}`,
         projectedTimeline: "Unpredictable — failure possible at any time",
         severity: "urgent",
-        insight: "Reallocated sectors indicate physical media damage. Drive failure becomes increasingly likely. Back up all data immediately and plan for drive replacement.",
+        insight: "Reallocated sectors indicate physical media damage. Drive failure is unpredictable from this point. Back up all data immediately and replace the drive.",
       });
     } else if (wear != null && wear < 60) {
       const monthsLeft = Math.max(2, Math.round(wear * 0.3));
       predictions.push({
         component: "Storage",
-        currentValue: `${wear}% endurance remaining · ${free.toFixed(0)}% free`,
+        currentValue: `${wear}% endurance remaining${free != null ? ` · ${free.toFixed(0)}% free` : ""}`,
         projectedTimeline: `${monthsLeft}–${monthsLeft + 6} months of write endurance remaining`,
         severity: "declining",
         insight: `SSD write endurance is below 60%. At current write patterns, the drive will reach its rated endurance limit within ${monthsLeft}–${monthsLeft + 6} months. Performance may degrade before then.`,
       });
-    } else if (free < 10) {
+    } else if (free != null && free < 10) {
       predictions.push({
         component: "Storage",
         currentValue: `${free.toFixed(1)}% free space`,
@@ -724,10 +750,12 @@ function generatePredictions(r: SentinelReport): Prediction[] {
     } else {
       predictions.push({
         component: "Storage",
-        currentValue: wear != null ? `${wear}% endurance remaining · ${free.toFixed(0)}% free` : `${free.toFixed(0)}% free`,
+        currentValue: wear != null
+          ? `${wear}% endurance remaining${free != null ? ` · ${free.toFixed(0)}% free` : " · free space unknown"}`
+          : free != null ? `${free.toFixed(0)}% free` : "Data limited",
         projectedTimeline: "No storage concerns for 12+ months",
         severity: "stable",
-        insight: "Storage health and free space are both in good condition. No action needed.",
+        insight: "Storage health and free space are in good condition. No action needed.",
       });
     }
   }

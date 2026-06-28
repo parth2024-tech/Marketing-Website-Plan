@@ -552,62 +552,94 @@ public class CollectorService
 
     private static void CollectSecurity(SentinelReport report)
     {
-        // Collect antivirus/security posture from SecurityCenter2 WMI namespace
-        // and Windows Firewall active profile state from the registry.
+        // Collect antivirus/security posture from SecurityCenter2 WMI namespace.
+        // productState is a 3-byte integer packed as 0xXXYYZZ where:
+        //   XX = product type  (0x10 = AV, 0x20 = antispyware)
+        //   YY = real-time protection state  (0x10 = ON, 0x00 = OFF)
+        //   ZZ = signature/definition state  (0x00 = up-to-date, 0x10 = out-of-date)
         try
         {
             var secInfo = new SecurityInfo();
             bool hasAv = false;
 
-            // SecurityCenter2 lives in root\SecurityCenter2 (Vista and later)
-            using var avSearcher = new ManagementObjectSearcher(
-                @"root\SecurityCenter2",
-                "SELECT displayName, productState FROM AntiVirusProduct");
-
-            foreach (var obj in avSearcher.Get())
+            try
             {
-                // productState is a 6-digit hex-encoded bitmask:
-                //   Bit 12–13 (nibble 3 from right): 0x1 = not enabled, 0x0 = enabled
-                //   Bit 4–5 (nibble 1 from right): 0x0 = up-to-date, 0x1 = out of date
-                if (!int.TryParse(obj["productState"]?.ToString(), out int state)) continue;
-                string hex = state.ToString("X");
-                int enabledNibble = hex.Length >= 6 ? (hex[2] - '0') : 0; // nibble at position 2 from left (position 3 from right)
-                bool avEnabled = enabledNibble != 1;
-                secInfo.AntivirusEnabled = avEnabled;
-                secInfo.RealTimeProtection = avEnabled; // SecurityCenter2 doesn't expose this separately
-                hasAv = true;
-                break; // Use first registered AV product
+                using var avSearcher = new ManagementObjectSearcher(
+                    @"root\SecurityCenter2",
+                    "SELECT displayName, productState, timestamp FROM AntiVirusProduct");
+
+                foreach (var obj in avSearcher.Get())
+                {
+                    if (!uint.TryParse(obj["productState"]?.ToString(), out uint state)) continue;
+
+                    // Extract the three bytes correctly:
+                    // productState is stored as a uint32 with the three status bytes in the low 3 bytes
+                    byte zzByte = (byte)(state & 0xFF);         // definition state
+                    byte yyByte = (byte)((state >> 8) & 0xFF);  // real-time protection state
+                    // byte xxByte = (byte)((state >> 16) & 0xFF); // product type (not needed here)
+
+                    // YY byte: 0x10 = real-time protection ON, 0x00 = OFF
+                    bool rtpEnabled = yyByte == 0x10;
+                    // ZZ byte: 0x00 = definitions up-to-date, 0x10 = outdated
+                    bool defsOutdated = zzByte == 0x10;
+
+                    secInfo.AntivirusEnabled = rtpEnabled;
+                    secInfo.RealTimeProtection = rtpEnabled;
+
+                    // Timestamp field format: "20240101120000.000000+000" (WMI DateTime)
+                    string? ts = obj["timestamp"]?.ToString();
+                    if (!string.IsNullOrEmpty(ts))
+                    {
+                        try
+                        {
+                            var sigDate = ManagementDateTimeConverter.ToDateTime(ts);
+                            secInfo.AntivirusSignatureDate = sigDate.ToUniversalTime().ToString("o");
+                        }
+                        catch { /* ignore parse errors */ }
+                    }
+
+                    hasAv = true;
+                    break; // Use first registered AV product
+                }
             }
+            catch (Exception ex) { Debug.WriteLine($"Collection error (SecurityCenter2 AV): {ex.Message}"); }
 
             if (!hasAv)
             {
-                // No AV registered in SecurityCenter2 — this is a significant finding
+                // No AV registered in SecurityCenter2 — significant finding
                 secInfo.AntivirusEnabled = false;
                 secInfo.RealTimeProtection = false;
             }
 
-            // Windows Firewall active profile from registry
+            // Windows Firewall: check all three profiles and report which are enabled.
+            // Registry layout:
+            //   HKLM\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\
+            //     DomainProfile\EnableFirewall
+            //     StandardProfile\EnableFirewall     (Private profile in the UI)
+            //     PublicProfile\EnableFirewall
             try
             {
-                using var fwKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
-                    @"SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\StandardProfile");
-                if (fwKey != null)
+                var profileKeyMap = new Dictionary<string, string>
                 {
-                    int fwEnabled = (int)(fwKey.GetValue("EnableFirewall") ?? 0);
-                    // Check which profile is currently active
-                    using var activeKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
-                        @"SOFTWARE\Policies\Microsoft\WindowsFirewall");
-                    string activeProfile = "Unknown";
-                    if (activeKey != null)
-                    {
-                        object? profileType = activeKey.GetValue("PolicyVersion");
-                        activeProfile = profileType != null ? "Domain" : "Standard";
-                    }
-                    if (fwEnabled == 1) secInfo.FirewallProfilesActive = "Private";
-                    else secInfo.FirewallProfilesActive = "Public (Firewall may be off)";
+                    ["Domain"]  = @"SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\DomainProfile",
+                    ["Private"] = @"SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\StandardProfile",
+                    ["Public"]  = @"SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\PublicProfile",
+                };
+
+                var activeProfiles = new List<string>();
+                foreach (var (profileName, regPath) in profileKeyMap)
+                {
+                    using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(regPath);
+                    if (key == null) continue;
+                    int enabled = (int)(key.GetValue("EnableFirewall") ?? 0);
+                    if (enabled == 1) activeProfiles.Add(profileName);
                 }
+
+                secInfo.FirewallProfilesActive = activeProfiles.Count > 0
+                    ? string.Join(", ", activeProfiles)
+                    : "None (Firewall disabled on all profiles)";
             }
-            catch (Exception ex) { Debug.WriteLine($"Collection error (firewall): {ex.Message}"); }
+            catch (Exception ex) { Debug.WriteLine($"Collection error (firewall profiles): {ex.Message}"); }
 
             report.Security = secInfo;
         }
