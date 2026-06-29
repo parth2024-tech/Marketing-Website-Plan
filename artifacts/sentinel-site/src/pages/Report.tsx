@@ -110,7 +110,7 @@ function ScoreRing({ score, size = 148 }: { score: number; size?: number }) {
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
-        className="rotate-[-90deg] absolute inset-0"
+        className="rotate-[-90deg] absolute inset-0 z-0"
       >
         {/* Track */}
         <circle
@@ -120,7 +120,23 @@ function ScoreRing({ score, size = 148 }: { score: number; size?: number }) {
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeW}
-          className="text-border/15"
+          className="text-border/30"
+        />
+        {/* Glow arc (avoids Safari drop-shadow transform drift bug) */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeW}
+          strokeDasharray={`${dash} ${circ}`}
+          strokeLinecap="round"
+          style={{
+            filter: "blur(6px)",
+            opacity: 0.6,
+            transition: "stroke-dasharray 0.05s linear",
+          }}
         />
         {/* Progress arc */}
         <circle
@@ -133,7 +149,6 @@ function ScoreRing({ score, size = 148 }: { score: number; size?: number }) {
           strokeDasharray={`${dash} ${circ}`}
           strokeLinecap="round"
           style={{
-            filter: `drop-shadow(0 0 10px ${color}) drop-shadow(0 0 3px ${color})`,
             transition: "stroke-dasharray 0.05s linear",
           }}
         />
