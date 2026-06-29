@@ -1070,15 +1070,130 @@ export default function Report() {
             <div className="space-y-6">
               {result.components.map((c, idx) => {
                 const s = STATUS_STYLES[c.status];
-                const INTERP: Record<string, string> = {
-                  Battery: c.score >= 80 ? "Battery is healthy — no immediate action needed." : c.score >= 60 ? `Battery retaining ${c.score}% effective capacity. Adequate but degrading — plan replacement in 12–18 months.` : `Battery severely degraded at ${c.score}%. Runtime is significantly reduced and unexpected shutdowns may occur. Replace soon.`,
-                  Thermals: c.score >= 80 ? "Cooling system is performing well within safe limits." : c.score >= 60 ? "Temperatures are elevated above recommended range. Consider cleaning vents and checking airflow." : "Critical heat levels detected. Thermal paste replacement and vent cleaning are strongly recommended.",
-                  Storage: c.score >= 80 ? "Drive health and free space are both in good condition." : c.score >= 60 ? "Storage showing wear or low free space — monitor closely and maintain backups." : "Critical drive wear or critically low free space detected — back up all data immediately.",
-                  Memory: c.score >= 80 ? "Memory usage is healthy with adequate headroom." : c.score >= 60 ? "Memory usage is moderately high. Heavy multitasking may cause slowdowns." : "System is under significant memory pressure — frequent slowdowns and pagefile activity expected.",
-                  CPU: c.score >= 80 ? "CPU load is healthy with no throttling detected." : c.score >= 60 ? "Some CPU throttling detected — cooling system may need attention." : "Significant thermal throttling is actively reducing your CPU performance.",
-                  Security: c.score >= 80 ? "Security posture looks good." : "Security configuration requires attention — see findings.",
-                };
                 const scoreColor = c.score >= 80 ? "#22d3ee" : c.score >= 60 ? "#f59e0b" : "#f87171";
+                const raw = result.rawReport;
+
+                // ── Data-driven narrative per component ──────────────────
+                let narrative = c.detail; // fallback = engine detail string
+
+                if (c.name === "Battery" && raw.battery) {
+                  const b = raw.battery;
+                  const health = b.health;
+                  const cycles = b.cycleCount;
+                  const drainW = b.dischargeRateMw != null ? (Math.abs(b.dischargeRateMw) / 1000).toFixed(1) : null;
+                  const fullWh = b.fullChargeCapacity ? (b.fullChargeCapacity / 1000).toFixed(0) : null;
+                  const designWh = b.designCapacity ? (b.designCapacity / 1000).toFixed(0) : null;
+
+                  if (health != null && cycles != null) {
+                    const lostPct = (100 - health).toFixed(0);
+                    const capacityStr = fullWh && designWh ? ` (${fullWh} Wh of original ${designWh} Wh)` : "";
+                    const drainStr = drainW ? ` Current draw: ${drainW}W.` : "";
+                    if (c.score >= 80) {
+                      narrative = `Battery retains ${health.toFixed(1)}% of its original capacity${capacityStr} at ${cycles} charge cycles.${drainStr} Degradation is within normal range for this cycle count — no action needed.`;
+                    } else if (c.score >= 60) {
+                      narrative = `Battery has lost ${lostPct}% of its original capacity${capacityStr} over ${cycles} charge cycles.${drainStr} Runtime per charge is measurably shorter. Plan replacement within the next 6–12 months.`;
+                    } else {
+                      narrative = `Battery is severely degraded — retaining only ${health.toFixed(1)}% of original capacity${capacityStr} at ${cycles} cycles.${drainStr} Unexpected shutdowns at 10–20% reported charge are likely. Replacement is strongly recommended.`;
+                    }
+                  } else if (health != null) {
+                    if (c.score >= 80) {
+                      narrative = `Battery retains ${health.toFixed(1)}% of its original capacity. No action needed.`;
+                    } else {
+                      narrative = `Battery retains ${health.toFixed(1)}% of original capacity. Cycle count data unavailable, so an exact timeline cannot be projected — but capacity loss at this level is measurable.`;
+                    }
+                  }
+                }
+
+                else if (c.name === "Thermals" && raw.thermals) {
+                  const t = raw.thermals;
+                  const maxTemp = t.maxTempC;
+                  const throttle = t.throttleEvents30min ?? 0;
+                  const source = t.thermalSource ?? "";
+                  const srcLabel: Record<string, string> = {
+                    performance_counter: "Win32 Performance Counter",
+                    acpi_wmi: "ACPI/WMI",
+                    ohm: "OpenHardwareMonitor",
+                    lhm: "LibreHardwareMonitor",
+                  };
+                  const srcStr = srcLabel[source] ?? source;
+                  if (maxTemp != null) {
+                    const throttleStr = throttle > 0
+                      ? ` ${throttle} thermal throttle event${throttle > 1 ? "s" : ""} detected in the last 30 minutes — CPU was forced to reduce its clock speed to prevent damage.`
+                      : " No throttle events detected.";
+                    if (c.score >= 80) {
+                      narrative = `Peak temperature: ${maxTemp.toFixed(1)}°C — within safe operating limits for consumer processors.${throttleStr} Source: ${srcStr}.`;
+                    } else if (c.score >= 60) {
+                      narrative = `Peak temperature: ${maxTemp.toFixed(1)}°C — above the ideal sustained operating range.${throttleStr} Check vent clearance and consider cleaning dust accumulation. Source: ${srcStr}.`;
+                    } else {
+                      narrative = `Peak temperature: ${maxTemp.toFixed(1)}°C — in the critical range where sustained operation accelerates thermal paste degradation and shortens fan bearing lifespan.${throttleStr} Thermal paste replacement and deep vent cleaning are recommended. Source: ${srcStr}.`;
+                    }
+                  }
+                }
+
+                else if (c.name === "Storage" && raw.storage?.[0]) {
+                  const st = raw.storage[0];
+                  const model = st.model ?? "Drive";
+                  const wear = st.wearLevelPct ?? st.healthPct;
+                  const free = st.freeSpacePct;
+                  const realloc = st.reallocatedSectors ?? 0;
+                  const poh = st.powerOnHours ?? 0;
+                  const freeStr = free != null ? ` ${free.toFixed(1)}% free space remaining.` : " Free space data unavailable.";
+                  const pohStr = poh > 0 ? ` Power-on hours: ${poh.toLocaleString()}h.` : "";
+                  const reallocStr = realloc > 0 ? ` ⚠ ${realloc} reallocated sector${realloc > 1 ? "s" : ""} detected — physical media damage present.` : "";
+                  if (wear != null) {
+                    const consumed = (100 - wear).toFixed(0);
+                    if (c.score >= 80) {
+                      narrative = `${model}: ${wear}% endurance remaining (${consumed}% of rated write life consumed).${freeStr}${pohStr}${reallocStr} Drive health is in good condition.`;
+                    } else if (c.score >= 60) {
+                      narrative = `${model}: ${wear}% endurance remaining.${freeStr}${pohStr}${reallocStr} Drive is in the monitoring zone — maintain regular backups and consider upgrade planning.`;
+                    } else {
+                      narrative = `${model}: only ${wear}% endurance remaining.${freeStr}${pohStr}${reallocStr} Write endurance is critically low. Imminent performance degradation or failure is possible — back up all data now.`;
+                    }
+                  } else {
+                    if (c.score >= 80) {
+                      narrative = `${model}:${freeStr}${pohStr}${reallocStr} Health data was not directly readable — score reflects available indicators.`;
+                    } else {
+                      narrative = `${model}:${freeStr}${pohStr}${reallocStr} Health data was not directly readable. Low free space or high runtime hours are contributing to the lower score.`;
+                    }
+                  }
+                }
+
+                else if (c.name === "Memory" && raw.memory) {
+                  const m = raw.memory;
+                  const usedPct = m.usedPct.toFixed(1);
+                  const totalGB = m.totalGB;
+                  const pf = m.pageFaultsPerSec;
+                  const freeGB = ((1 - m.usedPct / 100) * totalGB).toFixed(1);
+                  const pfStr = pf != null && pf > 10 ? ` Page fault rate: ${pf.toLocaleString()}/s — active pagefile use detected, which causes SSD wear and latency spikes.` : "";
+                  if (c.score >= 80) {
+                    narrative = `${totalGB} GB RAM · ${usedPct}% in use (${freeGB} GB free). Memory headroom is adequate for current workload.${pfStr}`;
+                  } else if (c.score >= 60) {
+                    narrative = `${totalGB} GB RAM · ${usedPct}% in use (${freeGB} GB free). Memory is moderately pressured — adding more browser tabs or background apps will trigger pagefile activity.${pfStr}`;
+                  } else {
+                    narrative = `${totalGB} GB RAM · ${usedPct}% in use (only ${freeGB} GB free). System is under heavy memory pressure. Windows is actively using the pagefile on your SSD, causing slowdowns and accelerating drive wear.${pfStr}`;
+                  }
+                }
+
+                else if (c.name === "CPU" && raw.cpu) {
+                  const cpu = raw.cpu;
+                  const name = cpu.name ?? "CPU";
+                  const load = cpu.avgLoadPct;
+                  const throttle = cpu.throttleEvents30min ?? 0;
+                  const cores = cpu.cores;
+                  const coreStr = cores ? ` (${cores}-core)` : "";
+                  const loadStr = load != null ? ` Average load: ${load.toFixed(1)}%.` : "";
+                  const throttleStr = throttle > 0
+                    ? ` ${throttle} thermal throttle event${throttle > 1 ? "s" : ""} in the last 30 minutes — processor is reducing clock speed due to heat.`
+                    : " No throttle events.";
+                  if (c.score >= 80) {
+                    narrative = `${name}${coreStr}.${loadStr}${throttleStr} CPU is operating efficiently.`;
+                  } else if (c.score >= 60) {
+                    narrative = `${name}${coreStr}.${loadStr}${throttleStr} CPU load or throttling is moderately elevated — cooling system maintenance may improve performance.`;
+                  } else {
+                    narrative = `${name}${coreStr}.${loadStr}${throttleStr} CPU is being significantly thermally limited. Effective performance is lower than hardware spec due to sustained throttling.`;
+                  }
+                }
+
                 return (
                   <motion.div key={c.name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + idx * 0.1, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}>
                     <div className="flex items-center justify-between mb-2">
@@ -1088,20 +1203,20 @@ export default function Report() {
                       </div>
                       <span className="text-lg font-bold font-mono tabular-nums" style={{ color: scoreColor }}>{c.score}</span>
                     </div>
-                    <div className="h-2 bg-border/20 rounded-full overflow-hidden mb-2">
+                    <div className="h-2 bg-border/20 rounded-full overflow-hidden mb-3">
                       <motion.div className={`h-full rounded-full ${s.bar}`} initial={{ width: 0 }} animate={{ width: `${c.score}%` }} transition={{ delay: 0.2 + idx * 0.15, duration: 0.8, ease: "easeOut" }} />
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{INTERP[c.name] ?? c.detail}</p>
-                    <p className="text-xs text-muted-foreground/40 font-mono mt-0.5">{c.detail}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{narrative}</p>
                   </motion.div>
                 );
               })}
             </div>
           </div>
 
+
           {/* Advanced System Diagnostics */}
           <AnimateIn delay={0.05}>
-            <AdvancedDiagnostics report={result} />
+            <AdvancedDiagnostics report={result.rawReport} />
           </AnimateIn>
 
           {/* ── Health Forecast Timeline ────────────────────────────────────── */}
