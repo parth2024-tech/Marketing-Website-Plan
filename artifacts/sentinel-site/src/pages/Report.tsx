@@ -151,10 +151,10 @@ function ScoreRing({ score, size = 148 }: { score: number; size?: number }) {
         />
       </svg>
       {/* Score text — centred inside ring */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center z-10" style={{ transform: 'translateZ(0)' }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
         <motion.div
           className="text-4xl font-black tabular-nums leading-none"
-          style={{ color, textShadow: `0 0 20px ${color}60` }}
+          style={{ color }}
         >
           {roundedScore}
         </motion.div>
