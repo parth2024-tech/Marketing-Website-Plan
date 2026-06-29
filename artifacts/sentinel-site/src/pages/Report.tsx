@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
 import { ResponsiveContainer, ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceArea } from "recharts";
 
 import { Link, useParams, useLocation } from "wouter";
@@ -85,19 +85,18 @@ function ScoreRing({ score, size = 148 }: { score: number; size?: number }) {
   const color = score >= 80 ? "#22d3ee" : score >= 60 ? "#f59e0b" : "#f87171";
   const glowColor = score >= 80 ? "#06b6d4" : score >= 60 ? "#d97706" : "#ef4444";
 
-  const [displayed, setDisplayed] = React.useState(0);
+  // Hardware-accelerated motion values (bypasses React render cycle)
+  const scoreValue = useMotionValue(0);
+  const roundedScore = useTransform(scoreValue, (latest) => Math.round(latest));
+  const dasharray = useTransform(scoreValue, (latest) => `${(latest / 100) * circ} ${circ}`);
 
   React.useEffect(() => {
-    import("framer-motion").then(({ animate }) => {
-      animate(0, score, {
-        duration: 1.0,
-        ease: [0.25, 0.1, 0.25, 1],
-        onUpdate: (val) => setDisplayed(Math.round(val)),
-      });
+    const controls = animate(scoreValue, score, {
+      duration: 1.0,
+      ease: [0.25, 0.1, 0.25, 1],
     });
-  }, [score]);
-
-  const dash = (displayed / 100) * circ;
+    return controls.stop;
+  }, [score, scoreValue]);
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -123,44 +122,42 @@ function ScoreRing({ score, size = 148 }: { score: number; size?: number }) {
           className="text-border/30"
         />
         {/* Glow arc (avoids Safari drop-shadow transform drift bug) */}
-        <circle
+        <motion.circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
           stroke={color}
           strokeWidth={strokeW}
-          strokeDasharray={`${dash} ${circ}`}
           strokeLinecap="round"
           style={{
+            strokeDasharray: dasharray,
             filter: "blur(6px)",
             opacity: 0.6,
-            transition: "stroke-dasharray 0.05s linear",
           }}
         />
         {/* Progress arc */}
-        <circle
+        <motion.circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
           stroke={color}
           strokeWidth={strokeW}
-          strokeDasharray={`${dash} ${circ}`}
           strokeLinecap="round"
           style={{
-            transition: "stroke-dasharray 0.05s linear",
+            strokeDasharray: dasharray,
           }}
         />
       </svg>
-      {/* Score text — centred inside ring (only rendered here, NOT duplicated outside) */}
+      {/* Score text — centred inside ring */}
       <div className="absolute inset-0 flex flex-col items-center justify-center z-10" style={{ transform: 'translateZ(0)' }}>
-        <div
+        <motion.div
           className="text-4xl font-black tabular-nums leading-none"
           style={{ color, textShadow: `0 0 20px ${color}60` }}
         >
-          {displayed}
-        </div>
+          {roundedScore}
+        </motion.div>
         <div className="text-[11px] font-mono text-muted-foreground/50 mt-0.5">/100</div>
       </div>
     </div>
