@@ -420,16 +420,28 @@ function BatteryDegradationChart({ battery }: { battery: { health?: number | nul
   const health = battery?.health;
   const cycles = battery?.cycleCount;
 
-  // Build chart data: the degradation curve + user's actual position
-  const chartData = curvePoints.map((p) => ({
-    cycles: p.cycles,
-    expected: p.expected,
-    // Mark the user's current data point at their exact cycle count
-    actual:
-      cycles != null && Math.abs(p.cycles - cycles) < 60
-        ? health ?? null
-        : null,
-  }));
+  // User's exact cycle position — always inserted so the dot is always visible
+  const userPoint = cycles != null && health != null
+    ? { cycles, expected: (() => {
+        // Interpolate expected at user's exact cycle count from the curve
+        for (let i = 1; i < curvePoints.length; i++) {
+          const p0 = curvePoints[i - 1];
+          const p1 = curvePoints[i];
+          if (cycles <= p1.cycles) {
+            const t = (cycles - p0.cycles) / (p1.cycles - p0.cycles);
+            return p0.expected + t * (p1.expected - p0.expected);
+          }
+        }
+        return curvePoints[curvePoints.length - 1].expected;
+      })(), actual: health }
+    : null;
+
+  // Build chart data: merge curve points + user's exact position into a sorted series
+  const baseData = curvePoints.map((p) => ({ cycles: p.cycles, expected: p.expected, actual: null as number | null }));
+  const chartData = userPoint
+    ? [...baseData, { cycles: userPoint.cycles, expected: userPoint.expected, actual: userPoint.actual }]
+        .sort((a, b) => a.cycles - b.cycles)
+    : baseData;
 
   // Determine how the user compares to expectations
   const gap =
@@ -800,8 +812,45 @@ export default function Report() {
 
   if (!result) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-sm text-muted-foreground font-mono animate-pulse">Loading report…</div>
+      <div className="min-h-screen bg-background px-6 py-12">
+        <div className="max-w-3xl mx-auto space-y-6 animate-pulse">
+          {/* Header skeleton */}
+          <div className="h-16 bg-card/60 rounded-2xl border border-border/40" />
+          {/* Score card skeleton */}
+          <div className="bg-card/60 rounded-2xl border border-border/40 p-7">
+            <div className="flex gap-8 items-center">
+              <div className="w-36 h-36 rounded-full bg-border/30 shrink-0" />
+              <div className="flex-1 space-y-3">
+                <div className="h-10 bg-border/30 rounded-lg w-40" />
+                <div className="h-4 bg-border/20 rounded w-72" />
+                <div className="h-4 bg-border/20 rounded w-52" />
+                <div className="flex gap-2 mt-2">
+                  <div className="h-6 w-20 bg-border/20 rounded-full" />
+                  <div className="h-6 w-24 bg-border/20 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Component cards skeleton */}
+          <div className="bg-card/60 rounded-2xl border border-border/40 p-7 space-y-5">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="flex justify-between">
+                  <div className="h-4 bg-border/30 rounded w-24" />
+                  <div className="h-4 bg-border/30 rounded w-8" />
+                </div>
+                <div className="h-2 bg-border/20 rounded-full" />
+                <div className="h-3 bg-border/10 rounded w-3/4" />
+              </div>
+            ))}
+          </div>
+          {/* Findings skeleton */}
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-20 bg-card/60 rounded-xl border border-border/40" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -961,13 +1010,26 @@ export default function Report() {
                   )}
 
                   <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                    {(combinedScoreVal ?? result.overall) >= 85
-                      ? "Your hardware is in excellent shape. Minor items to keep an eye on."
-                      : (combinedScoreVal ?? result.overall) >= 70
-                      ? "Hardware is generally healthy. A few components need attention."
-                      : (combinedScoreVal ?? result.overall) >= 55
-                      ? "Several components need attention. Review the findings below."
-                      : "Multiple components are degraded. Prioritise the critical findings."}
+                    {(() => {
+                      const score = combinedScoreVal ?? result.overall;
+                      const criticalComponents = result.components.filter(c => c.status === "critical");
+                      const attentionComponents = result.components.filter(c => c.status === "attention");
+                      const criticalFindings = publicFindings.filter(f => f.urgency === "critical");
+
+                      if (score >= 85 && criticalComponents.length === 0) {
+                        const topComponent = result.components.reduce((a, b) => a.score > b.score ? a : b);
+                        return `All components are operating within healthy parameters. ${topComponent.name} is performing best at ${topComponent.score}/100.`;
+                      } else if (criticalComponents.length > 0) {
+                        const names = criticalComponents.map(c => `${c.name} (${c.score}/100)`).join(" and ");
+                        return `${names} ${criticalComponents.length === 1 ? "is" : "are"} in critical condition and ${criticalComponents.length === 1 ? "requires" : "require"} immediate attention. ${criticalFindings.length > 0 ? `${criticalFindings.length} critical finding${criticalFindings.length > 1 ? "s" : ""} flagged — review below.` : ""}`;
+                      } else if (attentionComponents.length > 0) {
+                        const names = attentionComponents.map(c => `${c.name} (${c.score}/100)`).join(" and ");
+                        return `${names} ${attentionComponents.length === 1 ? "needs" : "need"} attention. Review the findings below for specific recommendations.`;
+                      } else {
+                        const lowestComponent = result.components.reduce((a, b) => a.score < b.score ? a : b);
+                        return `Hardware is generally healthy. ${lowestComponent.name} has the lowest score at ${lowestComponent.score}/100 — keep an eye on it.`;
+                      }
+                    })()}
                   </p>
 
                   {/* Finding summary pills */}
@@ -1064,6 +1126,53 @@ export default function Report() {
             </AnimateIn>
           )}
 
+          {/* System Info Tile */}
+          <AnimateIn delay={0.05}>
+            <div className="surface-card rounded-2xl p-6 border border-border/30">
+              <h2 className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest mb-4">System Information</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-xs font-mono">
+                <div>
+                  <div className="text-muted-foreground/40 mb-0.5 uppercase tracking-wide text-[10px]">Model</div>
+                  <div className="text-foreground font-medium truncate" title={result.system.model}>{result.system.model || "Unknown"}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground/40 mb-0.5 uppercase tracking-wide text-[10px]">OS</div>
+                  <div className="text-foreground truncate" title={result.system.os}>{result.system.os || "Unknown"}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground/40 mb-0.5 uppercase tracking-wide text-[10px]">Hostname</div>
+                  <div className="text-foreground truncate">{result.system.hostname || "—"}</div>
+                </div>
+                {result.rawReport?.system?.biosVersion && (
+                  <div>
+                    <div className="text-muted-foreground/40 mb-0.5 uppercase tracking-wide text-[10px]">BIOS / UEFI</div>
+                    <div className="text-foreground truncate" title={result.rawReport.system.biosVersion}>{result.rawReport.system.biosVersion}</div>
+                  </div>
+                )}
+                {result.rawReport?.system?.bootTime && (
+                  <div>
+                    <div className="text-muted-foreground/40 mb-0.5 uppercase tracking-wide text-[10px]">Last Boot</div>
+                    <div className="text-foreground">{new Date(result.rawReport.system.bootTime).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                  </div>
+                )}
+                {result.rawReport?.system?.uptimeHours != null && (
+                  <div>
+                    <div className="text-muted-foreground/40 mb-0.5 uppercase tracking-wide text-[10px]">Uptime</div>
+                    <div className="text-foreground">{result.rawReport.system.uptimeHours < 24
+                      ? `${result.rawReport.system.uptimeHours.toFixed(0)}h`
+                      : `${(result.rawReport.system.uptimeHours / 24).toFixed(0)}d ${(result.rawReport.system.uptimeHours % 24).toFixed(0)}h`}</div>
+                  </div>
+                )}
+                {result.rawReport?.cpu?.name && (
+                  <div className="col-span-2 sm:col-span-3">
+                    <div className="text-muted-foreground/40 mb-0.5 uppercase tracking-wide text-[10px]">Processor</div>
+                    <div className="text-foreground truncate" title={result.rawReport.cpu.name}>{result.rawReport.cpu.name}{result.rawReport.cpu.cores ? ` · ${result.rawReport.cpu.cores} cores` : ""}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </AnimateIn>
+
           {/* Component breakdown — staggered animated */}
           <div className="surface-card rounded-2xl p-7">
             <h2 className="text-sm font-mono text-muted-foreground/60 uppercase tracking-widest mb-6">Component breakdown</h2>
@@ -1080,27 +1189,29 @@ export default function Report() {
                   const b = raw.battery;
                   const health = b.health;
                   const cycles = b.cycleCount;
-                  const drainW = b.dischargeRateMw != null ? (Math.abs(b.dischargeRateMw) / 1000).toFixed(1) : null;
-                  const fullWh = b.fullChargeCapacity ? (b.fullChargeCapacity / 1000).toFixed(0) : null;
-                  const designWh = b.designCapacity ? (b.designCapacity / 1000).toFixed(0) : null;
+                  const drainMw = b.dischargeRateMw != null && b.dischargeRateMw < 0 ? Math.abs(b.dischargeRateMw) : null;
+                  const drainW = drainMw ? (drainMw / 1000).toFixed(1) : null;
+                  const fullWh = b.fullChargeCapacity ? (b.fullChargeCapacity / 1000).toFixed(1) : null;
+                  const designWh = b.designCapacity ? (b.designCapacity / 1000).toFixed(1) : null;
+                  // Estimate runtime: fullChargeCapacity (mWh) / |dischargeRateMw| = hours
+                  const runtimeHrs = (drainMw && b.fullChargeCapacity)
+                    ? (b.fullChargeCapacity / drainMw).toFixed(1)
+                    : null;
 
                   if (health != null && cycles != null) {
                     const lostPct = (100 - health).toFixed(0);
-                    const capacityStr = fullWh && designWh ? ` (${fullWh} Wh of original ${designWh} Wh)` : "";
-                    const drainStr = drainW ? ` Current draw: ${drainW}W.` : "";
+                    const whStr = fullWh && designWh ? ` (${fullWh} Wh of ${designWh} Wh rated)` : "";
+                    const runtimeStr = runtimeHrs ? ` Est. ${runtimeHrs}h runtime at current draw (${drainW}W).` : drainW ? ` Current draw: ${drainW}W.` : "";
                     if (c.score >= 80) {
-                      narrative = `Battery retains ${health.toFixed(1)}% of its original capacity${capacityStr} at ${cycles} charge cycles.${drainStr} Degradation is within normal range for this cycle count — no action needed.`;
+                      narrative = `Battery retains ${health.toFixed(1)}% capacity${whStr} at ${cycles} cycles.${runtimeStr} Degradation within normal range — no action needed.`;
                     } else if (c.score >= 60) {
-                      narrative = `Battery has lost ${lostPct}% of its original capacity${capacityStr} over ${cycles} charge cycles.${drainStr} Runtime per charge is measurably shorter. Plan replacement within the next 6–12 months.`;
+                      narrative = `Battery has lost ${lostPct}% of original capacity${whStr} over ${cycles} cycles.${runtimeStr} Runtime is measurably shorter. Plan replacement within 6–12 months.`;
                     } else {
-                      narrative = `Battery is severely degraded — retaining only ${health.toFixed(1)}% of original capacity${capacityStr} at ${cycles} cycles.${drainStr} Unexpected shutdowns at 10–20% reported charge are likely. Replacement is strongly recommended.`;
+                      narrative = `Battery severely degraded: ${health.toFixed(1)}% remaining${whStr} at ${cycles} cycles.${runtimeStr} Unexpected shutdowns at 10–20% reported charge are likely. Replace soon.`;
                     }
                   } else if (health != null) {
-                    if (c.score >= 80) {
-                      narrative = `Battery retains ${health.toFixed(1)}% of its original capacity. No action needed.`;
-                    } else {
-                      narrative = `Battery retains ${health.toFixed(1)}% of original capacity. Cycle count data unavailable, so an exact timeline cannot be projected — but capacity loss at this level is measurable.`;
-                    }
+                    const runtimeStr = runtimeHrs ? ` Est. ${runtimeHrs}h runtime at current draw.` : "";
+                    narrative = `Battery retains ${health.toFixed(1)}% of original capacity.${runtimeStr} ${c.score >= 80 ? "No action needed." : "Degradation is measurable — monitor closely."}`;
                   }
                 }
 
@@ -1117,15 +1228,20 @@ export default function Report() {
                   };
                   const srcStr = srcLabel[source] ?? source;
                   if (maxTemp != null) {
+                    const THROTTLE_TEMP = 100;
+                    const headroom = THROTTLE_TEMP - maxTemp;
+                    const headroomStr = headroom > 0
+                      ? ` ${headroom.toFixed(0)}°C of headroom before throttle limit.`
+                      : " Throttle threshold exceeded.";
                     const throttleStr = throttle > 0
-                      ? ` ${throttle} thermal throttle event${throttle > 1 ? "s" : ""} detected in the last 30 minutes — CPU was forced to reduce its clock speed to prevent damage.`
-                      : " No throttle events detected.";
+                      ? ` ${throttle} thermal throttle event${throttle > 1 ? "s" : ""} in last 30min — CPU clock was reduced.`
+                      : " No throttle events.";
                     if (c.score >= 80) {
-                      narrative = `Peak temperature: ${maxTemp.toFixed(1)}°C — within safe operating limits for consumer processors.${throttleStr} Source: ${srcStr}.`;
+                      narrative = `Peak: ${maxTemp.toFixed(1)}°C — within safe limits.${headroomStr}${throttleStr} Source: ${srcStr || "System"}.`;
                     } else if (c.score >= 60) {
-                      narrative = `Peak temperature: ${maxTemp.toFixed(1)}°C — above the ideal sustained operating range.${throttleStr} Check vent clearance and consider cleaning dust accumulation. Source: ${srcStr}.`;
+                      narrative = `Peak: ${maxTemp.toFixed(1)}°C — above ideal sustained range.${headroomStr}${throttleStr} Check vent clearance. Source: ${srcStr || "System"}.`;
                     } else {
-                      narrative = `Peak temperature: ${maxTemp.toFixed(1)}°C — in the critical range where sustained operation accelerates thermal paste degradation and shortens fan bearing lifespan.${throttleStr} Thermal paste replacement and deep vent cleaning are recommended. Source: ${srcStr}.`;
+                      narrative = `Peak: ${maxTemp.toFixed(1)}°C — critical zone.${headroomStr}${throttleStr} Thermal paste replacement and deep vent cleaning recommended. Source: ${srcStr || "System"}.`;
                     }
                   }
                 }
@@ -1164,13 +1280,18 @@ export default function Report() {
                   const totalGB = m.totalGB;
                   const pf = m.pageFaultsPerSec;
                   const freeGB = ((1 - m.usedPct / 100) * totalGB).toFixed(1);
-                  const pfStr = pf != null && pf > 10 ? ` Page fault rate: ${pf.toLocaleString()}/s — active pagefile use detected, which causes SSD wear and latency spikes.` : "";
+                  const PF_BASELINE = 500;
+                  const pfStr = pf != null && pf > PF_BASELINE
+                    ? ` Page fault rate: ${pf.toLocaleString()}/s (×${(pf / PF_BASELINE).toFixed(1)} above healthy idle baseline of ${PF_BASELINE}/s) — active SSD pagefile use.`
+                    : pf != null && pf > 10
+                    ? ` Page fault rate: ${pf.toLocaleString()}/s.`
+                    : "";
                   if (c.score >= 80) {
                     narrative = `${totalGB} GB RAM · ${usedPct}% in use (${freeGB} GB free). Memory headroom is adequate for current workload.${pfStr}`;
                   } else if (c.score >= 60) {
-                    narrative = `${totalGB} GB RAM · ${usedPct}% in use (${freeGB} GB free). Memory is moderately pressured — adding more browser tabs or background apps will trigger pagefile activity.${pfStr}`;
+                    narrative = `${totalGB} GB RAM · ${usedPct}% in use (${freeGB} GB free). Memory is moderately pressured — additional apps or browser tabs will trigger pagefile activity.${pfStr}`;
                   } else {
-                    narrative = `${totalGB} GB RAM · ${usedPct}% in use (only ${freeGB} GB free). System is under heavy memory pressure. Windows is actively using the pagefile on your SSD, causing slowdowns and accelerating drive wear.${pfStr}`;
+                    narrative = `${totalGB} GB RAM · ${usedPct}% in use (only ${freeGB} GB free). System is under heavy memory pressure. Windows is actively using the SSD as a memory extension, causing latency spikes and accelerating drive wear.${pfStr}`;
                   }
                 }
 

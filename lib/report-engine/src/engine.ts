@@ -1,6 +1,6 @@
 import type { SentinelReport } from "./schema";
 
-export const ALGORITHM_VERSION = 2;
+export const ALGORITHM_VERSION = 3;
 
 export interface ComponentScore {
   name: string;
@@ -291,11 +291,12 @@ function memoryScore(r: SentinelReport): ComponentScore | null {
   let score = clamp(Math.round(100 - finalPenalty));
 
   // Capacity hard caps — physical RAM size creates a ceiling on how well
-  // memory can ever perform regardless of current usage percentage
-  if (m.totalGB <= 4) score = Math.min(score, 50);       // 4 GB = can't run modern Windows without pagefile
-  else if (m.totalGB <= 6) score = Math.min(score, 68);  // 6 GB = borderline for Win11
+  // memory can ever perform regardless of current usage percentage.
+  // NOTE: conditions ordered from most-severe to least — each must be mutually exclusive.
+  if (m.totalGB <= 4) score = Math.min(score, 50);              // 4 GB = can't run modern Windows without pagefile
+  else if (m.totalGB <= 6) score = Math.min(score, 68);         // 6 GB = borderline for Win11
+  else if (m.totalGB <= 8 && used > 85) score = Math.min(score, 65); // 8 GB critically full (check 85 FIRST)
   else if (m.totalGB <= 8 && used > 75) score = Math.min(score, 75); // 8 GB at high usage
-  else if (m.totalGB <= 8 && used > 85) score = Math.min(score, 65); // 8 GB critically full
 
   let detail = `${m.totalGB} GB RAM · ${used.toFixed(1)}% used`;
   if (m.pageFaultsPerSec != null && m.pageFaultsPerSec > 10) {
@@ -342,14 +343,26 @@ function generateFindings(r: SentinelReport): Finding[] {
 
   // Battery
   if (b?.health != null) {
+    // Estimate runtime from discharge rate if available
+    const runtimeStr = (b.dischargeRateMw != null && b.fullChargeCapacity != null && b.dischargeRateMw < 0)
+      ? (() => {
+          const drainMw = Math.abs(b.dischargeRateMw);
+          const runtimeHrs = (b.fullChargeCapacity / drainMw);
+          return ` At current draw of ${(drainMw / 1000).toFixed(1)}W, estimated remaining runtime is approximately ${runtimeHrs.toFixed(1)} hours.`;
+        })()
+      : "";
+
     if (b.health < 60) {
       const cycles = b.cycleCount ?? 0;
       const expected = cycles > 0 ? expectedBatteryHealth(cycles) : null;
       const oemCtx = expected
         ? `Your OEM tool (e.g. Dell SupportAssist, Lenovo Vantage) reports raw capacity only — it does not adjust for cycle count. At ${cycles} cycles, a healthy battery should retain ~${expected.toFixed(0)}% capacity. Yours is at ${b.health.toFixed(1)}%. That ${(expected - b.health).toFixed(0)}-point gap is invisible to OEM diagnostics.`
         : `OEM tools like Dell SupportAssist or Lenovo Vantage only report raw capacity percentage. They don't compare against expected degradation curves for your cycle count, so they can't tell you if your battery is wearing faster than normal.`;
-      findings.push({ component: "Battery", title: "Battery capacity critically low",
-        body: `Your battery retains only ${b.health.toFixed(1)}% of its original capacity. At this level, runtime is severely reduced and unexpected shutdowns may occur.`,
+      const lostWh = b.designCapacity != null && b.fullChargeCapacity != null
+        ? ` You've lost ${((b.designCapacity - b.fullChargeCapacity) / 1000).toFixed(1)} Wh of original ${(b.designCapacity / 1000).toFixed(1)} Wh capacity.`
+        : "";
+      findings.push({ component: "Battery", title: `Battery capacity critically low — ${b.health.toFixed(1)}%`,
+        body: `Your battery retains only ${b.health.toFixed(1)}% of its original capacity.${lostWh}${runtimeStr} At this degradation level, unexpected shutdowns at 10–20% reported charge are common.`,
         oemContext: oemCtx,
         urgency: "critical", pro: false });
     } else if (b.health < 75) {
@@ -358,48 +371,92 @@ function generateFindings(r: SentinelReport): Finding[] {
       const oemCtx = expected
         ? `Your OEM tool doesn't check cycle-adjusted degradation — it only reports raw capacity. At your cycle count (${cycles}), your battery should be at ~${expected.toFixed(0)}%. It's at ${b.health.toFixed(1)}%. That ${(expected - b.health).toFixed(0)}-point gap is what SupportAssist misses.`
         : `OEM battery diagnostics only show raw capacity percentage. They don't track whether degradation is faster than expected for your usage pattern.`;
-      findings.push({ component: "Battery", title: "Battery degrading faster than expected",
-        body: `Current capacity: ${b.health.toFixed(1)}% of original. You're losing measurable runtime per charge cycle. Battery replacement is worth planning.`,
+      findings.push({ component: "Battery", title: `Battery degrading — ${b.health.toFixed(1)}% capacity remaining`,
+        body: `Current capacity: ${b.health.toFixed(1)}% of original.${runtimeStr} You're losing measurable runtime per charge cycle. Plan for battery replacement within 6–12 months.`,
         oemContext: oemCtx,
         urgency: "warning", pro: false });
     }
   }
   if (b?.cycleCount != null && b.cycleCount > 500) {
-    findings.push({ component: "Battery", title: "High cycle count detected",
-      body: `${b.cycleCount} charge cycles recorded. Most laptop batteries are rated for 300–500 full cycles before significant degradation. You're past this threshold.`,
-      oemContext: "OEM tools like HP Support Assistant show cycle count but don't flag when you've exceeded the manufacturer's rated cycle life. They treat 1,000 cycles the same as 100.",
+    const ratedCycles = 500; // industry standard baseline
+    const overBy = b.cycleCount - ratedCycles;
+    findings.push({ component: "Battery", title: `High cycle count — ${b.cycleCount} cycles (${overBy} past rated life)`,
+      body: `${b.cycleCount} charge cycles recorded. Most laptop batteries are rated for 300–500 full cycles before significant degradation. You are ${overBy} cycles past the typical rated life — statistical failure risk increases meaningfully past this point.`,
+      oemContext: "OEM tools like HP Support Assistant show cycle count but don't flag when you've exceeded the manufacturer's rated cycle life. They treat 1,000 cycles the same as 100 cycles — there is no threshold alert.",
       urgency: b.cycleCount > 800 ? "critical" : "warning", pro: false });
   }
   // Pro: degradation trajectory — requires both health and cycles
   if (b?.health != null && b?.cycleCount != null) {
     const expected = expectedBatteryHealth(b.cycleCount);
-    if (expected - b.health > 8) {
+    const gap = expected - b.health;
+    if (gap > 8) {
+      // Physics: if battery is 'gap' points below expected at these cycles,
+      // it's degrading at roughly (gap/cycles) extra per cycle above baseline
+      const extraDegradationPerCycle = gap / b.cycleCount;
+      const cyclesUntil60 = b.health > 60
+        ? Math.round((b.health - 60) / (extraDegradationPerCycle + 0.04)) // baseline ~0.04%/cycle
+        : 0;
+      const monthsEstimate = Math.round(cyclesUntil60 / 2); // assume ~2 cycles/month average
       findings.push({ component: "Battery", title: "Degradation trajectory: faster-than-normal wear detected",
-        body: `At ${b.cycleCount} cycles, a typical battery retains ~${expected.toFixed(0)}% capacity. Yours is at ${b.health.toFixed(1)}% — ${(expected - b.health).toFixed(1)} points below baseline. Sentinel projects replacement-grade degradation approximately 3–4 months earlier than average.`,
-        oemContext: `No OEM diagnostic tool performs cycle-adjusted degradation analysis. Dell SupportAssist, Lenovo Vantage, and HP Support Assistant all report raw capacity without comparing against expected wear curves. The ${(expected - b.health).toFixed(0)}-point gap between expected (${expected.toFixed(0)}%) and actual (${b.health.toFixed(1)}%) health is entirely invisible to these tools.`,
+        body: `At ${b.cycleCount} cycles, a typical battery retains ~${expected.toFixed(0)}% capacity. Yours is at ${b.health.toFixed(1)}% — ${gap.toFixed(1)} points below the population baseline. Sentinel projects the battery will reach replacement-grade degradation (60%) approximately ${monthsEstimate > 0 ? `${monthsEstimate} months` : "soon"} sooner than average.`,
+        oemContext: `No OEM diagnostic tool performs cycle-adjusted degradation analysis. Dell SupportAssist, Lenovo Vantage, and HP Support Assistant all report raw capacity without comparing against expected wear curves. The ${gap.toFixed(0)}-point gap between expected (${expected.toFixed(0)}%) and actual (${b.health.toFixed(1)}%) health is entirely invisible to these tools.`,
         urgency: "warning", pro: true });
     }
   }
 
   // Thermals
+  // Throttle threshold for Intel/AMD consumer chips is typically 100°C.
+  // Sustained >85°C causes measurable silicon degradation over months.
+  const THROTTLE_TEMP = 100; // °C — typical TJ Max for consumer processors
   if (t?.maxTempC != null) {
+    const headroomC = THROTTLE_TEMP - t.maxTempC;
+    const headroomStr = headroomC > 0
+      ? ` Only ${headroomC.toFixed(0)}°C of headroom before the processor's thermal throttle limit (${THROTTLE_TEMP}°C TJ Max).`
+      : ` System has exceeded the thermal throttle threshold.`;
     if (t.maxTempC > 90) {
-      findings.push({ component: "Thermals", title: "Critical peak temperature recorded",
-        body: `Your system reached ${t.maxTempC.toFixed(1)}°C. Sustained temperatures above 90°C accelerate thermal paste degradation, reduce fan bearing lifespan, and can trigger permanent CPU performance reduction.`,
-        oemContext: "OEM tools like Dell SupportAssist only run a brief thermal stress test and report pass/fail. They don't measure real-world peak temperatures under your actual workload, so a system that passes the OEM test can still be thermally throttling daily.",
+      findings.push({ component: "Thermals", title: `Critical peak temperature — ${t.maxTempC.toFixed(1)}°C recorded`,
+        body: `Your system reached ${t.maxTempC.toFixed(1)}°C.${headroomStr} Sustained operation at this temperature accelerates thermal paste degradation, reduces fan bearing lifespan, and causes the CPU to permanently reduce its maximum clock speed over time.`,
+        oemContext: "OEM tools like Dell SupportAssist only run a brief 30-second thermal stress test and report pass/fail. They don't measure real-world peak temperatures under your actual workload — a system that passes OEM thermal testing can still be throttling continuously during normal use.",
         urgency: "critical", pro: false });
     } else if (t.maxTempC > 80) {
-      findings.push({ component: "Thermals", title: "Elevated peak temperature",
-        body: `Peak temperature of ${t.maxTempC.toFixed(1)}°C detected. This is above the recommended sustained operating range for most consumer processors. Check vent clearance.`,
-        oemContext: "OEM thermal tests use artificial stress loads for 30–60 seconds. Your actual workload produces sustained temperatures that OEM tests never simulate.",
+      findings.push({ component: "Thermals", title: `Elevated peak temperature — ${t.maxTempC.toFixed(1)}°C`,
+        body: `Peak temperature of ${t.maxTempC.toFixed(1)}°C detected.${headroomStr} This is above the recommended sustained operating range for most consumer processors. Ensure vents are unobstructed and the system is on a hard flat surface.`,
+        oemContext: "OEM thermal tests use artificial stress loads for 30–60 seconds. Your actual workload generates sustained heat that OEM benchmarks never replicate.",
         urgency: "warning", pro: false });
     }
   }
   if (t?.throttleEvents30min != null && t.throttleEvents30min > 5) {
-    findings.push({ component: "Thermals", title: `${t.throttleEvents30min} thermal throttle events detected`,
-      body: "CPU throttling reduces performance and indicates the cooling system is struggling to dissipate heat. Common causes: blocked vents, degraded thermal paste, or dust accumulation.",
-      oemContext: "OEM tools don't count throttle events. They report CPU temperature at a single point in time, not the pattern of thermal throttling that reveals cooling system degradation.",
+    const throttleImpact = t.throttleEvents30min > 20
+      ? "Your CPU has been running at a significantly reduced clock speed, which can cut performance by 30–60% during burst workloads."
+      : "Your CPU is intermittently dropping to lower clock speeds, causing noticeable lag spikes during intensive tasks.";
+    findings.push({ component: "Thermals", title: `${t.throttleEvents30min} thermal throttle events in the last 30 minutes`,
+      body: `${throttleImpact} Common causes: blocked air vents, degraded thermal compound (paste dries out after 3–5 years), or dust accumulation in the heatsink fins.`,
+      oemContext: "OEM diagnostic tools report CPU temperature at a single snapshot — they never count throttle events. Windows Task Manager doesn't display throttling either: it shows CPU usage as a percentage of the reduced clock speed, making throttled performance look identical to full performance.",
       urgency: t.throttleEvents30min > 15 ? "critical" : "warning", pro: false });
+  }
+
+  // GPU temperature finding — fires when GPU data is available and temperature is elevated
+  const gpu = r.gpus?.[0];
+  if (gpu?.tempC != null) {
+    if (gpu.tempC > 90) {
+      findings.push({
+        component: "GPU",
+        title: `GPU critically hot — ${gpu.tempC}°C`,
+        body: `${gpu.name ?? "Your GPU"} is running at ${gpu.tempC}°C. Most GPUs begin throttling between 83–90°C, and sustained operation above 90°C accelerates VRAM degradation and reduces the GPU's effective lifespan. Check that GPU fan is spinning and air vents are clear.`,
+        oemContext: "OEM diagnostic tools rarely include GPU thermal analysis in their automated health checks. Dell SupportAssist and HP Support Assistant do not flag GPU overtemperature in their standard diagnostic flows.",
+        urgency: "critical",
+        pro: false,
+      });
+    } else if (gpu.tempC > 80) {
+      findings.push({
+        component: "GPU",
+        title: `GPU temperature elevated — ${gpu.tempC}°C`,
+        body: `${gpu.name ?? "Your GPU"} is running at ${gpu.tempC}°C — approaching the typical thermal throttle threshold. Ensure the laptop is on a hard, flat surface and vents are unobstructed.`,
+        oemContext: "GPU thermal data is not part of standard OEM diagnostic checks. HP, Dell, and Lenovo tools do not surface GPU temperature or GPU throttle events.",
+        urgency: "warning",
+        pro: false,
+      });
+    }
   }
   // Pro: thermal-battery correlation — requires both
   if (t?.maxTempC != null && b?.health != null && t.maxTempC > 78) {
@@ -431,26 +488,45 @@ function generateFindings(r: SentinelReport): Finding[] {
       urgency: s.wearLevelPct < 50 ? "critical" : "warning", pro: true });
   }
 
-  // Low total RAM finding
+  // Low total RAM finding — with page fault rate context
   const m = r.memory;
-  if (m && m.totalGB <= 4) {
-    findings.push({
-      component: "Memory",
-      title: "4 GB RAM — insufficient for modern workloads",
-      body: `Your system has only ${m.totalGB} GB of RAM. Windows 11 alone can consume 3–4 GB at idle. With just ${m.totalGB} GB, every additional app causes heavy pagefile use, significantly slowing your system and accelerating SSD wear.`,
-      oemContext: "OEM diagnostics do not flag low total RAM — they only test whether installed RAM is functional. A 4 GB system will pass every OEM memory test while delivering a noticeably degraded experience.",
-      urgency: "warning",
-      pro: false,
-    });
-  } else if (m && m.totalGB <= 6 && m.usedPct > 70) {
-    findings.push({
-      component: "Memory",
-      title: `${m.totalGB} GB RAM under pressure`,
-      body: `With ${m.totalGB} GB RAM and ${m.usedPct.toFixed(0)}% utilisation, your system is frequently near its memory limit. Adding browser tabs or background apps will push it into pagefile territory.`,
-      oemContext: "OEM tools test RAM for hardware defects, not capacity sufficiency. They will pass a 6 GB system with 80% utilisation as 'Memory: OK'.",
-      urgency: "info",
-      pro: false,
-    });
+  const PF_HEALTHY_BASELINE = 500; // page faults/s — Windows idle baseline
+  if (m) {
+    const pfContext = (m.pageFaultsPerSec != null && m.pageFaultsPerSec > PF_HEALTHY_BASELINE)
+      ? (() => {
+          const multiplier = (m.pageFaultsPerSec / PF_HEALTHY_BASELINE).toFixed(1);
+          return ` Current page fault rate is ${m.pageFaultsPerSec.toLocaleString()}/s — ${multiplier}× above the healthy idle baseline of ${PF_HEALTHY_BASELINE}/s. This means your SSD is being used as an active memory extension, causing measurable wear and latency spikes.`;
+        })()
+      : "";
+
+    if (m.totalGB <= 4) {
+      findings.push({
+        component: "Memory",
+        title: `${m.totalGB} GB RAM — insufficient for modern workloads`,
+        body: `Your system has only ${m.totalGB} GB of RAM. Windows 11 alone consumes 3–4 GB at idle, leaving less than 1 GB for any open applications.${pfContext} Every additional app forces heavy pagefile use, accelerating SSD wear and causing severe slowdowns.`,
+        oemContext: "OEM diagnostics test whether installed RAM modules are functional — not whether the installed capacity is adequate for the OS workload. A 4 GB system will pass every OEM memory test while delivering a noticeably degraded real-world experience.",
+        urgency: "warning",
+        pro: false,
+      });
+    } else if (m.totalGB <= 6 && m.usedPct > 70) {
+      findings.push({
+        component: "Memory",
+        title: `${m.totalGB} GB RAM under pressure — ${m.usedPct.toFixed(0)}% utilised`,
+        body: `With ${m.totalGB} GB RAM and ${m.usedPct.toFixed(0)}% current utilisation, your system is frequently near its physical memory limit.${pfContext} Adding more browser tabs or opening additional applications will push it into active pagefile territory.`,
+        oemContext: "OEM tools test RAM for hardware defects — not capacity sufficiency under real workloads. A 6 GB system at 80% utilisation passes every OEM memory diagnostic as 'Memory: OK'.",
+        urgency: "info",
+        pro: false,
+      });
+    } else if (m.pageFaultsPerSec != null && m.pageFaultsPerSec > 1000) {
+      findings.push({
+        component: "Memory",
+        title: `Excessive page fault rate — ${m.pageFaultsPerSec.toLocaleString()}/s`,
+        body: `Your system is generating ${m.pageFaultsPerSec.toLocaleString()} page faults per second — ${(m.pageFaultsPerSec / PF_HEALTHY_BASELINE).toFixed(1)}× above the healthy idle baseline. This indicates the OS is actively swapping memory to the SSD (pagefile), causing latency spikes and accelerating drive wear even though you have ${m.totalGB} GB of RAM installed.`,
+        oemContext: "OEM memory diagnostics test hardware integrity, not runtime behaviour. Page fault rate is never reported in Dell SupportAssist, Lenovo Vantage, or HP Support Assistant.",
+        urgency: m.pageFaultsPerSec > 2000 ? "warning" : "info",
+        pro: false,
+      });
+    }
   }
 
   // ── OEM Case Study Findings ───────────────────────────────────────────
@@ -558,12 +634,14 @@ function generateFindings(r: SentinelReport): Finding[] {
   // NOTE: requires r.startupList to be populated by the collector.
   // The C# collector sends this via Win32_StartupCommand + registry enumeration.
   const startupCount = (r.startupList ?? []).length;
+  // Rough RAM overhead estimate: avg startup program consumes ~80 MB of RAM
+  const estRamOverheadMb = startupCount * 80;
   if (startupCount > 15) {
     findings.push({
       component: "CPU",
-      title: `${startupCount} startup programs — impacting boot time`,
-      body: `Your system has ${startupCount} programs set to launch at startup. This increases boot time, raises idle CPU usage, and reduces available RAM from the first moment you log in. Review and disable non-essential startup items in Task Manager.`,
-      oemContext: "OEM diagnostic tools do not audit startup programs. Task Manager's Startup tab shows them, but no OEM tool aggregates startup impact on system health scoring.",
+      title: `${startupCount} startup programs — impacting boot time and idle performance`,
+      body: `Your system launches ${startupCount} programs automatically at login. Collectively, these consume an estimated ${estRamOverheadMb} MB of RAM before you open a single application, increase boot time, and keep idle CPU usage elevated. Open Task Manager → Startup Apps and disable anything you don't need at login.`,
+      oemContext: "OEM diagnostic tools do not audit startup programs. Task Manager's Startup tab shows them, but no OEM tool aggregates their impact on system health scoring or correlates startup count with observed memory pressure.",
       urgency: startupCount > 25 ? "warning" : "info",
       pro: false,
     });
@@ -571,11 +649,33 @@ function generateFindings(r: SentinelReport): Finding[] {
     findings.push({
       component: "CPU",
       title: `${startupCount} startup programs — moderate boot impact`,
-      body: `${startupCount} programs launch at startup. Consider reviewing which are essential to reduce boot time and idle resource use.`,
+      body: `${startupCount} programs launch at login, consuming an estimated ${estRamOverheadMb} MB of RAM before your first app is opened. Review which are essential to reduce boot time and idle resource consumption.`,
       oemContext: "Startup program auditing is absent from all major OEM diagnostic tools.",
       urgency: "info",
       pro: false,
     });
+  }
+
+  // BIOS version age finding — fires when biosVersion is present
+  if (r.system.biosVersion) {
+    // Extract a year from the BIOS version string if possible
+    // Common formats: "F.40 Nov 10 2021", "1.22.0 2019-05-15", "N2.0" etc.
+    const yearMatch = r.system.biosVersion.match(/20(1[5-9]|2[0-9])/); // matches 2015–2029
+    if (yearMatch) {
+      const biosYear = parseInt(`20${yearMatch[1]}`);
+      const currentYear = new Date().getFullYear();
+      const biosAge = currentYear - biosYear;
+      if (biosAge >= 3) {
+        findings.push({
+          component: "System",
+          title: `BIOS version dated ${biosYear} — ${biosAge} years old`,
+          body: `Your system firmware (BIOS/UEFI) is from ${biosYear} — ${biosAge} year${biosAge > 1 ? "s" : ""} old. Outdated firmware can cause thermal management inefficiencies, hardware compatibility issues, and missing security patches (e.g. Spectre/Meltdown mitigations). Visit your manufacturer's support page and search for your model to check for firmware updates.`,
+          oemContext: "While OEM tools like Dell SupportAssist and Lenovo Vantage do check for BIOS updates, they won't always surface a firmware that's 'current but old' as a health concern — they only flag when a newer version is available.",
+          urgency: biosAge >= 5 ? "warning" : "info",
+          pro: false,
+        });
+      }
+    }
   }
 
   // Security posture
@@ -640,47 +740,68 @@ function generatePredictions(r: SentinelReport): Prediction[] {
   const m = r.memory;
   const c = r.cpu;
 
-  // Battery prediction
+  // Battery prediction — physics-based timeline
+  // Uses the population degradation curve to project when health will hit 60% (replace threshold)
+  // and adjusts for actual vs. expected gap (faster degraders get shorter timelines)
   if (b?.health != null) {
     const health = b.health;
     const cycles = b.cycleCount ?? 0;
+
+    // Average cycle rate: ~1.5 full cycles/day for a laptop user → ~45/month
+    const AVG_CYCLES_PER_MONTH = 45;
+    const REPLACE_THRESHOLD = 60; // % health
+
+    // Population baseline degradation per cycle from engine's curve
+    const healthAtCurrent = expectedBatteryHealth(cycles);
+    const healthAt100More = expectedBatteryHealth(cycles + 100);
+    const baselineDropPer100Cycles = Math.max(0.1, healthAtCurrent - healthAt100More);
+    const baselineDropPerCycle = baselineDropPer100Cycles / 100;
+
+    // Actual degradation rate — if below expected, degrading faster
+    const gap = healthAtCurrent - health;
+    // Extra degradation per cycle beyond baseline (could be 0 if on-curve)
+    const actualDropPerCycle = Math.max(baselineDropPerCycle, baselineDropPerCycle + (gap / Math.max(cycles, 100)));
+    const cyclesUntilThreshold = health > REPLACE_THRESHOLD
+      ? (health - REPLACE_THRESHOLD) / actualDropPerCycle
+      : 0;
+    const monthsUntil = Math.round(cyclesUntilThreshold / AVG_CYCLES_PER_MONTH);
+
+    const currentValueStr = cycles > 0
+      ? `${health.toFixed(1)}% capacity · ${cycles} cycles`
+      : `${health.toFixed(1)}% capacity`;
+
     if (health >= 90) {
       predictions.push({
         component: "Battery",
-        currentValue: `${health.toFixed(1)}% capacity`,
-        projectedTimeline: "18–24 months before noticeable degradation",
+        currentValue: currentValueStr,
+        projectedTimeline: monthsUntil > 0 ? `~${monthsUntil} months before reaching replacement threshold` : "Long-term stable",
         severity: "stable",
-        insight: "Battery is in excellent condition. At current usage patterns, expect reliable performance for the next 1.5–2 years.",
+        insight: `Battery is in excellent condition. Based on the population degradation curve and ${cycles > 0 ? `your ${cycles} current cycles` : "usage patterns"}, expect reliable performance for approximately ${monthsUntil > 0 ? `${monthsUntil} more months` : "the foreseeable future"} before reaching the 60% capacity replacement threshold.`,
       });
     } else if (health >= 75) {
-      const gap = expectedBatteryHealth(cycles) - health;
-      const baseMonths = Math.max(3, Math.round((health - 50) * 0.6));
-      const adjustedMonths = gap > 10 ? Math.max(2, baseMonths - Math.round(gap * 0.3)) : baseMonths;
+      const gapNote = gap > 10 ? ` Battery is degrading ${(gap / Math.max(cycles, 1) * 100).toFixed(2)}% faster per 100 cycles than the population average.` : "";
       predictions.push({
         component: "Battery",
-        currentValue: `${health.toFixed(1)}% capacity · ${cycles} cycles`,
-        projectedTimeline: `${adjustedMonths}–${adjustedMonths + 4} months before performance becomes unreliable`,
+        currentValue: currentValueStr,
+        projectedTimeline: `~${monthsUntil} months before reaching replacement threshold (60% capacity)`,
         severity: "declining",
-        insight: `At current degradation rate${
-          gap > 10 ? ` (${gap.toFixed(0)}pts below expected for ${cycles} cycles)` : ""
-        }, battery performance may become unstable within ${adjustedMonths}–${adjustedMonths + 4} months. Runtime per charge will decrease noticeably. Plan for replacement within this window.`,
+        insight: `At the current degradation rate, your battery will reach the 60% replacement threshold in approximately ${monthsUntil} months (assuming ~${AVG_CYCLES_PER_MONTH} charge cycles/month).${gapNote} Runtime per charge will decrease noticeably before then. Plan for replacement within this window.`,
       });
     } else if (health >= 50) {
-      const monthsLeft = Math.max(1, Math.round((health - 40) * 0.4));
       predictions.push({
         component: "Battery",
-        currentValue: `${health.toFixed(1)}% capacity · ${cycles} cycles`,
-        projectedTimeline: `${monthsLeft}–${monthsLeft + 2} months before unexpected shutdowns likely`,
+        currentValue: currentValueStr,
+        projectedTimeline: monthsUntil > 0 ? `~${monthsUntil} months to complete end-of-life` : "Replacement overdue",
         severity: "urgent",
-        insight: `Battery is degrading at an accelerated rate. Random shutdowns at 10–20% reported charge are likely within ${monthsLeft}–${monthsLeft + 2} months. Replacement is strongly recommended.`,
+        insight: `Battery is below the recommended replacement threshold. Random shutdowns at 10–20% reported charge are likely — the battery's fuel gauge is no longer accurate at low state-of-charge. Replacement is strongly recommended within the next ${Math.max(1, monthsUntil)} month${monthsUntil !== 1 ? "s" : ""}.`,
       });
     } else {
       predictions.push({
         component: "Battery",
-        currentValue: `${health.toFixed(1)}% capacity · ${cycles} cycles`,
+        currentValue: currentValueStr,
         projectedTimeline: "Immediate — replacement overdue",
         severity: "urgent",
-        insight: "Battery has reached end-of-life. Unexpected shutdowns, swelling risk, and severely reduced runtime are expected. Replace as soon as possible.",
+        insight: "Battery has reached end-of-life by all standard metrics. Unexpected shutdowns, potential cell swelling, and severely reduced runtime are expected. Replace the battery as soon as possible.",
       });
     }
   }
